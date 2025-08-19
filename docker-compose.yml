@@ -7,9 +7,9 @@ services:
     networks:
       - maestro-network
     expose:
-      - "5000"
+      - "8000"
     volumes:
-      - ./maestro/:/code
+      - ./maestro:/maestro
 
   nginx:
     image: nginx:latest
@@ -19,7 +19,10 @@ services:
     networks:
       - maestro-network
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx.conf:/etc/nginx/nginx.conf.template
+    environment:
+      - NGINX_TOKEN=${NGINX_TOKEN}
+    command: /bin/bash -c "envsubst '$${NGINX_TOKEN}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
 
 networks:
   maestro-network:
