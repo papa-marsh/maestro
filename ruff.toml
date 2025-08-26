@@ -1,0 +1,25 @@
+cache-dir = ".cache/ruff"
+target-version = "py313"
+line-length = 120
+
+[lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "I",
+    "PGH",
+    "UP",
+    "S",
+    "C4",
+    "DJ",
+    "INP",
+    "T20",
+    "SIM",
+    "ARG",
+    "PTH",
+    "FURB",
+    "RUF",
+]
+
+ignore = []
