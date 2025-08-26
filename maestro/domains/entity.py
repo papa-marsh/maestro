@@ -1,18 +1,19 @@
 from abc import ABC
 from datetime import datetime
-from enum import StrEnum
+from enum import StrEnum, auto
 from typing import Any
 
 
 class Domain(StrEnum):
-    CALENDAR = "calendar"
-    CLIMATE = "climate"
-    COVER = "cover"
-    FAN = "fan"
-    LIGHT = "light"
-    LOCK = "lock"
-    MEDIA_PLAYER = "media_player"
-    SWITCH = "switch"
+    CALENDAR = auto()
+    CLIMATE = auto()
+    COVER = auto()
+    FAN = auto()
+    INPUT_BOOLEAN = auto()
+    LIGHT = auto()
+    LOCK = auto()
+    MEDIA_PLAYER = auto()
+    SWITCH = auto()
 
 
 class EntityAttribute[T]:

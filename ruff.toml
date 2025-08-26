@@ -23,3 +23,6 @@ select = [
 ]
 
 ignore = []
+
+[lint.per-file-ignores]
+"**/tests/**.py" = ["S101"]

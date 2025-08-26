@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
-HOME_ASSISTANT_URL = Path(os.environ["HOME_ASSISTANT_URL"])
+HOME_ASSISTANT_URL = os.environ["HOME_ASSISTANT_URL"].rstrip('/')
 HOME_ASSISTANT_TOKEN = os.environ["HOME_ASSISTANT_TOKEN"]
