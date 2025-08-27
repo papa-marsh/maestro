@@ -26,6 +26,17 @@ services:
       - NGINX_TOKEN=${NGINX_TOKEN}
     command: /bin/bash -c "envsubst '$${NGINX_TOKEN}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
 
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    networks:
+      - maestro-network
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
+
 networks:
   maestro-network:
     name: maestro-network

@@ -21,7 +21,7 @@ class EntityState:
     last_updated: str
 
 
-class HomeAssistantProvider:
+class HomeAssistantClient:
     """Client for interacting with Home Assistant REST API."""
 
     def check_health(self) -> bool:

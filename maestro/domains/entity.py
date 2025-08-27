@@ -68,14 +68,3 @@ class Entity(ABC):
     def perform_action(self, action: str, **kwargs: Any) -> dict:  # type:ignore[empty-body]
         """Perform an action related to the entity"""
         ...
-
-
-class SwitchClass(Entity):
-    def turn_on(self) -> None:
-        self.perform_action("turn_on")
-
-    def turn_off(self) -> None:
-        self.perform_action("turn_off")
-
-    def toggle(self) -> None:
-        self.perform_action("toggle")

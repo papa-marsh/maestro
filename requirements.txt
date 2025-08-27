@@ -13,6 +13,7 @@ mypy_extensions==1.1.0
 packaging==25.0
 pathspec==0.12.1
 pytest==8.3.4
+redis==6.4.0
 requests==2.32.5
 ruff==0.12.9
 types-requests==2.32.4.20250809

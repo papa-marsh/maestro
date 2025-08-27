@@ -1,26 +1,26 @@
 import pytest
 
 from maestro.domains.entity import Domain
-from maestro.integrations.home_assistant_provider import EntityState, HomeAssistantProvider
+from maestro.integrations.home_assistant import EntityState, HomeAssistantClient
 
 
-class TestHomeAssistantProvider:
+class TestHomeAssistantClient:
     @pytest.fixture(scope="class")
-    def provider(self) -> HomeAssistantProvider:
-        return HomeAssistantProvider()
+    def provider(self) -> HomeAssistantClient:
+        return HomeAssistantClient()
 
     @pytest.fixture(scope="class", autouse=True)
-    def check_health_or_skip(self, provider: HomeAssistantProvider) -> None:
+    def check_health_or_skip(self, provider: HomeAssistantClient) -> None:
         """Check Home Assistant health before running other tests. Skip all if unhealthy."""
         if not provider.check_health():
             pytest.skip("Home Assistant is not healthy - skipping all integration tests")
 
-    def test_check_health(self, provider: HomeAssistantProvider) -> None:
+    def test_check_health(self, provider: HomeAssistantClient) -> None:
         """Test that Home Assistant API is accessible and returns expected health response."""
         is_healthy = provider.check_health()
         assert is_healthy is True
 
-    def test_get_state(self, provider: HomeAssistantProvider) -> None:
+    def test_get_state(self, provider: HomeAssistantClient) -> None:
         entity_state = provider.get_state("person.marshall")
 
         assert isinstance(entity_state, EntityState)
@@ -31,7 +31,7 @@ class TestHomeAssistantProvider:
         assert isinstance(entity_state.last_reported, str)
         assert isinstance(entity_state.last_updated, str)
 
-    def test_set_state(self, provider: HomeAssistantProvider) -> None:
+    def test_set_state(self, provider: HomeAssistantClient) -> None:
         test_entity_id = "maestro.unit_test"
         provider.delete_entity_if_exists(test_entity_id)
 
@@ -56,7 +56,7 @@ class TestHomeAssistantProvider:
         assert entity_state.attributes["test_attr"] == "updated_value"
         assert entity_state.attributes["new_attr"] == "new_value"
 
-    def test_perform_action(self, provider: HomeAssistantProvider) -> None:
+    def test_perform_action(self, provider: HomeAssistantClient) -> None:
         test_entity_id = "input_boolean.maestro_unit_test"
         # Get initial state
         initial_state = provider.get_state(test_entity_id)
@@ -84,7 +84,7 @@ class TestHomeAssistantProvider:
         assert final_state is not None
         assert initial_state_value == final_state.state
 
-    def test_delete_entity(self, provider: HomeAssistantProvider) -> None:
+    def test_delete_entity(self, provider: HomeAssistantClient) -> None:
         test_entity_id = "maestro.unit_test_delete"
         # Create an entity to delete
         provider.set_state(test_entity_id, "to_be_deleted", {"delete_me": True})
