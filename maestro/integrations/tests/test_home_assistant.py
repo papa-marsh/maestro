@@ -36,7 +36,11 @@ class TestHomeAssistantClient:
         provider.delete_entity_if_exists(test_entity_id)
 
         # Create a new entity
-        entity_state, created = provider.set_state(test_entity_id, "test_state", {"test_attr": "test_value"})
+        entity_state, created = provider.set_state(
+            entity_id=test_entity_id,
+            state="test_state",
+            attributes={"test_attr": "test_value"},
+        )
 
         assert isinstance(entity_state, EntityState)
         assert created is True
@@ -46,7 +50,9 @@ class TestHomeAssistantClient:
 
         # Update the existing entity
         entity_state, created = provider.set_state(
-            test_entity_id, "updated_state", {"test_attr": "updated_value", "new_attr": "new_value"}
+            entity_id=test_entity_id,
+            state="updated_state",
+            attributes={"test_attr": "updated_value", "new_attr": "new_value"},
         )
 
         assert isinstance(entity_state, EntityState)

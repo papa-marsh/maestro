@@ -69,7 +69,12 @@ class HomeAssistantClient:
 
         return entity_states
 
-    def set_state(self, entity_id: str, state: str, attributes: dict[str, Any]) -> tuple[EntityState, bool]:
+    def set_state(
+        self,
+        entity_id: str,
+        state: str,
+        attributes: dict[str, Any],
+    ) -> tuple[EntityState, bool]:
         """Set the state and attributes of an entity. Returns (EntityState, created)."""
         path = f"/api/states/{entity_id}"
         body = {"state": state, "attributes": attributes}
@@ -135,7 +140,12 @@ class HomeAssistantClient:
 
         return entity_states
 
-    def execute_request(self, method: HTTPMethod, path: str, body: dict | None = None) -> tuple[dict | list, int]:
+    def execute_request(
+        self,
+        method: HTTPMethod,
+        path: str,
+        body: dict | None = None,
+    ) -> tuple[dict | list, int]:
         """Execute an HTTP request to the Home Assistant API."""
         url = f"{HOME_ASSISTANT_URL}{path}"
         headers = {

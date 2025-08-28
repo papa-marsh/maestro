@@ -1,19 +1,9 @@
 from abc import ABC
 from datetime import datetime
-from enum import StrEnum, auto
 from typing import Any
 
-
-class Domain(StrEnum):
-    CALENDAR = auto()
-    CLIMATE = auto()
-    COVER = auto()
-    FAN = auto()
-    INPUT_BOOLEAN = auto()
-    LIGHT = auto()
-    LOCK = auto()
-    MEDIA_PLAYER = auto()
-    SWITCH = auto()
+from maestro.domains.domain import Domain
+from maestro.integrations.state_manager import StateManager
 
 
 class EntityAttribute[T]:
@@ -26,12 +16,17 @@ class EntityAttribute[T]:
 
 
 class Entity(ABC):
+    state_manager: StateManager
     domain: Domain
     name: str
 
     friendly_name = EntityAttribute[str]()
 
-    def __init__(self, entity_id: str) -> None:
+    def __init__(
+        self,
+        entity_id: str,
+        state_manager: StateManager | None = None,
+    ) -> None:
         entity_parts = entity_id.split(".")
         if len(entity_parts) != 2:
             raise ValueError("Entity string must adhere to `<domain>.<name`> format")
@@ -41,6 +36,8 @@ class Entity(ABC):
         self.name = entity_parts[1]
         if self.domain != type(self).__name__.lower():
             raise ValueError("Mismatch between entity domain and domain class")
+
+        self.state_manager = state_manager or StateManager()
 
     @property
     def state(self) -> str:  # type:ignore[empty-body]

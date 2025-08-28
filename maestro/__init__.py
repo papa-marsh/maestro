@@ -1,12 +1,26 @@
 import json
 import logging
 import re
+from dataclasses import dataclass
 from typing import Any
 
 from flask import Flask, Response, jsonify, request
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
+
+
+@dataclass
+class StateChange:
+    """Represents a state change event for a Home Assistant entity"""
+
+    entity_id: str
+    new_state: str
+    old_state: str
+    attributes: dict[str, Any]
+    last_changed: str
+    last_reported: str
+    last_updated: str
 
 
 @app.route("/")
@@ -44,7 +58,7 @@ def handle_state_changed() -> tuple[Response, int] | Response:
                 state_value = state_match.group(1).strip()
                 attributes_str = state_match.group(2).strip()
 
-                # Parse attributes like "state_class=measurement, unit_of_measurement=MiB, device_class=data_size"
+                # Parse attributes
                 attributes = {}
                 if attributes_str:
                     attr_pairs = re.findall(r"(\w+)=([^,]+)", attributes_str)
