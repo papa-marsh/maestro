@@ -12,17 +12,17 @@ class TestRedisClient:
 
     @pytest.fixture(scope="class", autouse=True)
     def check_health_or_skip(self, client: RedisClient) -> None:
-        """Check Redis health before running other tests. Skip all if unhealthy."""
+        """Check Redis health before running other tests. Skip all if unhealthy"""
         if not client.check_health():
             pytest.skip("Redis is not healthy - skipping all integration tests")
 
     def test_check_health(self, client: RedisClient) -> None:
-        """Test that Redis is accessible and returns expected health response."""
+        """Test that Redis is accessible and returns expected health response"""
         is_healthy = client.check_health()
         assert is_healthy is True
 
     def test_set_and_get(self, client: RedisClient) -> None:
-        """Test setting and getting string values."""
+        """Test setting and getting string values"""
         test_key = "maestro:test:string"
         test_value = "test_value"
 
@@ -49,7 +49,7 @@ class TestRedisClient:
         client.delete(test_key)
 
     def test_set_with_ttl(self, client: RedisClient) -> None:
-        """Test setting values with TTL."""
+        """Test setting values with TTL"""
         test_key = "maestro:test:ttl"
         test_value = "expires_soon"
 
@@ -70,7 +70,7 @@ class TestRedisClient:
         assert client.get(test_key) is None
 
     def test_delete_and_exists(self, client: RedisClient) -> None:
-        """Test deleting keys and checking existence."""
+        """Test deleting keys and checking existence"""
         test_key1 = "maestro:test:delete1"
         test_key2 = "maestro:test:delete2"
         test_value = "to_be_deleted"
@@ -99,7 +99,7 @@ class TestRedisClient:
         assert deleted_count == 1  # Only test_key2 existed
 
     def test_get_keys(self, client: RedisClient) -> None:
-        """Test getting all keys."""
+        """Test getting all keys"""
         # Set up test keys with a unique prefix
         test_prefix = "maestro:test:keys"
         test_keys = [f"{test_prefix}:1", f"{test_prefix}:2", f"{test_prefix}:3"]
@@ -122,7 +122,7 @@ class TestRedisClient:
         client.delete(*test_keys)
 
     def test_nonexistent_key(self, client: RedisClient) -> None:
-        """Test operations on nonexistent keys."""
+        """Test operations on nonexistent keys"""
         nonexistent_key = "maestro:test:nonexistent"
 
         # Ensure key doesn't exist
@@ -138,7 +138,7 @@ class TestRedisClient:
         assert client.delete(nonexistent_key) == 0
 
     def test_empty_string_value(self, client: RedisClient) -> None:
-        """Test handling empty string values."""
+        """Test handling empty string values"""
         test_key = "maestro:test:empty"
 
         # Clean up first
@@ -155,7 +155,7 @@ class TestRedisClient:
         client.delete(test_key)
 
     def test_key_patterns(self, client: RedisClient) -> None:
-        """Test various key naming patterns."""
+        """Test various key naming patterns"""
         test_keys = [
             "maestro:test:simple",
             "maestro:test:with-dashes",

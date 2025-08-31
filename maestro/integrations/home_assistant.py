@@ -11,7 +11,7 @@ from maestro.domains.entity import Domain
 
 @dataclass
 class EntityState:
-    """Represents the current state and metadata of a Home Assistant entity."""
+    """Represents the current state and metadata of a Home Assistant entity"""
 
     entity_id: str
     state: str
@@ -22,10 +22,10 @@ class EntityState:
 
 
 class HomeAssistantClient:
-    """Client for interacting with Home Assistant REST API."""
+    """Client for interacting with Home Assistant REST API"""
 
     def check_health(self) -> bool:
-        """Check if Home Assistant API is accessible and healthy."""
+        """Check if Home Assistant API is accessible and healthy"""
         path = "/api/"
         response_data, status = self.execute_request(method=HTTPMethod.GET, path=path)
 
@@ -35,8 +35,8 @@ class HomeAssistantClient:
             and response_data.get("message") == "API running."
         )
 
-    def get_state(self, entity_id: str) -> EntityState | None:
-        """Get the current state of a specific entity."""
+    def get_entity_state(self, entity_id: str) -> EntityState | None:
+        """Get the current state of a specific entity"""
         path = f"/api/states/{entity_id}"
 
         response_data, status = self.execute_request(method=HTTPMethod.GET, path=path)
@@ -48,8 +48,8 @@ class HomeAssistantClient:
 
         return self.resolve_entity_state(response_data)
 
-    def get_all_states(self) -> list[EntityState]:
-        """Get the current state of all entities."""
+    def get_all_entity_states(self) -> list[EntityState]:
+        """Get the current state of all entities"""
         path = "/api/states"
         response_data, status = self.execute_request(
             method=HTTPMethod.GET,
@@ -69,13 +69,13 @@ class HomeAssistantClient:
 
         return entity_states
 
-    def set_state(
+    def set_entity_state(
         self,
         entity_id: str,
         state: str,
         attributes: dict[str, Any],
     ) -> tuple[EntityState, bool]:
-        """Set the state and attributes of an entity. Returns (EntityState, created)."""
+        """Set the state and attributes of an entity. Returns (EntityState, created)"""
         path = f"/api/states/{entity_id}"
         body = {"state": state, "attributes": attributes}
 
@@ -93,7 +93,7 @@ class HomeAssistantClient:
         return entity_state, created
 
     def delete_entity(self, entity_id: str) -> None:
-        """Delete an entity from Home Assistant."""
+        """Delete an entity from Home Assistant"""
         path = f"/api/states/{entity_id}"
 
         _, status = self.execute_request(method=HTTPMethod.DELETE, path=path)
@@ -104,7 +104,7 @@ class HomeAssistantClient:
             raise ConnectionError(f"Failed to delete entity {entity_id}")
 
     def delete_entity_if_exists(self, entity_id: str) -> None:
-        """Delete an entity if it exists, ignoring errors if it doesn't exist."""
+        """Delete an entity if it exists, ignoring errors if it doesn't exist"""
         with contextlib.suppress(ValueError):
             self.delete_entity(entity_id)
 
@@ -115,7 +115,7 @@ class HomeAssistantClient:
         entity_id: str | list[str],
         **kwargs: Any,
     ) -> list[EntityState]:
-        """Perform an action on one or more entities."""
+        """Perform an action on one or more entities"""
         path = f"/api/services/{domain}/{action}"
         body = {
             "entity_id": entity_id,
@@ -146,7 +146,7 @@ class HomeAssistantClient:
         path: str,
         body: dict | None = None,
     ) -> tuple[dict | list, int]:
-        """Execute an HTTP request to the Home Assistant API."""
+        """Execute an HTTP request to the Home Assistant API"""
         url = f"{HOME_ASSISTANT_URL}{path}"
         headers = {
             "Authorization": f"Bearer {HOME_ASSISTANT_TOKEN}",
@@ -172,7 +172,7 @@ class HomeAssistantClient:
 
     @staticmethod
     def resolve_entity_state(raw_dict: dict) -> EntityState:
-        """Convert raw API response data to EntityState object."""
+        """Convert raw API response data to EntityState object"""
         keys = {"entity_id", "state", "attributes", "last_changed", "last_reported", "last_updated"}
         if not all(key in raw_dict for key in keys):
             raise KeyError("Couldn't resolve EntityState. Missing required keys.")

@@ -34,6 +34,16 @@ state_decoder_map: dict[str, Callable[[str], CachedStateValueT]] = {
     type(None).__name__: lambda _: None,
 }
 
+attribute_ignore_list = {
+    "editable",
+    "device_class",
+    "supported_features",
+    "entity_picture",
+    "editable",
+    "icon",
+    "attribution",
+}
+
 
 class StateManager:
     home_assistant_client: HomeAssistantClient
@@ -47,9 +57,9 @@ class StateManager:
         self.home_assistant_client = home_assistant_client or HomeAssistantClient()
         self.redis_client = redis_client or RedisClient()
 
-    def get_cached_state(self, name: str) -> CachedStateValueT:
+    def get_cached_state(self, id: str) -> CachedStateValueT:
         """Retrieve an entity's state or attribute value from Redis"""
-        parts = name.split(".")
+        parts = id.split(".")
         if len(parts) not in [2, 3]:
             raise ValueError("Invalid format receieved for state/attribute name")
         key = RedisClient.build_key(STATE_CACHE_PREFIX, *parts)
@@ -63,9 +73,9 @@ class StateManager:
 
         return self.decode_cached_state(cached_state)
 
-    def set_cached_state(self, name: str, value: CachedStateValueT) -> CachedStateValueT:
+    def set_cached_state(self, id: str, value: CachedStateValueT) -> CachedStateValueT:
         """Stores an entity's state or attribute value in Redis along with its type"""
-        parts = name.split(".")
+        parts = id.split(".")
         if len(parts) not in [2, 3]:
             raise ValueError("Invalid format receieved for state/attribute name")
         if len(parts) == 2 and not isinstance(value, str):
@@ -83,6 +93,21 @@ class StateManager:
         old_cached_state = CachedState(value=old_data["value"], type=old_data["type"])
 
         return self.decode_cached_state(old_cached_state)
+
+    def refresh_cached_state(self, entity_id: str) -> None:
+        if entity_id.count(".") != 1:
+            raise ValueError("Refreshing cached state requires a valid entity ID")
+        entity_state = self.home_assistant_client.get_entity_state(entity_id)
+        if not entity_state:
+            raise ValueError(f"Failed to retrieve an entity state for {entity_id}")
+
+        self.set_cached_state(entity_id, entity_state.state)
+        self.set_cached_state(f"{entity_id}.{'last_changed'}", entity_state.last_changed)
+        self.set_cached_state(f"{entity_id}.{'last_updated'}", entity_state.last_updated)
+        for attribute, value in entity_state.attributes.items():
+            if attribute in attribute_ignore_list:
+                continue
+            self.set_cached_state(f"{entity_id}.{attribute}", value)
 
     @classmethod
     def encode_cached_state(cls, value: CachedStateValueT) -> str:

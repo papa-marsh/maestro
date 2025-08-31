@@ -7,10 +7,19 @@ from maestro.integrations.state_manager import StateManager
 
 
 class EntityAttribute[T]:
+    def __init__(self, attribute_type: type[T]) -> None:
+        self.attribute_type = attribute_type
+
     def __set_name__(self, owner: type["Entity"], name: str) -> None:
         self.name = name
 
-    def __get__(self, obj: "Entity", objtype: type["Entity"] | None = None) -> T: ...  # type:ignore[empty-body]
+    def __get__(self, obj: "Entity", objtype: type["Entity"] | None = None) -> T:
+        id = f"{obj.entity_id}.{self.name}"
+        value = obj.state_manager.get_cached_state(id)
+        if not isinstance(value, self.attribute_type):
+            raise TypeError(f"Type mismatch for cached attribute {id}")
+
+        return value
 
     def __set__(self, obj: "Entity", value: T) -> None: ...
 
@@ -20,7 +29,9 @@ class Entity(ABC):
     domain: Domain
     name: str
 
-    friendly_name = EntityAttribute[str]()
+    friendly_name = EntityAttribute(str)
+    last_changed = EntityAttribute(datetime)
+    last_updated = EntityAttribute(datetime)
 
     def __init__(
         self,
@@ -40,28 +51,19 @@ class Entity(ABC):
         self.state_manager = state_manager or StateManager()
 
     @property
-    def state(self) -> str:  # type:ignore[empty-body]
-        """Get the current state of the entity"""
-        ...
+    def state(self) -> str:
+        """Get the current state of the entity (always a string)"""
+        state = self.state_manager.get_cached_state(self.entity_id)
+        if not isinstance(state, str):
+            raise TypeError("Entity state must be a string")
+
+        return state
 
     @state.setter
     def state(self, value: str) -> None:
         """Set the state of the entity"""
         ...
 
-    def get_attribute(self, attribute_name: str) -> Any:
-        """Get the current value of one of the entity's attributes"""
-        ...
-
-    def set_attribute(self, attribute_name: str, value: Any) -> None:
-        """Set one of the entity's attributes"""
-        ...
-
-    @property
-    def last_changed(self) -> datetime:  # type:ignore[empty-body]
-        """Get the datetime when the entity state last changed"""
-        ...
-
-    def perform_action(self, action: str, **kwargs: Any) -> dict:  # type:ignore[empty-body]
+    def perform_action(self, action: str, **kwargs: Any) -> dict:
         """Perform an action related to the entity"""
         ...

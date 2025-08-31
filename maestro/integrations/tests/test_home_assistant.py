@@ -11,12 +11,12 @@ class TestHomeAssistantClient:
 
     @pytest.fixture(scope="class", autouse=True)
     def check_health_or_skip(self, provider: HomeAssistantClient) -> None:
-        """Check Home Assistant health before running other tests. Skip all if unhealthy."""
+        """Check Home Assistant health before running other tests. Skip all if unhealthy"""
         if not provider.check_health():
             pytest.skip("Home Assistant is not healthy - skipping all integration tests")
 
     def test_check_health(self, provider: HomeAssistantClient) -> None:
-        """Test that Home Assistant API is accessible and returns expected health response."""
+        """Test that Home Assistant API is accessible and returns expected health response"""
         is_healthy = provider.check_health()
         assert is_healthy is True
 
