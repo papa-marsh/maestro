@@ -1,5 +1,5 @@
-from maestro.domains.domain import Domain
-from maestro.domains.entity import Entity
+from maestro.entities.domain import Domain
+from maestro.entities.entity import Entity
 
 
 class Switch(Entity):

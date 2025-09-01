@@ -2,8 +2,8 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from maestro.domains.domain import Domain
-from maestro.domains.entity import Entity, EntityAttribute
+from maestro.entities.domain import Domain
+from maestro.entities.entity import Entity, EntityAttribute
 
 
 class CalendarAction(StrEnum):

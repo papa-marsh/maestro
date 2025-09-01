@@ -1,7 +1,7 @@
 from enum import StrEnum, auto
 
-from maestro.domains.domain import Domain
-from maestro.domains.entity import Entity, EntityAttribute
+from maestro.entities.domain import Domain
+from maestro.entities.entity import Entity, EntityAttribute
 
 
 class TeslaHVACMode(StrEnum):
@@ -38,10 +38,10 @@ FanModeT = TeslaFanMode | ThermostatFanMode
 class Climate(Entity):
     domain = Domain.CLIMATE
 
-    current_temperature = EntityAttribute[int]()
-    temperature = EntityAttribute[int]()
-    hvac_modes = EntityAttribute[HVACModeT]()
-    fan_mode = EntityAttribute[FanModeT]
+    current_temperature = EntityAttribute(int)
+    temperature = EntityAttribute(int)
+    hvac_modes = EntityAttribute(str)
+    fan_mode = EntityAttribute(str)
 
     def turn_on(self) -> None:
         self.perform_action("turn_on")
@@ -52,7 +52,7 @@ class Climate(Entity):
     def toggle(self) -> None:
         self.perform_action("toggle")
 
-    def set_fan_mode(self, mode: StrEnum) -> None:
+    def set_fan_mode(self, mode: FanModeT) -> None:
         self.perform_action("set_fan_mode", mode=mode)
 
     def set_temperature(self, target_temp: int) -> None:

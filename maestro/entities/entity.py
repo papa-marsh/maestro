@@ -2,7 +2,7 @@ from abc import ABC
 from datetime import datetime
 from typing import Any
 
-from maestro.domains.domain import Domain
+from maestro.entities.domain import Domain
 from maestro.integrations.state_manager import StateManager
 
 
