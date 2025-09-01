@@ -1,107 +1,109 @@
 import pytest
 
 from maestro.domains.entity import Domain
-from maestro.integrations.home_assistant import EntityState, HomeAssistantClient
+from maestro.integrations.home_assistant import EntityResponse, HomeAssistantClient
 
 
 class TestHomeAssistantClient:
     @pytest.fixture(scope="class")
-    def provider(self) -> HomeAssistantClient:
+    def home_assistant_client(self) -> HomeAssistantClient:
         return HomeAssistantClient()
 
     @pytest.fixture(scope="class", autouse=True)
-    def check_health_or_skip(self, provider: HomeAssistantClient) -> None:
+    def check_health_or_skip(self, home_assistant_client: HomeAssistantClient) -> None:
         """Check Home Assistant health before running other tests. Skip all if unhealthy"""
-        if not provider.check_health():
+        if not home_assistant_client.check_health():
             pytest.skip("Home Assistant is not healthy - skipping all integration tests")
 
-    def test_check_health(self, provider: HomeAssistantClient) -> None:
+    def test_check_health(self, home_assistant_client: HomeAssistantClient) -> None:
         """Test that Home Assistant API is accessible and returns expected health response"""
-        is_healthy = provider.check_health()
+        is_healthy = home_assistant_client.check_health()
         assert is_healthy is True
 
-    def test_get_state(self, provider: HomeAssistantClient) -> None:
-        entity_state = provider.get_state("person.marshall")
+    def test_get_entity(self, home_assistant_client: HomeAssistantClient) -> None:
+        entity = home_assistant_client.get_entity("person.marshall")
 
-        assert isinstance(entity_state, EntityState)
-        assert entity_state.entity_id == "person.marshall"
-        assert isinstance(entity_state.state, str)
-        assert isinstance(entity_state.attributes, dict)
-        assert isinstance(entity_state.last_changed, str)
-        assert isinstance(entity_state.last_reported, str)
-        assert isinstance(entity_state.last_updated, str)
+        assert isinstance(entity, EntityResponse)
+        assert entity.entity_id == "person.marshall"
+        assert isinstance(entity.state, str)
+        assert isinstance(entity.attributes, dict)
+        assert isinstance(entity.last_changed, str)
+        assert isinstance(entity.last_reported, str)
+        assert isinstance(entity.last_updated, str)
 
-    def test_set_state(self, provider: HomeAssistantClient) -> None:
+    def test_set_entity(self, home_assistant_client: HomeAssistantClient) -> None:
         test_entity_id = "maestro.unit_test"
-        provider.delete_entity_if_exists(test_entity_id)
+        home_assistant_client.delete_entity_if_exists(test_entity_id)
 
         # Create a new entity
-        entity_state, created = provider.set_state(
+        entity, created = home_assistant_client.set_entity(
             entity_id=test_entity_id,
             state="test_state",
             attributes={"test_attr": "test_value"},
         )
 
-        assert isinstance(entity_state, EntityState)
+        assert isinstance(entity, EntityResponse)
         assert created is True
-        assert entity_state.entity_id == test_entity_id
-        assert entity_state.state == "test_state"
-        assert entity_state.attributes["test_attr"] == "test_value"
+        assert entity.entity_id == test_entity_id
+        assert entity.state == "test_state"
+        assert entity.attributes["test_attr"] == "test_value"
 
         # Update the existing entity
-        entity_state, created = provider.set_state(
+        entity, created = home_assistant_client.set_entity(
             entity_id=test_entity_id,
             state="updated_state",
             attributes={"test_attr": "updated_value", "new_attr": "new_value"},
         )
 
-        assert isinstance(entity_state, EntityState)
+        assert isinstance(entity, EntityResponse)
         assert created is False
-        assert entity_state.entity_id == test_entity_id
-        assert entity_state.state == "updated_state"
-        assert entity_state.attributes["test_attr"] == "updated_value"
-        assert entity_state.attributes["new_attr"] == "new_value"
+        assert entity.entity_id == test_entity_id
+        assert entity.state == "updated_state"
+        assert entity.attributes["test_attr"] == "updated_value"
+        assert entity.attributes["new_attr"] == "new_value"
 
-    def test_perform_action(self, provider: HomeAssistantClient) -> None:
+    def test_perform_action(self, home_assistant_client: HomeAssistantClient) -> None:
         test_entity_id = "input_boolean.maestro_unit_test"
         # Get initial state
-        initial_state = provider.get_state(test_entity_id)
+        initial_state = home_assistant_client.get_entity(test_entity_id)
         assert initial_state is not None
         initial_state_value = initial_state.state
 
         # Toggle the switch
-        result_states = provider.perform_action(Domain.INPUT_BOOLEAN, "toggle", test_entity_id)
+        result_states = home_assistant_client.perform_action(
+            Domain.INPUT_BOOLEAN, "toggle", test_entity_id
+        )
 
         assert isinstance(result_states, list)
 
         for state in result_states:
-            assert isinstance(state, EntityState)
+            assert isinstance(state, EntityResponse)
 
         # Get state after first toggle
-        toggled_state = provider.get_state(test_entity_id)
+        toggled_state = home_assistant_client.get_entity(test_entity_id)
         assert toggled_state is not None
         assert initial_state_value != toggled_state.state
 
         # Toggle back to original state
-        provider.perform_action(Domain.INPUT_BOOLEAN, "toggle", test_entity_id)
+        home_assistant_client.perform_action(Domain.INPUT_BOOLEAN, "toggle", test_entity_id)
 
         # Verify it's back to original state
-        final_state = provider.get_state(test_entity_id)
+        final_state = home_assistant_client.get_entity(test_entity_id)
         assert final_state is not None
         assert initial_state_value == final_state.state
 
-    def test_delete_entity(self, provider: HomeAssistantClient) -> None:
+    def test_delete_entity(self, home_assistant_client: HomeAssistantClient) -> None:
         test_entity_id = "maestro.unit_test_delete"
         # Create an entity to delete
-        provider.set_state(test_entity_id, "to_be_deleted", {"delete_me": True})
+        home_assistant_client.set_entity(test_entity_id, "to_be_deleted", {"delete_me": True})
 
         # Verify it exists
-        entity_state = provider.get_state(test_entity_id)
-        assert entity_state is not None
+        entity = home_assistant_client.get_entity(test_entity_id)
+        assert entity is not None
 
         # Delete the entity
-        provider.delete_entity(test_entity_id)
+        home_assistant_client.delete_entity(test_entity_id)
 
         # Verify it no longer exists
         with pytest.raises(ValueError):
-            provider.get_state(test_entity_id)
+            home_assistant_client.get_entity(test_entity_id)

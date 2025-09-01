@@ -14,12 +14,12 @@ class CalendarAction(StrEnum):
 class Calendar(Entity):
     domain = Domain.CALENDAR
 
-    message = EntityAttribute[str]()
-    all_day = EntityAttribute[bool]()
-    start_time = EntityAttribute[datetime]()  # TODO datetime or str?
-    end_time = EntityAttribute[datetime]()  # TODO datetime or str?
-    location = EntityAttribute[str]()
-    description = EntityAttribute[str]()
+    message = EntityAttribute(str)
+    all_day = EntityAttribute(bool)
+    start_time = EntityAttribute(datetime)
+    end_time = EntityAttribute(datetime)
+    location = EntityAttribute(str)
+    description = EntityAttribute(str)
 
     def create_event(self, **kwargs: Any) -> None:
         self.perform_action(CalendarAction.CREATE_EVENT, **kwargs)

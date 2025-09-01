@@ -8,9 +8,10 @@ from maestro.integrations.redis import RedisClient
 from maestro.integrations.state_manager import CachedState, StateManager
 
 
-class TestStateManagerUnit:
-    """Unit tests for StateManager focusing on encoding/decoding logic"""
+class TestStateManagerIntegration: ...  # TODO
 
+
+class TestStateManagerUnit:
     def test_encode_cached_state_string(self) -> None:
         """Test encoding string values"""
         result = StateManager.encode_cached_state("test_string")

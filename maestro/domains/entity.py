@@ -21,7 +21,17 @@ class EntityAttribute[T]:
 
         return value
 
-    def __set__(self, obj: "Entity", value: T) -> None: ...
+    def __set__(self, obj: "Entity", value: T) -> None:
+        entity_response = obj.state_manager.fetch_hass_entity(obj.entity_id)
+        if entity_response is None:
+            raise ValueError(f"Failed to retrieve entity response for {obj.entity_id}")
+
+        entity_response.attributes[self.name] = value
+        obj.state_manager.hass_client.set_entity(
+            entity_id=obj.entity_id,
+            state=entity_response.state,
+            attributes=entity_response.attributes,
+        )
 
 
 class Entity(ABC):
@@ -62,8 +72,24 @@ class Entity(ABC):
     @state.setter
     def state(self, value: str) -> None:
         """Set the state of the entity"""
-        ...
+        entity_response = self.state_manager.fetch_hass_entity(self.entity_id)
+        if entity_response is None:
+            raise ValueError(f"Failed to retrieve entity response for {self.entity_id}")
 
-    def perform_action(self, action: str, **kwargs: Any) -> dict:
+        entity_response.state = value
+        self.state_manager.hass_client.set_entity(
+            entity_id=self.entity_id,
+            state=entity_response.state,
+            attributes=entity_response.attributes,
+        )
+
+    def perform_action(self, action: str, **kwargs: Any) -> None:
         """Perform an action related to the entity"""
-        ...
+        response = self.state_manager.hass_client.perform_action(
+            domain=self.domain,
+            action=action,
+            entity_id=self.entity_id,
+            **kwargs,
+        )
+        if len(response) > 1:
+            raise ValueError("Unexpectedly received more than one EntityResponse from action call")

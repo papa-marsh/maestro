@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
-from maestro.integrations.home_assistant import HomeAssistantClient
+from maestro.integrations.home_assistant import EntityResponse, HomeAssistantClient
 from maestro.integrations.redis import RedisClient
 
 STATE_CACHE_PREFIX = "STATE"
@@ -46,22 +46,27 @@ attribute_ignore_list = {
 
 
 class StateManager:
-    home_assistant_client: HomeAssistantClient
+    """
+    Middleware that sits between Home Assistant and the main logic engine.
+    Orchestrates all state/attribute data handoffs to & from HASS and the cache layer.
+    """
+
+    hass_client: HomeAssistantClient
     redis_client: RedisClient
 
     def __init__(
         self,
-        home_assistant_client: HomeAssistantClient | None = None,
+        hass_client: HomeAssistantClient | None = None,
         redis_client: RedisClient | None = None,
     ) -> None:
-        self.home_assistant_client = home_assistant_client or HomeAssistantClient()
+        self.hass_client = hass_client or HomeAssistantClient()
         self.redis_client = redis_client or RedisClient()
 
     def get_cached_state(self, id: str) -> CachedStateValueT:
         """Retrieve an entity's state or attribute value from Redis"""
         parts = id.split(".")
         if len(parts) not in [2, 3]:
-            raise ValueError("Invalid format receieved for state/attribute name")
+            raise ValueError("Invalid format received for state/attribute name")
         key = RedisClient.build_key(STATE_CACHE_PREFIX, *parts)
 
         encoded_value = self.redis_client.get(key)
@@ -77,7 +82,7 @@ class StateManager:
         """Stores an entity's state or attribute value in Redis along with its type"""
         parts = id.split(".")
         if len(parts) not in [2, 3]:
-            raise ValueError("Invalid format receieved for state/attribute name")
+            raise ValueError("Invalid format received for state/attribute name")
         if len(parts) == 2 and not isinstance(value, str):
             raise TypeError("State value must be a string")
 
@@ -93,21 +98,6 @@ class StateManager:
         old_cached_state = CachedState(value=old_data["value"], type=old_data["type"])
 
         return self.decode_cached_state(old_cached_state)
-
-    def refresh_cached_state(self, entity_id: str) -> None:
-        if entity_id.count(".") != 1:
-            raise ValueError("Refreshing cached state requires a valid entity ID")
-        entity_state = self.home_assistant_client.get_entity_state(entity_id)
-        if not entity_state:
-            raise ValueError(f"Failed to retrieve an entity state for {entity_id}")
-
-        self.set_cached_state(entity_id, entity_state.state)
-        self.set_cached_state(f"{entity_id}.{'last_changed'}", entity_state.last_changed)
-        self.set_cached_state(f"{entity_id}.{'last_updated'}", entity_state.last_updated)
-        for attribute, value in entity_state.attributes.items():
-            if attribute in attribute_ignore_list:
-                continue
-            self.set_cached_state(f"{entity_id}.{attribute}", value)
 
     @classmethod
     def encode_cached_state(cls, value: CachedStateValueT) -> str:
@@ -135,3 +125,24 @@ class StateManager:
         decoder_function = state_decoder_map[cached_state.type]
 
         return decoder_function(cached_state.value)
+
+    def fetch_hass_entity(self, entity_id: str) -> EntityResponse:
+        """Fetch and cache up-to-date data for a Home Assistant entity"""
+        if entity_id.count(".") != 1:
+            raise ValueError("Refreshing cached state requires a valid entity ID")
+        entity_response = self.hass_client.get_entity(entity_id)
+        if not entity_response:
+            raise ValueError(f"Failed to retrieve an entity response for {entity_id}")
+        self.cache_entity_response(entity_response)
+
+        return entity_response
+
+    def cache_entity_response(self, entity: EntityResponse) -> None:
+        """Given an EntityResponse object, cache its state and attributes"""
+        self.set_cached_state(entity.entity_id, entity.state)
+        self.set_cached_state(f"{entity.entity_id}.{'last_changed'}", entity.last_changed)
+        self.set_cached_state(f"{entity.entity_id}.{'last_updated'}", entity.last_updated)
+        for attribute, value in entity.attributes.items():
+            if attribute in attribute_ignore_list:
+                continue
+            self.set_cached_state(f"{entity.entity_id}.{attribute}", value)

@@ -10,8 +10,8 @@ from maestro.domains.entity import Domain
 
 
 @dataclass
-class EntityState:
-    """Represents the current state and metadata of a Home Assistant entity"""
+class EntityResponse:
+    """Represents the current state and metadata of a Home Assistant entity API response"""
 
     entity_id: str
     state: str
@@ -35,7 +35,7 @@ class HomeAssistantClient:
             and response_data.get("message") == "API running."
         )
 
-    def get_entity_state(self, entity_id: str) -> EntityState | None:
+    def get_entity(self, entity_id: str) -> EntityResponse:
         """Get the current state of a specific entity"""
         path = f"/api/states/{entity_id}"
 
@@ -46,9 +46,9 @@ class HomeAssistantClient:
         if status != HTTPStatus.OK or not response_data or not isinstance(response_data, dict):
             raise ConnectionError(f"Failed to retrieve valid state for `{entity_id}`")
 
-        return self.resolve_entity_state(response_data)
+        return self.resolve_entity_response(response_data)
 
-    def get_all_entity_states(self) -> list[EntityState]:
+    def get_all_entities(self) -> list[EntityResponse]:
         """Get the current state of all entities"""
         path = "/api/states"
         response_data, status = self.execute_request(
@@ -59,27 +59,34 @@ class HomeAssistantClient:
         if status != HTTPStatus.OK or not response_data or not isinstance(response_data, list):
             raise ConnectionError("Failed to retrieve states")
 
-        entity_states = []
+        entities = []
         for state_data in response_data:
             if not isinstance(state_data, dict):
                 raise TypeError("Unexpected non-dict in state response")
 
-            entity_state = self.resolve_entity_state(state_data)
-            entity_states.append(entity_state)
+            entity = self.resolve_entity_response(state_data)
+            entities.append(entity)
 
-        return entity_states
+        return entities
 
-    def set_entity_state(
+    def set_entity(
         self,
         entity_id: str,
         state: str,
         attributes: dict[str, Any],
-    ) -> tuple[EntityState, bool]:
-        """Set the state and attributes of an entity. Returns (EntityState, created)"""
+    ) -> tuple[EntityResponse, bool]:
+        """Set the state and attributes of an entity. Returns (EntityResponse, created)"""
         path = f"/api/states/{entity_id}"
-        body = {"state": state, "attributes": attributes}
+        body = {
+            "state": state,
+            "attributes": attributes,
+        }
 
-        response_data, status = self.execute_request(method=HTTPMethod.POST, path=path, body=body)
+        response_data, status = self.execute_request(
+            method=HTTPMethod.POST,
+            path=path,
+            body=body,
+        )
 
         if status not in (HTTPStatus.OK, HTTPStatus.CREATED):
             raise ConnectionError(f"Failed to set state for entity {entity_id}")
@@ -87,10 +94,10 @@ class HomeAssistantClient:
         if not isinstance(response_data, dict):
             raise ConnectionError(f"Expected dict response for entity {entity_id}")
 
-        entity_state = self.resolve_entity_state(response_data)
+        entity = self.resolve_entity_response(response_data)
         created = status == HTTPStatus.CREATED
 
-        return entity_state, created
+        return entity, created
 
     def delete_entity(self, entity_id: str) -> None:
         """Delete an entity from Home Assistant"""
@@ -114,7 +121,7 @@ class HomeAssistantClient:
         action: str,
         entity_id: str | list[str],
         **kwargs: Any,
-    ) -> list[EntityState]:
+    ) -> list[EntityResponse]:
         """Perform an action on one or more entities"""
         path = f"/api/services/{domain}/{action}"
         body = {
@@ -122,7 +129,11 @@ class HomeAssistantClient:
             **kwargs,
         }
 
-        response_data, status = self.execute_request(method=HTTPMethod.POST, path=path, body=body)
+        response_data, status = self.execute_request(
+            method=HTTPMethod.POST,
+            path=path,
+            body=body,
+        )
 
         if status != HTTPStatus.OK:
             raise ConnectionError(f"Failed to perform action {domain}.{action}")
@@ -130,15 +141,15 @@ class HomeAssistantClient:
         if not isinstance(response_data, list):
             raise ConnectionError(f"Expected list response for action {domain}.{action}")
 
-        entity_states = []
+        entities = []
         for state_data in response_data:
             if not isinstance(state_data, dict):
                 raise TypeError("Unexpected non-dict in state response")
 
-            entity_state = self.resolve_entity_state(state_data)
-            entity_states.append(entity_state)
+            entity = self.resolve_entity_response(state_data)
+            entities.append(entity)
 
-        return entity_states
+        return entities
 
     def execute_request(
         self,
@@ -171,13 +182,20 @@ class HomeAssistantClient:
         return data, response.status_code
 
     @staticmethod
-    def resolve_entity_state(raw_dict: dict) -> EntityState:
-        """Convert raw API response data to EntityState object"""
-        keys = {"entity_id", "state", "attributes", "last_changed", "last_reported", "last_updated"}
+    def resolve_entity_response(raw_dict: dict) -> EntityResponse:
+        """Convert raw API response data to EntityResponse object"""
+        keys = {
+            "entity_id",
+            "state",
+            "attributes",
+            "last_changed",
+            "last_reported",
+            "last_updated",
+        }
         if not all(key in raw_dict for key in keys):
-            raise KeyError("Couldn't resolve EntityState. Missing required keys.")
+            raise KeyError("Couldn't resolve EntityResponse. Missing required keys.")
 
-        entity_state = EntityState(
+        entity = EntityResponse(
             entity_id=raw_dict.get("entity_id", ""),
             state=raw_dict.get("state", ""),
             attributes=raw_dict.get("attributes", {}),
@@ -186,4 +204,4 @@ class HomeAssistantClient:
             last_updated=raw_dict.get("last_updated", ""),
         )
 
-        return entity_state
+        return entity
