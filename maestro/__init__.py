@@ -1,6 +1,5 @@
 import json
 import logging
-from dataclasses import dataclass
 from enum import StrEnum, auto
 from http import HTTPMethod
 
@@ -16,14 +15,6 @@ class EventType(StrEnum):
     STATE_CHANGED = auto()
 
 
-@dataclass
-class RawEvent:
-    event_type: EventType
-    event_data: str
-    time_fired: str
-    timestamp: str
-
-
 @app.route("/")
 def hello_world() -> str:
     app.logger.info("Hello World")
@@ -37,6 +28,6 @@ def payload_testing() -> str:
     return "<p>Payload Testing</p>"
 
 
-@app.route("/events/state_changed", methods=[HTTPMethod.POST])
-def state_changed() -> tuple[Response, int] | Response:
+@app.route("/events/state-changed", methods=[HTTPMethod.POST])
+def state_changed() -> tuple[Response, int]:
     return handle_state_changed()

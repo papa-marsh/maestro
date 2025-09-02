@@ -11,7 +11,7 @@ from maestro.entities.entity import Domain
 
 @dataclass
 class EntityResponse:
-    """The Home Assistant API's representation of an entity's state and metadata"""
+    """How an entity's state and metadata are represented by the Home Assistant API"""
 
     entity_id: str
     state: str
@@ -196,12 +196,12 @@ class HomeAssistantClient:
             raise KeyError("Couldn't resolve EntityResponse. Missing required keys.")
 
         entity = EntityResponse(
-            entity_id=raw_dict.get("entity_id", ""),
-            state=raw_dict.get("state", ""),
-            attributes=raw_dict.get("attributes", {}),
-            last_changed=raw_dict.get("last_changed", ""),
-            last_reported=raw_dict.get("last_reported", ""),
-            last_updated=raw_dict.get("last_updated", ""),
+            entity_id=raw_dict["entity_id"] or "",
+            state=raw_dict["state"] or "",
+            attributes=raw_dict["attributes"] or {},
+            last_changed=raw_dict["last_changed"] or "",
+            last_reported=raw_dict["last_reported"] or "",
+            last_updated=raw_dict["last_updated"] or "",
         )
 
         return entity

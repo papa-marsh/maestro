@@ -5,6 +5,7 @@ from datetime import datetime
 
 from maestro.integrations.home_assistant import EntityResponse, HomeAssistantClient
 from maestro.integrations.redis import RedisClient
+from maestro.utils.dates import resolve_timestamp
 
 STATE_CACHE_PREFIX = "STATE"
 
@@ -30,7 +31,7 @@ state_decoder_map: dict[str, Callable[[str], CachedStateValueT]] = {
     int.__name__: lambda x: int(x),
     float.__name__: lambda x: float(x),
     dict.__name__: lambda x: json.loads(x) if isinstance(x, str) else dict(x),
-    datetime.__name__: lambda x: datetime.fromisoformat(x),
+    datetime.__name__: lambda x: resolve_timestamp(x),
     type(None).__name__: lambda _: None,
 }
 
