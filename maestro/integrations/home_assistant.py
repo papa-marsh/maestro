@@ -6,12 +6,12 @@ from typing import Any
 import requests
 
 from maestro.config import HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
-from maestro.domains.entity import Domain
+from maestro.entities.entity import Domain
 
 
 @dataclass
 class EntityResponse:
-    """Represents the current state and metadata of a Home Assistant entity API response"""
+    """The Home Assistant API's representation of an entity's state and metadata"""
 
     entity_id: str
     state: str

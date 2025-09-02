@@ -48,7 +48,7 @@ attribute_ignore_list = {
 class StateManager:
     """
     Middleware that sits between Home Assistant and the main logic engine.
-    Orchestrates all state/attribute data handoffs to & from HASS and the cache layer.
+    Orchestrates entity data handoffs to & from HASS and the cache layer.
     """
 
     hass_client: HomeAssistantClient
