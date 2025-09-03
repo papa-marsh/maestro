@@ -7,7 +7,7 @@ from typing import Any
 import requests
 
 from maestro.config import HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
-from maestro.entities.entity import Domain
+from maestro.entities.domain import Domain
 
 
 @dataclass

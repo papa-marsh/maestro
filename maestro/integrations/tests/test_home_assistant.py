@@ -1,6 +1,6 @@
 import pytest
 
-from maestro.entities.entity import Domain
+from maestro.entities.domain import Domain
 from maestro.integrations.home_assistant import EntityResponse, HomeAssistantClient
 
 
