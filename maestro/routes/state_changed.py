@@ -1,25 +1,13 @@
-from dataclasses import dataclass
-from datetime import datetime
+from flask import Response, jsonify, request
 
-from flask import Response, current_app, jsonify, request
-
+from maestro.integrations.home_assistant import StateChangeEvent
+from maestro.integrations.state_manager import StateManager
 from maestro.utils.dates import resolve_timestamp
-
-
-@dataclass
-class StateChangeEvent:
-    timestamp: datetime
-    time_fired: datetime
-    event_type: str
-    entity_id: str
-    old_state: str
-    new_state: str
-    old_attributes: dict
-    new_attributes: dict
 
 
 def handle_state_changed() -> tuple[Response, int]:
     request_body = request.get_json() or {}
+    state_manager = StateManager()
 
     state_change_data = StateChangeEvent(
         timestamp=resolve_timestamp(request_body["timestamp"] or ""),
@@ -31,5 +19,7 @@ def handle_state_changed() -> tuple[Response, int]:
         old_attributes=request_body["old_attributes"] or {},
         new_attributes=request_body["new_attributes"] or {},
     )
+
+    state_manager.cache_state_change(state_change_data)
 
     return jsonify({"status": "success"}), 200

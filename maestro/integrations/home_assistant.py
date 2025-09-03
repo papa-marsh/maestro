@@ -1,5 +1,6 @@
 import contextlib
 from dataclasses import dataclass
+from datetime import datetime
 from http import HTTPMethod, HTTPStatus
 from typing import Any
 
@@ -11,7 +12,7 @@ from maestro.entities.entity import Domain
 
 @dataclass
 class EntityResponse:
-    """How an entity's state and metadata are represented by the Home Assistant API"""
+    """An entity's state and metadata as represented by the Home Assistant API"""
 
     entity_id: str
     state: str
@@ -19,6 +20,20 @@ class EntityResponse:
     last_changed: str
     last_reported: str
     last_updated: str
+
+
+@dataclass
+class StateChangeEvent:
+    """A state change event as represented by the send_to_maestro automation"""
+
+    timestamp: datetime
+    time_fired: datetime
+    event_type: str
+    entity_id: str
+    old_state: str
+    new_state: str
+    old_attributes: dict
+    new_attributes: dict
 
 
 class HomeAssistantClient:

@@ -3,7 +3,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
-from maestro.integrations.home_assistant import EntityResponse, HomeAssistantClient
+from maestro.integrations.home_assistant import (
+    EntityResponse,
+    HomeAssistantClient,
+    StateChangeEvent,
+)
 from maestro.integrations.redis import RedisClient
 from maestro.utils.dates import resolve_timestamp
 
@@ -138,12 +142,34 @@ class StateManager:
 
         return entity_response
 
+    def cache_state_change(self, state_change: StateChangeEvent) -> None:
+        """Given an EntityResponse object, cache its state and attributes"""
+        custom_attributes = {
+            "last_changed": state_change.time_fired,
+            "last_updated": state_change.timestamp,
+            "previous_state": state_change.old_state,
+        }
+        self.cache_entity(
+            entity_id=state_change.entity_id,
+            state=state_change.new_state,
+            attributes=custom_attributes | state_change.new_attributes,
+        )
+
     def cache_entity_response(self, entity: EntityResponse) -> None:
         """Given an EntityResponse object, cache its state and attributes"""
-        self.set_cached_state(entity.entity_id, entity.state)
-        self.set_cached_state(f"{entity.entity_id}.{'last_changed'}", entity.last_changed)
-        self.set_cached_state(f"{entity.entity_id}.{'last_updated'}", entity.last_updated)
-        for attribute, value in entity.attributes.items():
+        custom_attributes = {
+            "last_changed": entity.last_changed,
+            "last_updated": entity.last_updated,
+        }
+        self.cache_entity(
+            entity_id=entity.entity_id,
+            state=entity.state,
+            attributes=custom_attributes | entity.attributes,
+        )
+
+    def cache_entity(self, entity_id: str, state: str, attributes: dict) -> None:
+        self.set_cached_state(entity_id, state)
+        for attribute, value in attributes.items():
             if attribute in attribute_ignore_list:
                 continue
-            self.set_cached_state(f"{entity.entity_id}.{attribute}", value)
+            self.set_cached_state(id=f"{entity_id}.{attribute}", value=value)

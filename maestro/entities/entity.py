@@ -42,6 +42,7 @@ class Entity(ABC):
     friendly_name = EntityAttribute(str)
     last_changed = EntityAttribute(datetime)
     last_updated = EntityAttribute(datetime)
+    previous_state = EntityAttribute(str)
 
     def __init__(
         self,
