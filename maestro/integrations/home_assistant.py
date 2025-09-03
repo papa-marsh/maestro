@@ -8,6 +8,7 @@ import requests
 
 from maestro.config import HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
 from maestro.entities.domain import Domain
+from maestro.utils.dates import resolve_timestamp
 
 
 @dataclass
@@ -17,9 +18,9 @@ class EntityResponse:
     entity_id: str
     state: str
     attributes: dict[str, Any]
-    last_changed: str
-    last_reported: str
-    last_updated: str
+    last_changed: datetime
+    last_reported: datetime
+    last_updated: datetime
 
 
 @dataclass
@@ -214,9 +215,9 @@ class HomeAssistantClient:
             entity_id=raw_dict["entity_id"] or "",
             state=raw_dict["state"] or "",
             attributes=raw_dict["attributes"] or {},
-            last_changed=raw_dict["last_changed"] or "",
-            last_reported=raw_dict["last_reported"] or "",
-            last_updated=raw_dict["last_updated"] or "",
+            last_changed=resolve_timestamp(raw_dict["last_changed"]),
+            last_reported=resolve_timestamp(raw_dict["last_reported"]),
+            last_updated=resolve_timestamp(raw_dict["last_updated"]),
         )
 
         return entity

@@ -118,6 +118,12 @@ class TestRedisClient:
         for test_key in test_keys:
             assert test_key in all_keys
 
+        # Test filtered keys
+        filtered_keys = client.get_keys(f"{test_prefix}*")
+        assert len(filtered_keys) == 3
+        for test_key in test_keys:
+            assert test_key in filtered_keys
+
         # Clean up
         client.delete(*test_keys)
 

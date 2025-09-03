@@ -8,9 +8,9 @@ build:
 test: build
 	docker compose run --rm maestro pytest -v $(TEST)
 
-# Open a Python shell in the container with app context
+# Open a Flask shell in the container with pre-loaded imports
 shell: build
-	docker compose run --rm maestro python
+	docker compose run --rm -e FLASK_APP=maestro maestro flask shell
 
 # Open an interactive bash shell in the container
 bash: build

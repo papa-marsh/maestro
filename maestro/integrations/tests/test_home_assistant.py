@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from maestro.entities.domain import Domain
@@ -27,9 +29,9 @@ class TestHomeAssistantClient:
         assert entity.entity_id == "person.marshall"
         assert isinstance(entity.state, str)
         assert isinstance(entity.attributes, dict)
-        assert isinstance(entity.last_changed, str)
-        assert isinstance(entity.last_reported, str)
-        assert isinstance(entity.last_updated, str)
+        assert isinstance(entity.last_changed, datetime)
+        assert isinstance(entity.last_reported, datetime)
+        assert isinstance(entity.last_updated, datetime)
 
     def test_set_entity(self, home_assistant_client: HomeAssistantClient) -> None:
         test_entity_id = "maestro.unit_test"

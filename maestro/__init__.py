@@ -11,6 +11,30 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+@app.shell_context_processor
+def make_shell_context() -> dict:
+    """Pre-load common imports for flask shell command"""
+    from maestro.entities.climate import Climate
+    from maestro.entities.domain import Domain
+    from maestro.entities.entity import Entity
+    from maestro.entities.switch import Switch
+    from maestro.integrations.home_assistant import (
+        EntityResponse,
+        HomeAssistantClient,
+        StateChangeEvent,
+    )
+    from maestro.integrations.redis import RedisClient
+    from maestro.integrations.state_manager import StateManager
+    from maestro.utils.dates import resolve_timestamp, utc_now
+
+    # Convenience instances
+    hass = HomeAssistantClient()
+    redis = RedisClient()
+    sm = StateManager(hass_client=hass, redis_client=redis)
+
+    return locals()  # Returns all local variables as a dict
+
+
 class EventType(StrEnum):
     STATE_CHANGED = auto()
 

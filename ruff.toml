@@ -4,25 +4,26 @@ line-length = 100
 
 [lint]
 select = [
-    "F",
-    "E",
-    "W",
-    "I",
-    "PGH",
-    "UP",
-    "S",
-    "C4",
-    "DJ",
-    "INP",
-    "T20",
-    "SIM",
-    "ARG",
-    "PTH",
-    "FURB",
-    "RUF",
+    "F",    # Pyflakes - basic Python errors
+    "E",    # pycodestyle errors - PEP 8 violations
+    "W",    # pycodestyle warnings - PEP 8 style issues
+    "I",    # isort - import sorting
+    "PGH",  # pygrep-hooks - miscellaneous linting rules
+    "UP",   # pyupgrade - modernize Python code
+    "S",    # flake8-bandit - security issues
+    "C4",   # flake8-comprehensions - list/dict comprehension improvements
+    "DJ",   # flake8-django - Django-specific rules
+    "INP",  # flake8-no-pep420 - require __init__.py files
+    "T20",  # flake8-print - detect print statements
+    "SIM",  # flake8-simplify - code simplification suggestions
+    "ARG",  # flake8-unused-arguments - unused function arguments
+    "PTH",  # flake8-use-pathlib - prefer pathlib over os.path
+    "FURB", # refurb - modernization and performance improvements
+    "RUF",  # Ruff-specific rules
 ]
 
 ignore = []
 
 [lint.per-file-ignores]
-"**/tests/**.py" = ["S101"]
+"**/tests/**.py" = ["S101"]      # Allow assert statements in test files
+"maestro/__init__.py" = ["F401"] # Allow unused imports for Flask shell context

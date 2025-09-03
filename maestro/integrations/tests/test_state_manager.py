@@ -4,11 +4,119 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from maestro.integrations.home_assistant import StateChangeEvent
 from maestro.integrations.redis import RedisClient
-from maestro.integrations.state_manager import CachedState, StateManager
+from maestro.integrations.state_manager import STATE_CACHE_PREFIX, CachedState, StateManager
+from maestro.utils.dates import utc_now
 
 
-class TestStateManagerIntegration: ...  # TODO
+class TestStateManagerIntegration:
+    @pytest.fixture(scope="class")
+    def state_manager(self) -> StateManager:
+        return StateManager()
+
+    @pytest.fixture(scope="class", autouse=True)
+    def check_services_health_or_skip(self, state_manager: StateManager) -> None:
+        """Check both Home Assistant and Redis health before running tests"""
+        if not state_manager.hass_client.check_health():
+            pytest.skip("Home Assistant is not healthy - skipping integration tests")
+        if not state_manager.redis_client.check_health():
+            pytest.skip("Redis is not healthy - skipping integration tests")
+
+    def test_fetch_hass_entity(self, state_manager: StateManager) -> None:
+        """Test fetching entity from Home Assistant and caching it"""
+        test_entity_id = "maestro.unit_test"
+
+        # Ensure test entity exists in Home Assistant
+        state_manager.hass_client.set_entity(
+            entity_id=test_entity_id,
+            state="test_state",
+            attributes={"friendly_name": "Unit Test Entity", "test_attr": "test_value"},
+        )
+
+        # Clean up any existing cached data for this entity
+        redis_key_prefix = f"{STATE_CACHE_PREFIX}:{test_entity_id.replace('.', ':')}"
+        cached_keys = state_manager.redis_client.get_keys(f"{redis_key_prefix}*")
+        if cached_keys:
+            state_manager.redis_client.delete(*cached_keys)
+
+        # Fetch entity from Home Assistant
+        entity_response = state_manager.fetch_hass_entity(test_entity_id)
+
+        # Verify we got a valid entity response
+        assert entity_response is not None
+        assert entity_response.entity_id == test_entity_id
+        assert isinstance(entity_response.state, str)
+        assert isinstance(entity_response.attributes, dict)
+
+        # Verify the entity state was cached
+        cached_state = state_manager.get_cached_state(test_entity_id)
+        assert cached_state == entity_response.state
+
+        # Verify some attributes were cached (excluding ignored ones)
+        cached_last_updated = state_manager.get_cached_state(f"{test_entity_id}.last_updated")
+        assert cached_last_updated is not None
+        assert isinstance(cached_last_updated, datetime)
+
+        cached_test_attr = state_manager.get_cached_state(f"{test_entity_id}.test_attr")
+        assert cached_test_attr == "test_value"
+
+        # Clean up test entity
+        state_manager.hass_client.delete_entity_if_exists(test_entity_id)
+
+    def test_cache_state_change(self, state_manager: StateManager) -> None:
+        """Test caching a state change event"""
+        test_entity_id = "input_boolean.maestro_unit_test"
+
+        # Ensure test entity exists in Home Assistant
+        state_manager.hass_client.set_entity(
+            entity_id=test_entity_id,
+            state="off",
+            attributes={"friendly_name": "Test Cache Entity"},
+        )
+
+        # Clean up any existing cached data
+        redis_key_prefix = f"{STATE_CACHE_PREFIX}:{test_entity_id.replace('.', ':')}"
+        cached_keys = state_manager.redis_client.get_keys(f"{redis_key_prefix}*")
+        if cached_keys:
+            state_manager.redis_client.delete(*cached_keys)
+
+        # Create a dummy state change event
+        now = utc_now()
+        state_change_event = StateChangeEvent(
+            timestamp=now,
+            time_fired=now,
+            event_type="state_changed",
+            entity_id=test_entity_id,
+            old_state="off",
+            new_state="on",
+            old_attributes={"friendly_name": "Test Cache Entity"},
+            new_attributes={"friendly_name": "Test Cache Entity", "changed": True},
+        )
+
+        # Cache the state change
+        state_manager.cache_state_change(state_change_event)
+
+        # Verify the new state was cached
+        cached_state = state_manager.get_cached_state(test_entity_id)
+        assert cached_state == "on"
+
+        # Verify custom attributes were cached
+        cached_last_changed = state_manager.get_cached_state(f"{test_entity_id}.last_changed")
+        assert cached_last_changed == now
+
+        cached_last_updated = state_manager.get_cached_state(f"{test_entity_id}.last_updated")
+        assert cached_last_updated == now
+
+        cached_previous_state = state_manager.get_cached_state(f"{test_entity_id}.previous_state")
+        assert cached_previous_state == "off"
+
+        # Verify new attributes were cached
+        cached_friendly_name = state_manager.get_cached_state(f"{test_entity_id}.friendly_name")
+        assert cached_friendly_name == "Test Cache Entity"
+
+        cached_changed = state_manager.get_cached_state(f"{test_entity_id}.changed")
+        assert cached_changed is True
 
 
 class TestStateManagerUnit:
@@ -47,7 +155,7 @@ class TestStateManagerUnit:
 
     def test_encode_cached_state_datetime(self) -> None:
         """Test encoding datetime values"""
-        test_datetime = datetime(2025, 1, 1, 12, 0, 0)
+        test_datetime = utc_now().replace(microsecond=0)  # Remove microseconds for clean comparison
         result = StateManager.encode_cached_state(test_datetime)
         data = json.loads(result)
 
@@ -102,7 +210,7 @@ class TestStateManagerUnit:
 
     def test_decode_cached_state_datetime(self) -> None:
         """Test decoding datetime values"""
-        test_datetime = datetime(2025, 1, 1, 12, 0, 0)
+        test_datetime = utc_now().replace(microsecond=0)  # Remove microseconds for clean comparison
         cached_state = CachedState(value=test_datetime.isoformat(), type="datetime")
         result = StateManager.decode_cached_state(cached_state)
 
@@ -156,7 +264,7 @@ class TestStateManagerUnit:
     @patch.object(RedisClient, "build_key")
     def test_get_cached_state_valid_data(self, mock_build_key: Mock, mock_get: Mock) -> None:
         """Test get_cached_state with valid cached data"""
-        mock_build_key.return_value = "STATE:entity:attr"
+        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:entity:attr"
         mock_get.return_value = '{"value": "42", "type": "int"}'
 
         state_manager = StateManager()
@@ -164,14 +272,14 @@ class TestStateManagerUnit:
 
         assert result == 42
         assert isinstance(result, int)
-        mock_build_key.assert_called_once_with("STATE", "entity", "attr")
-        mock_get.assert_called_once_with("STATE:entity:attr")
+        mock_build_key.assert_called_once_with(STATE_CACHE_PREFIX, "entity", "attr")
+        mock_get.assert_called_once_with(f"{STATE_CACHE_PREFIX}:entity:attr")
 
     @patch.object(RedisClient, "get")
     @patch.object(RedisClient, "build_key")
     def test_get_cached_state_no_data(self, mock_build_key: Mock, mock_get: Mock) -> None:
         """Test get_cached_state when no cached data exists"""
-        mock_build_key.return_value = "STATE:entity:attr"
+        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:entity:attr"
         mock_get.return_value = None
 
         state_manager = StateManager()
@@ -183,14 +291,14 @@ class TestStateManagerUnit:
     @patch.object(RedisClient, "build_key")
     def test_set_cached_state_new_value(self, mock_build_key: Mock, mock_set: Mock) -> None:
         """Test set_cached_state with new value (no previous value)"""
-        mock_build_key.return_value = "STATE:entity:attr"
+        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:entity:attr"
         mock_set.return_value = None  # No previous value
 
         state_manager = StateManager()
         result = state_manager.set_cached_state("entity.attr", "new_value")
 
         assert result is None
-        mock_build_key.assert_called_once_with("STATE", "entity", "attr")
+        mock_build_key.assert_called_once_with(STATE_CACHE_PREFIX, "entity", "attr")
         # Verify the encoded JSON was passed to Redis
         mock_set.assert_called_once()
         encoded_json = mock_set.call_args[0][1]
@@ -204,7 +312,7 @@ class TestStateManagerUnit:
         self, mock_build_key: Mock, mock_set: Mock
     ) -> None:
         """Test set_cached_state returns previous value when it exists"""
-        mock_build_key.return_value = "STATE:entity:attr"
+        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:entity:attr"
         mock_set.return_value = '{"value": "old_value", "type": "str"}'
 
         state_manager = StateManager()

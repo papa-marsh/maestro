@@ -60,15 +60,15 @@ class RedisClient:
             raise TypeError(f"Expected `int` from redis `exists` but got {type(result)}")
         return result
 
-    def get_keys(self) -> list[str]:
-        """Returns a list of all current keys"""
+    def get_keys(self, pattern: str | None = None) -> list[str]:
+        """Returns a list of keys, optionally filtered by pattern"""
         keys: list[str] = []
         cursor = None
 
         while cursor != 0:
             if cursor is None:
                 cursor = 0
-            result = self.client.scan(cursor=cursor)
+            result = self.client.scan(cursor=cursor, match=pattern)
             if not isinstance(result, tuple):
                 raise TypeError
             cursor, new_keys = result
