@@ -5,10 +5,13 @@ from http import HTTPMethod, HTTPStatus
 from typing import Any
 
 import requests
+from structlog.stdlib import get_logger
 
 from maestro.config import HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
 from maestro.entities.domain import Domain
 from maestro.utils.dates import resolve_timestamp
+
+log = get_logger()
 
 
 @dataclass
@@ -181,6 +184,7 @@ class HomeAssistantClient:
         }
 
         try:
+            log.info("Sending request to Home Assistant", method=method, path=path)
             response = requests.request(
                 method=method,
                 url=url,
