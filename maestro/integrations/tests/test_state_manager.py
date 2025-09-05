@@ -83,6 +83,12 @@ class TestStateManagerIntegration:
 
         # Create a dummy state change event
         now = utc_now()
+        new_attributes = {"friendly_name": "Test Cache Entity", "changed": True}
+        # Add custom attributes like the route does
+        new_attributes["last_changed"] = now
+        new_attributes["last_updated"] = now
+        new_attributes["previous_state"] = "off"
+        
         state_change_event = StateChangeEvent(
             timestamp=now,
             time_fired=now,
@@ -91,7 +97,7 @@ class TestStateManagerIntegration:
             old_state="off",
             new_state="on",
             old_attributes={"friendly_name": "Test Cache Entity"},
-            new_attributes={"friendly_name": "Test Cache Entity", "changed": True},
+            new_attributes=new_attributes,
         )
 
         # Cache the state change
@@ -117,6 +123,99 @@ class TestStateManagerIntegration:
 
         cached_changed = state_manager.get_cached_state(f"{test_entity_id}.changed")
         assert cached_changed is True
+
+    def test_cache_state_change_entity_deletion(self, state_manager: StateManager) -> None:
+        """Test caching a state change event when entity is deleted (new_state is None)"""
+        test_entity_id = "maestro.unit_test"
+
+        # Set up initial cached state and attributes
+        state_manager.set_cached_state(test_entity_id, "on")
+        state_manager.set_cached_state(f"{test_entity_id}.friendly_name", "Test Entity")
+        state_manager.set_cached_state(f"{test_entity_id}.some_attribute", "some_value")
+
+        # Verify initial state is cached
+        assert state_manager.get_cached_state(test_entity_id) == "on"
+        assert state_manager.get_cached_state(f"{test_entity_id}.friendly_name") == "Test Entity"
+        assert state_manager.get_cached_state(f"{test_entity_id}.some_attribute") == "some_value"
+
+        # Create a state change event representing entity deletion
+        now = utc_now()
+        deletion_event = StateChangeEvent(
+            timestamp=now,
+            time_fired=now,
+            event_type="state_changed",
+            entity_id=test_entity_id,
+            old_state="on",
+            new_state=None,  # Entity deletion
+            old_attributes={"friendly_name": "Test Entity", "some_attribute": "some_value"},
+            new_attributes={},
+        )
+
+        # Cache the deletion event
+        state_manager.cache_state_change(deletion_event)
+
+        # Verify all cached data for this entity was deleted
+        assert state_manager.get_cached_state(test_entity_id) is None
+        assert state_manager.get_cached_state(f"{test_entity_id}.friendly_name") is None
+        assert state_manager.get_cached_state(f"{test_entity_id}.some_attribute") is None
+
+    def test_cache_state_change_attribute_removal(self, state_manager: StateManager) -> None:
+        """Test caching state change event when some attributes are removed"""
+        test_entity_id = "maestro.unit_test"
+
+        # Set up initial cached state and attributes
+        state_manager.set_cached_state(test_entity_id, "off")
+        state_manager.set_cached_state(f"{test_entity_id}.friendly_name", "Test Entity")
+        state_manager.set_cached_state(f"{test_entity_id}.old_attribute", "old_value")
+        state_manager.set_cached_state(f"{test_entity_id}.persistent_attribute", "persistent_value")
+
+        # Verify initial state
+        assert state_manager.get_cached_state(test_entity_id) == "off"
+        assert state_manager.get_cached_state(f"{test_entity_id}.old_attribute") == "old_value"
+        assert state_manager.get_cached_state(
+            f"{test_entity_id}.persistent_attribute"
+        ) == "persistent_value"
+
+        # Create state change event where old_attribute is removed but persistent_attribute remains
+        now = utc_now()
+        state_change_event = StateChangeEvent(
+            timestamp=now,
+            time_fired=now,
+            event_type="state_changed",
+            entity_id=test_entity_id,
+            old_state="off",
+            new_state="on",
+            old_attributes={
+                "friendly_name": "Test Entity",
+                "old_attribute": "old_value",
+                "persistent_attribute": "persistent_value"
+            },
+            new_attributes={
+                "friendly_name": "Test Entity",
+                "persistent_attribute": "updated_value",
+                "new_attribute": "new_value"
+            },
+        )
+
+        # Cache the state change
+        state_manager.cache_state_change(state_change_event)
+
+        # Verify state was updated
+        assert state_manager.get_cached_state(test_entity_id) == "on"
+
+        # Verify old_attribute was removed from cache
+        assert state_manager.get_cached_state(f"{test_entity_id}.old_attribute") is None
+
+        # Verify persistent_attribute was updated
+        assert state_manager.get_cached_state(
+            f"{test_entity_id}.persistent_attribute"
+        ) == "updated_value"
+
+        # Verify new_attribute was added
+        assert state_manager.get_cached_state(f"{test_entity_id}.new_attribute") == "new_value"
+
+        # Verify friendly_name persists
+        assert state_manager.get_cached_state(f"{test_entity_id}.friendly_name") == "Test Entity"
 
 
 class TestStateManagerUnit:
@@ -273,7 +372,7 @@ class TestStateManagerUnit:
         assert result == 42
         assert isinstance(result, int)
         mock_build_key.assert_called_once_with(STATE_CACHE_PREFIX, "entity", "attr")
-        mock_get.assert_called_once_with(f"{STATE_CACHE_PREFIX}:entity:attr")
+        mock_get.assert_called_once_with(key=f"{STATE_CACHE_PREFIX}:entity:attr")
 
     @patch.object(RedisClient, "get")
     @patch.object(RedisClient, "build_key")
@@ -358,3 +457,43 @@ class TestStateManagerUnit:
 
         with pytest.raises(ValueError, match="Invalid format"):
             state_manager.get_cached_state("too.many.parts.here.now")
+
+    @patch.object(RedisClient, "get_keys")
+    def test_get_all_entity_keys(self, mock_get_keys: Mock) -> None:
+        """Test get_all_entity_keys returns all cached keys for an entity"""
+        mock_get_keys.return_value = [
+            f"{STATE_CACHE_PREFIX}:sensor:temperature:friendly_name",
+            f"{STATE_CACHE_PREFIX}:sensor:temperature:unit_of_measurement",
+            f"{STATE_CACHE_PREFIX}:sensor:temperature:device_class",
+        ]
+
+        state_manager = StateManager()
+        result = state_manager.get_all_entity_keys("sensor.temperature")
+
+        expected_keys = [
+            f"{STATE_CACHE_PREFIX}:sensor:temperature",
+            f"{STATE_CACHE_PREFIX}:sensor:temperature:friendly_name",
+            f"{STATE_CACHE_PREFIX}:sensor:temperature:unit_of_measurement",
+            f"{STATE_CACHE_PREFIX}:sensor:temperature:device_class",
+        ]
+
+        assert result == expected_keys
+        mock_get_keys.assert_called_once_with(pattern=f"{STATE_CACHE_PREFIX}:sensor:temperature:*")
+
+    def test_state_key_classmethod(self) -> None:
+        """Test state_key class method builds correct Redis keys"""
+        # Test entity state key (2 parts)
+        entity_key = StateManager.state_key("sensor.temperature")
+        assert entity_key == f"{STATE_CACHE_PREFIX}:sensor:temperature"
+
+        # Test attribute key (3 parts)
+        attr_key = StateManager.state_key("sensor.temperature.friendly_name")
+        assert attr_key == f"{STATE_CACHE_PREFIX}:sensor:temperature:friendly_name"
+
+    def test_state_key_invalid_format(self) -> None:
+        """Test state_key raises ValueError for invalid formats"""
+        with pytest.raises(ValueError, match="Invalid format"):
+            StateManager.state_key("invalid_key")
+
+        with pytest.raises(ValueError, match="Invalid format"):
+            StateManager.state_key("too.many.parts.here.now")

@@ -71,14 +71,16 @@ class StateManager:
         self.hass_client = hass_client or HomeAssistantClient()
         self.redis_client = redis_client or RedisClient()
 
-    def get_cached_state(self, id: str) -> CachedStateValueT:
-        """Retrieve an entity's state or attribute value from Redis"""
+    @classmethod
+    def state_key(cls, id: str) -> str:
         parts = id.split(".")
         if len(parts) not in [2, 3]:
             raise ValueError("Invalid format received for state/attribute name")
-        key = RedisClient.build_key(STATE_CACHE_PREFIX, *parts)
+        return RedisClient.build_key(STATE_CACHE_PREFIX, *parts)
 
-        encoded_value = self.redis_client.get(key)
+    def get_cached_state(self, id: str) -> CachedStateValueT:
+        """Retrieve an entity's state or attribute value from Redis"""
+        encoded_value = self.redis_client.get(key=self.state_key(id))
         if encoded_value is None:
             return None
 
@@ -88,16 +90,12 @@ class StateManager:
         return self.decode_cached_state(cached_state)
 
     def set_cached_state(self, id: str, value: CachedStateValueT) -> CachedStateValueT:
-        """Stores an entity's state or attribute value in Redis along with its type"""
-        parts = id.split(".")
-        if len(parts) not in [2, 3]:
-            raise ValueError("Invalid format received for state/attribute name")
-        if len(parts) == 2 and not isinstance(value, str):
+        """Caches an entity's type-encoded state or attribute value. Returns the previous value"""
+        key = self.state_key(id)
+        if len(id.split(".")) == 2 and not isinstance(value, str):
             raise TypeError("State value must be a string")
 
-        key = RedisClient.build_key(STATE_CACHE_PREFIX, *parts)
         encoded_value = self.encode_cached_state(value)
-
         old_encoded_value = self.redis_client.set(key, encoded_value)
 
         if old_encoded_value is None:
@@ -107,6 +105,16 @@ class StateManager:
         old_cached_state = CachedState(value=old_data["value"], type=old_data["type"])
 
         return self.decode_cached_state(old_cached_state)
+
+    def get_all_entity_keys(self, entity_id: str) -> list[str]:
+        """Returns a list of all cached state and attribute keys for a given entity ID"""
+        entity_key = self.state_key(entity_id)
+        attribute_pattern = self.state_key(f"{entity_id}.*")
+
+        keys = [entity_key]
+        keys.extend(self.redis_client.get_keys(pattern=attribute_pattern))
+
+        return keys
 
     @classmethod
     def encode_cached_state(cls, value: CachedStateValueT) -> str:
@@ -148,15 +156,30 @@ class StateManager:
 
     def cache_state_change(self, state_change: StateChangeEvent) -> None:
         """Given an EntityResponse object, cache its state and attributes"""
-        custom_attributes = {
-            "last_changed": state_change.time_fired,
-            "last_updated": state_change.timestamp,
-            "previous_state": state_change.old_state,
-        }
+        cached_states = set(self.get_all_entity_keys(entity_id=state_change.entity_id))
+        if state_change.new_state is None:
+            if cached_states:
+                self.redis_client.delete(*cached_states)
+            return
+
+        cached_states.discard(self.state_key(id=state_change.entity_id))
+        keys_to_delete = []
+        for key in cached_states:
+            key_parts = key.split(f"{STATE_CACHE_PREFIX}:")[1].split(":")
+            if len(key_parts) == 3:
+                attribute_name = key_parts[2]
+                if (
+                    attribute_name in state_change.old_attributes
+                    and attribute_name not in state_change.new_attributes
+                ):
+                    keys_to_delete.append(key)
+        if keys_to_delete:
+            self.redis_client.delete(*keys_to_delete)
+
         self.cache_entity(
             entity_id=state_change.entity_id,
             state=state_change.new_state,
-            attributes=custom_attributes | state_change.new_attributes,
+            attributes=state_change.new_attributes,
         )
 
     def cache_entity_response(self, entity: EntityResponse) -> None:

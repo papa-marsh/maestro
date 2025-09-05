@@ -34,8 +34,8 @@ class StateChangeEvent:
     time_fired: datetime
     event_type: str
     entity_id: str
-    old_state: str
-    new_state: str
+    old_state: str | None
+    new_state: str | None
     old_attributes: dict
     new_attributes: dict
 
