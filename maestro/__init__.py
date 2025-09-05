@@ -19,13 +19,16 @@ class EventType(StrEnum):
 def make_shell_context() -> dict:
     """Pre-load common imports for flask shell command"""
     from maestro.entities.climate import Climate
-    from maestro.entities.domain import Domain
     from maestro.entities.entity import Entity
     from maestro.entities.switch import Switch
-    from maestro.integrations.home_assistant import (
+    from maestro.integrations.home_assistant.client import HomeAssistantClient
+    from maestro.integrations.home_assistant.types import (
+        AttributeId,
+        Domain,
+        EntityId,
         EntityResponse,
-        HomeAssistantClient,
         StateChangeEvent,
+        StateId,
     )
     from maestro.integrations.redis import RedisClient
     from maestro.integrations.state_manager import StateManager

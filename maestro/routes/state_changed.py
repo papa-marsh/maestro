@@ -3,7 +3,7 @@ from typing import Any
 from flask import Response, jsonify, request
 from structlog.stdlib import get_logger
 
-from maestro.integrations.home_assistant import StateChangeEvent
+from maestro.integrations.home_assistant.types import EntityId, StateChangeEvent
 from maestro.integrations.state_manager import StateManager
 from maestro.utils.dates import resolve_timestamp
 
@@ -21,7 +21,7 @@ def handle_state_changed() -> tuple[Response, int]:
         timestamp=resolve_timestamp(request_body["timestamp"] or ""),
         time_fired=resolve_timestamp(request_body["time_fired"] or ""),
         event_type=request_body["event_type"] or "",
-        entity_id=request_body["entity_id"] or "",
+        entity_id=EntityId(request_body["entity_id"] or ""),
         old_state=old_state,
         new_state=new_state,
         old_attributes=request_body["old_attributes"] or {},

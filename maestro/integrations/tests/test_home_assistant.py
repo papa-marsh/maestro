@@ -2,8 +2,8 @@ from datetime import datetime
 
 import pytest
 
-from maestro.entities.domain import Domain
-from maestro.integrations.home_assistant import EntityResponse, HomeAssistantClient
+from maestro.integrations.home_assistant.client import HomeAssistantClient
+from maestro.integrations.home_assistant.types import Domain, EntityResponse
 
 
 class TestHomeAssistantClient:

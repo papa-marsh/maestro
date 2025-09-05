@@ -3,10 +3,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
-from maestro.integrations.home_assistant import (
-    EntityResponse,
+from maestro.integrations.home_assistant.client import (
     HomeAssistantClient,
+)
+from maestro.integrations.home_assistant.types import (
+    AttributeId,
+    EntityId,
+    EntityResponse,
     StateChangeEvent,
+    StateId,
 )
 from maestro.integrations.redis import RedisClient
 from maestro.utils.dates import resolve_timestamp
@@ -71,16 +76,9 @@ class StateManager:
         self.hass_client = hass_client or HomeAssistantClient()
         self.redis_client = redis_client or RedisClient()
 
-    @classmethod
-    def state_key(cls, id: str) -> str:
-        parts = id.split(".")
-        if len(parts) not in [2, 3]:
-            raise ValueError("Invalid format received for state/attribute name")
-        return RedisClient.build_key(STATE_CACHE_PREFIX, *parts)
-
-    def get_cached_state(self, id: str) -> CachedStateValueT:
+    def get_cached_state(self, id: StateId) -> CachedStateValueT:
         """Retrieve an entity's state or attribute value from Redis"""
-        encoded_value = self.redis_client.get(key=self.state_key(id))
+        encoded_value = self.redis_client.get(key=id.cache_key)
         if encoded_value is None:
             return None
 
@@ -89,14 +87,13 @@ class StateManager:
 
         return self.decode_cached_state(cached_state)
 
-    def set_cached_state(self, id: str, value: CachedStateValueT) -> CachedStateValueT:
+    def set_cached_state(self, id: StateId, value: CachedStateValueT) -> CachedStateValueT:
         """Caches an entity's type-encoded state or attribute value. Returns the previous value"""
-        key = self.state_key(id)
-        if len(id.split(".")) == 2 and not isinstance(value, str):
+        if id.is_entity and not isinstance(value, str):
             raise TypeError("State value must be a string")
 
         encoded_value = self.encode_cached_state(value)
-        old_encoded_value = self.redis_client.set(key, encoded_value)
+        old_encoded_value = self.redis_client.set(key=id.cache_key, value=encoded_value)
 
         if old_encoded_value is None:
             return None
@@ -106,12 +103,16 @@ class StateManager:
 
         return self.decode_cached_state(old_cached_state)
 
-    def get_all_entity_keys(self, entity_id: str) -> list[str]:
+    def get_all_entity_keys(self, entity_id: EntityId) -> list[str]:
         """Returns a list of all cached state and attribute keys for a given entity ID"""
-        entity_key = self.state_key(entity_id)
-        attribute_pattern = self.state_key(f"{entity_id}.*")
+        attribute_pattern = self.redis_client.build_key(
+            STATE_CACHE_PREFIX,
+            entity_id.domain,
+            entity_id.entity,
+            "*",
+        )
 
-        keys = [entity_key]
+        keys = [entity_id.cache_key]
         keys.extend(self.redis_client.get_keys(pattern=attribute_pattern))
 
         return keys
@@ -143,10 +144,8 @@ class StateManager:
 
         return decoder_function(cached_state.value)
 
-    def fetch_hass_entity(self, entity_id: str) -> EntityResponse:
+    def fetch_hass_entity(self, entity_id: EntityId) -> EntityResponse:
         """Fetch and cache up-to-date data for a Home Assistant entity"""
-        if entity_id.count(".") != 1:
-            raise ValueError("Refreshing cached state requires a valid entity ID")
         entity_response = self.hass_client.get_entity(entity_id)
         if not entity_response:
             raise ValueError(f"Failed to retrieve an entity response for {entity_id}")
@@ -162,17 +161,15 @@ class StateManager:
                 self.redis_client.delete(*cached_states)
             return
 
-        cached_states.discard(self.state_key(id=state_change.entity_id))
+        cached_states.discard(state_change.entity_id.cache_key)
         keys_to_delete = []
         for key in cached_states:
-            key_parts = key.split(f"{STATE_CACHE_PREFIX}:")[1].split(":")
-            if len(key_parts) == 3:
-                attribute_name = key_parts[2]
-                if (
-                    attribute_name in state_change.old_attributes
-                    and attribute_name not in state_change.new_attributes
-                ):
-                    keys_to_delete.append(key)
+            id = AttributeId(key.split(f"{STATE_CACHE_PREFIX}:")[1].replace(":", "."))
+            if (
+                id.attribute in state_change.old_attributes
+                and id.attribute not in state_change.new_attributes
+            ):
+                keys_to_delete.append(key)
         if keys_to_delete:
             self.redis_client.delete(*keys_to_delete)
 
@@ -194,9 +191,10 @@ class StateManager:
             attributes=custom_attributes | entity.attributes,
         )
 
-    def cache_entity(self, entity_id: str, state: str, attributes: dict) -> None:
+    def cache_entity(self, entity_id: EntityId, state: str, attributes: dict) -> None:
         self.set_cached_state(entity_id, state)
         for attribute, value in attributes.items():
             if attribute in attribute_ignore_list:
                 continue
-            self.set_cached_state(id=f"{entity_id}.{attribute}", value=value)
+            attribute_id = f"{entity_id}.{attribute}"
+            self.set_cached_state(id=AttributeId(attribute_id), value=value)

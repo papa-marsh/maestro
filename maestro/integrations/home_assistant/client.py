@@ -1,6 +1,4 @@
 import contextlib
-from dataclasses import dataclass
-from datetime import datetime
 from http import HTTPMethod, HTTPStatus
 from typing import Any
 
@@ -8,36 +6,10 @@ import requests
 from structlog.stdlib import get_logger
 
 from maestro.config import HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
-from maestro.entities.domain import Domain
+from maestro.integrations.home_assistant.types import Domain, EntityId, EntityResponse
 from maestro.utils.dates import resolve_timestamp
 
 log = get_logger()
-
-
-@dataclass
-class EntityResponse:
-    """An entity's state and metadata as represented by the Home Assistant API"""
-
-    entity_id: str
-    state: str
-    attributes: dict[str, Any]
-    last_changed: datetime
-    last_reported: datetime
-    last_updated: datetime
-
-
-@dataclass
-class StateChangeEvent:
-    """A state change event as represented by the send_to_maestro automation"""
-
-    timestamp: datetime
-    time_fired: datetime
-    event_type: str
-    entity_id: str
-    old_state: str | None
-    new_state: str | None
-    old_attributes: dict
-    new_attributes: dict
 
 
 class HomeAssistantClient:
@@ -216,7 +188,7 @@ class HomeAssistantClient:
             raise KeyError("Couldn't resolve EntityResponse. Missing required keys.")
 
         entity = EntityResponse(
-            entity_id=raw_dict["entity_id"] or "",
+            entity_id=EntityId(raw_dict["entity_id"]),
             state=raw_dict["state"] or "",
             attributes=raw_dict["attributes"] or {},
             last_changed=resolve_timestamp(raw_dict["last_changed"]),

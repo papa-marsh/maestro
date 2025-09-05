@@ -1,5 +1,5 @@
-from maestro.entities.domain import Domain
 from maestro.entities.entity import Entity
+from maestro.integrations.home_assistant.types import Domain
 
 
 class Switch(Entity):

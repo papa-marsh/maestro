@@ -1,7 +1,7 @@
 from enum import StrEnum, auto
 
-from maestro.entities.domain import Domain
 from maestro.entities.entity import Entity, EntityAttribute
+from maestro.integrations.home_assistant.types import Domain
 
 
 class TeslaHVACMode(StrEnum):

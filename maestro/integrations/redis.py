@@ -77,6 +77,6 @@ class RedisClient:
         return keys
 
     @classmethod
-    def build_key(cls, *keys: str) -> str:
+    def build_key(cls, *parts: str) -> str:
         """Builds a redis key from provided args"""
-        return ":".join(keys)
+        return ":".join(parts)
