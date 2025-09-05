@@ -48,13 +48,6 @@ def hello_world() -> str:
     return "<p>Hello, World!</p>"
 
 
-@app.route("/payload-testing", methods=[HTTPMethod.POST])
-def payload_testing() -> str:
-    request_body = request.get_json() or {}
-    log.info("Handling payload test", request_body=json.dumps(request_body, indent=2))
-    return "<p>Payload Testing</p>"
-
-
 @app.route("/events/state-changed", methods=[HTTPMethod.POST])
 def state_changed() -> tuple[Response, int]:
     app.logger.info("Handling state change event")
