@@ -10,9 +10,11 @@ class Domain(StrEnum):
     CALENDAR = auto()
     CLIMATE = auto()
     COVER = auto()
+    DEVICE_TRACKER = auto()
     ENTITY = auto()  # For test cases
     EVENT = auto()
     FAN = auto()
+    HUMIDIFIER = auto()
     INPUT_BOOLEAN = auto()
     LIGHT = auto()
     LOCK = auto()
@@ -22,8 +24,10 @@ class Domain(StrEnum):
     PERSON = auto()
     PYSCRIPT = auto()  # TODO: Remove once pyscript is gone
     SENSOR = auto()
+    SUN = auto()
     SWITCH = auto()
     UPDATE = auto()
+    WEATHER = auto()
 
 
 class StateId(str):
