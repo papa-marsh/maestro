@@ -42,7 +42,7 @@ def make_shell_context() -> dict:
 
 
 @app.before_request
-def setup_request_logger() -> None:
+def before_request() -> None:
     log.info("Request received", path=request.path, method=request.method)
 
 

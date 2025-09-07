@@ -33,11 +33,11 @@ class Domain(StrEnum):
 class StateId(str):
     """A validated Home Assistant entity or attribute ID"""
 
-    def __new__(cls, value: str) -> "StateId":
-        entity_pattern = r"^[a-z_][a-z0-9_]*\.[a-z0-9_]+$"
-        attribute_pattern = r"^[a-z_][a-z0-9_]*\.[a-z0-9_]+\.[a-z0-9_]+$"
+    entity_pattern = r"^[a-z_][a-z0-9_]*\.[a-z0-9_]+$"
+    attribute_pattern = r"^[a-z_][a-z0-9_]*\.[a-z0-9_]+\.[a-z0-9_]+$"
 
-        if not (re.match(entity_pattern, value) or re.match(attribute_pattern, value)):
+    def __new__(cls, value: str) -> "StateId":
+        if not (re.match(cls.entity_pattern, value) or re.match(cls.attribute_pattern, value)):
             raise ValueError(f"Invalid entity or attribute format: {value}")
 
         return str.__new__(cls, value)
@@ -55,6 +55,7 @@ class StateId(str):
 
         self.is_entity = self.attribute is None
         self.is_attribute = self.attribute is not None
+
         self.cache_key = RedisClient.build_key(STATE_CACHE_PREFIX, *parts)
 
 
@@ -62,9 +63,7 @@ class EntityId(StateId):
     """A validated Home Assistant entity ID (domain.entity)"""
 
     def __new__(cls, value: str) -> "EntityId":
-        entity_pattern = r"^[a-z_][a-z0-9_]*\.[a-z0-9_]+$"
-
-        if not re.match(entity_pattern, value):
+        if not re.match(cls.entity_pattern, value):
             raise ValueError(f"Invalid entity format: {value}")
 
         return str.__new__(cls, value)
@@ -74,9 +73,7 @@ class AttributeId(StateId):
     """A validated Home Assistant attribute ID (domain.entity.attribute)"""
 
     def __new__(cls, value: str) -> "AttributeId":
-        attribute_pattern = r"^[a-z_][a-z0-9_]*\.[a-z0-9_]+\.[a-z0-9_]+$"
-
-        if not re.match(attribute_pattern, value):
+        if not re.match(cls.attribute_pattern, value):
             raise ValueError(f"Invalid attribute format: {value}")
 
         return str.__new__(cls, value)
@@ -93,6 +90,9 @@ class EntityResponse:
     last_reported: datetime
     last_updated: datetime
 
+    def __post_init__(self) -> None:
+        self.attributes = sanitize_attribute_keys(self.attributes)
+
 
 @dataclass
 class StateChangeEvent:
@@ -106,3 +106,23 @@ class StateChangeEvent:
     new_state: str | None
     old_attributes: dict[str, Any]
     new_attributes: dict[str, Any]
+
+    def __post_init__(self) -> None:
+        self.old_attributes = sanitize_attribute_keys(self.old_attributes)
+        self.new_attributes = sanitize_attribute_keys(self.new_attributes)
+
+
+def sanitize_attribute_keys(attributes: dict[str, Any]) -> dict[str, Any]:
+    """
+    Temporary (maybe) shim logic to handle spaces and uppercase chars in attribute names.
+    Otherwise, it breaks the EntityAttribute class, which relies on its own property name.
+    Theoretically, this should only present a problem if we try to set a value for an attribute with
+    uppercase/spaces. But overwriting existing HASS attributes doesn't seem like a
+    realistic use case; nor should we ever be creating new attributes with uppercase/spaces.
+    """
+    sanitized = {}
+    for key in attributes:
+        new_key = key.replace(" ", "_").lower()
+        sanitized[new_key] = attributes[key]
+
+    return sanitized

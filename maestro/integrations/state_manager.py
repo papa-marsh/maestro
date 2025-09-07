@@ -3,6 +3,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
+from structlog.stdlib import get_logger
+
 from maestro.integrations.home_assistant.client import (
     HomeAssistantClient,
 )
@@ -48,15 +50,7 @@ state_decoder_map: dict[str, Callable[[str], CachedStateValueT]] = {
     type(None).__name__: lambda _: None,
 }
 
-attribute_ignore_list = {
-    "editable",
-    "device_class",
-    "supported_features",
-    "entity_picture",
-    "editable",
-    "icon",
-    "attribution",
-}
+log = get_logger()
 
 
 class StateManager:
@@ -194,7 +188,14 @@ class StateManager:
     def cache_entity(self, entity_id: EntityId, state: str, attributes: dict) -> None:
         self.set_cached_state(entity_id, state)
         for attribute, value in attributes.items():
-            if attribute in attribute_ignore_list:
+            try:
+                attribute_id = AttributeId(f"{entity_id}.{attribute}")
+            except ValueError:
+                log.warning(
+                    "Attribute name failed validation while caching entity. Skipping attribute.",
+                    entity_id=entity_id,
+                    attribute_name=attribute,
+                )
                 continue
-            attribute_id = f"{entity_id}.{attribute}"
-            self.set_cached_state(id=AttributeId(attribute_id), value=value)
+
+            self.set_cached_state(id=attribute_id, value=value)

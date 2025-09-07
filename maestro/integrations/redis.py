@@ -2,7 +2,7 @@ import redis
 
 from maestro.config import REDIS_HOST, REDIS_PORT
 
-THIRTY_DAYS_IN_SEC = 30 * 24 * 60 * 60
+TWO_WEEKS_IN_SEC = 14 * 24 * 60 * 60
 
 
 class RedisClient:
@@ -38,7 +38,7 @@ class RedisClient:
         self,
         key: str,
         value: str,
-        ttl_seconds: int | None = THIRTY_DAYS_IN_SEC,
+        ttl_seconds: int | None = TWO_WEEKS_IN_SEC,
     ) -> str | None:
         """Set a string value with optional expiration in seconds"""
         old_value = self.client.set(name=key, value=value, ex=ttl_seconds, get=True)

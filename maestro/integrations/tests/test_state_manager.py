@@ -4,7 +4,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from maestro.integrations.home_assistant.types import AttributeId, EntityId, StateChangeEvent
+from maestro.integrations.home_assistant.types import (
+    AttributeId,
+    EntityId,
+    StateChangeEvent,
+    sanitize_attribute_keys,
+)
 from maestro.integrations.redis import RedisClient
 from maestro.integrations.state_manager import STATE_CACHE_PREFIX, CachedState, StateManager
 from maestro.utils.dates import utc_now
@@ -87,7 +92,11 @@ class TestStateManagerIntegration:
 
         # Create a dummy state change event
         now = utc_now()
-        new_attributes = {"friendly_name": "Test Cache Entity", "changed": True}
+        new_attributes = {
+            "friendly_name": "Test Cache Entity",
+            "changed": True,
+            "Caps And Spaces": "Test",
+        }
         # Add custom attributes like the route does
         new_attributes["last_changed"] = now
         new_attributes["last_updated"] = now
@@ -132,6 +141,12 @@ class TestStateManagerIntegration:
             AttributeId(f"{test_entity_id}.friendly_name")
         )
         assert cached_friendly_name == "Test Cache Entity"
+
+        # Verify caps and spaces are converted to lowercase and underscores
+        cached_caps_and_spaces = state_manager.get_cached_state(
+            AttributeId(f"{test_entity_id}.caps_and_spaces")
+        )
+        assert cached_caps_and_spaces == "Test"
 
         cached_changed = state_manager.get_cached_state(AttributeId(f"{test_entity_id}.changed"))
         assert cached_changed is True
@@ -259,6 +274,57 @@ class TestStateManagerIntegration:
             state_manager.get_cached_state(AttributeId(f"{test_entity_id}.friendly_name"))
             == "Test Entity"
         )
+
+    def test_cache_state_change_with_invalid_attributes(self, state_manager: StateManager) -> None:
+        """Test caching state change event with invalid attribute names that should be skipped"""
+        test_entity_id = EntityId("maestro.unit_test")
+
+        # Create a state change event with invalid attribute names
+        now = utc_now()
+        new_attributes = {
+            "valid_attribute": "good_value",
+            "invalid(attribute)": "bad_value",  # Contains parentheses
+            "another@invalid": "bad_value2",  # Contains @ symbol
+            "friendly_name": "Test Entity",  # This should work
+        }
+
+        state_change_event = StateChangeEvent(
+            timestamp=now,
+            time_fired=now,
+            event_type="state_changed",
+            entity_id=test_entity_id,
+            old_state="off",
+            new_state="on",
+            old_attributes={},
+            new_attributes=new_attributes,
+        )
+
+        # Cache the state change - should not raise an error despite invalid attributes
+        state_manager.cache_state_change(state_change_event)
+
+        # Verify the entity state was cached
+        cached_state = state_manager.get_cached_state(test_entity_id)
+        assert cached_state == "on"
+
+        # Verify valid attributes were cached
+        cached_valid_attr = state_manager.get_cached_state(
+            AttributeId(f"{test_entity_id}.valid_attribute")
+        )
+        assert cached_valid_attr == "good_value"
+
+        cached_friendly_name = state_manager.get_cached_state(
+            AttributeId(f"{test_entity_id}.friendly_name")
+        )
+        assert cached_friendly_name == "Test Entity"
+
+        # Verify invalid attributes were skipped (not cached)
+        # We can't directly test this since AttributeId creation would fail,
+        # but we can check the Redis keys to ensure they weren't created
+        all_keys = state_manager.get_all_entity_keys(test_entity_id)
+        invalid_keys = [
+            key for key in all_keys if "invalid(attribute)" in key or "another@invalid" in key
+        ]
+        assert len(invalid_keys) == 0, f"Invalid attributes should not be cached: {invalid_keys}"
 
 
 class TestStateManagerUnit:
@@ -503,3 +569,41 @@ class TestStateManagerUnit:
 
         assert result == expected_keys
         mock_get_keys.assert_called_once_with(pattern=f"{STATE_CACHE_PREFIX}:sensor:temperature:*")
+
+    def test_sanitize_attribute_keys(self) -> None:
+        """Test sanitize_attribute_keys function transforms keys correctly"""
+        # Test with various attribute name formats
+        original_attributes = {
+            "normal_key": "value1",
+            "Caps And Spaces": "value2",
+            "UPPERCASE_KEY": "value3",
+            "Mixed Case Key": "value4",
+            "already_lowercase": "value5",
+        }
+
+        sanitized = sanitize_attribute_keys(original_attributes)
+
+        # Verify keys are transformed correctly
+        expected_keys = {
+            "normal_key": "value1",
+            "caps_and_spaces": "value2",
+            "uppercase_key": "value3",
+            "mixed_case_key": "value4",
+            "already_lowercase": "value5",
+        }
+
+        assert sanitized == expected_keys
+
+    def test_sanitize_attribute_keys_empty_dict(self) -> None:
+        """Test sanitize_attribute_keys with empty dictionary"""
+        result = sanitize_attribute_keys({})
+        assert result == {}
+
+    def test_sanitize_attribute_keys_no_changes_needed(self) -> None:
+        """Test sanitize_attribute_keys when no sanitization is needed"""
+        original = {
+            "valid_key": "value1",
+            "another_valid_key": "value2",
+        }
+        result = sanitize_attribute_keys(original)
+        assert result == original
