@@ -7,6 +7,7 @@ from typing import Any
 
 class Domain(StrEnum):
     BINARY_SENSOR = auto()
+    BUTTON = auto()
     CALENDAR = auto()
     CLIMATE = auto()
     COVER = auto()

@@ -5,6 +5,7 @@ from structlog.stdlib import get_logger
 
 from maestro.integrations.home_assistant.types import EntityId, StateChangeEvent
 from maestro.integrations.state_manager import StateManager
+from maestro.triggers.trigger_manager import TriggerManager
 from maestro.utils.dates import resolve_timestamp
 
 log = get_logger()
@@ -40,8 +41,10 @@ def handle_state_changed() -> tuple[Response, int]:
     state_change.new_attributes["last_changed"] = state_change.time_fired
     state_change.new_attributes["last_updated"] = state_change.timestamp
     state_change.new_attributes["previous_state"] = state_change.old_state
-    state_manager.cache_state_change(state_change)
 
+    state_manager.cache_state_change(state_change)
     log.info("State change cached", entity_id=state_change.entity_id, changes=changes)
+
+    TriggerManager.execute_state_change_triggers(state_change)
 
     return jsonify({"status": "success"}), 200

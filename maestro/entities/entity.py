@@ -48,7 +48,7 @@ class Entity(ABC):
         entity_id: str | EntityId,
         state_manager: StateManager | None = None,
     ) -> None:
-        self.id = EntityId(entity_id)
+        self.id = EntityId(entity_id) if isinstance(entity_id, str) else entity_id
 
         if self.id.domain != type(self).__name__.lower():
             raise ValueError("Mismatch between entity domain and domain class")
