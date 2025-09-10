@@ -12,7 +12,6 @@ class Domain(StrEnum):
     CLIMATE = auto()
     COVER = auto()
     DEVICE_TRACKER = auto()
-    ENTITY = auto()  # For test cases
     EVENT = auto()
     FAN = auto()
     HUMIDIFIER = auto()

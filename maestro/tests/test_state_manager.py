@@ -472,26 +472,26 @@ class TestStateManagerUnit:
     @patch.object(RedisClient, "build_key")
     def test_get_cached_state_valid_data(self, mock_build_key: Mock, mock_get: Mock) -> None:
         """Test get_cached_state with valid cached data"""
-        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:entity:test:attr"
+        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:maestro:test:attr"
         mock_get.return_value = '{"value": "42", "type": "int"}'
 
         state_manager = StateManager()
-        result = state_manager.get_cached_state(AttributeId("entity.test.attr"))
+        result = state_manager.get_cached_state(AttributeId("maestro.test.attr"))
 
         assert result == 42
         assert isinstance(result, int)
-        mock_build_key.assert_called_once_with(STATE_CACHE_PREFIX, "entity", "test", "attr")
-        mock_get.assert_called_once_with(key=f"{STATE_CACHE_PREFIX}:entity:test:attr")
+        mock_build_key.assert_called_once_with(STATE_CACHE_PREFIX, "maestro", "test", "attr")
+        mock_get.assert_called_once_with(key=f"{STATE_CACHE_PREFIX}:maestro:test:attr")
 
     @patch.object(RedisClient, "get")
     @patch.object(RedisClient, "build_key")
     def test_get_cached_state_no_data(self, mock_build_key: Mock, mock_get: Mock) -> None:
         """Test get_cached_state when no cached data exists"""
-        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:entity:test:attr"
+        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:maestro:test:attr"
         mock_get.return_value = None
 
         state_manager = StateManager()
-        result = state_manager.get_cached_state(AttributeId("entity.test.attr"))
+        result = state_manager.get_cached_state(AttributeId("maestro.test.attr"))
 
         assert result is None
 
@@ -499,14 +499,14 @@ class TestStateManagerUnit:
     @patch.object(RedisClient, "build_key")
     def test_set_cached_state_new_value(self, mock_build_key: Mock, mock_set: Mock) -> None:
         """Test set_cached_state with new value (no previous value)"""
-        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:entity:test:attr"
+        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:maestro:test:attr"
         mock_set.return_value = None  # No previous value
 
         state_manager = StateManager()
-        result = state_manager.set_cached_state(AttributeId("entity.test.attr"), "new_value")
+        result = state_manager.set_cached_state(AttributeId("maestro.test.attr"), "new_value")
 
         assert result is None
-        mock_build_key.assert_called_once_with(STATE_CACHE_PREFIX, "entity", "test", "attr")
+        mock_build_key.assert_called_once_with(STATE_CACHE_PREFIX, "maestro", "test", "attr")
         # Verify the encoded JSON was passed to Redis
         mock_set.assert_called_once()
         call_args = mock_set.call_args
@@ -521,11 +521,11 @@ class TestStateManagerUnit:
         self, mock_build_key: Mock, mock_set: Mock
     ) -> None:
         """Test set_cached_state returns previous value when it exists"""
-        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:entity:test:attr"
+        mock_build_key.return_value = f"{STATE_CACHE_PREFIX}:maestro:test:attr"
         mock_set.return_value = '{"value": "old_value", "type": "str"}'
 
         state_manager = StateManager()
-        result = state_manager.set_cached_state(AttributeId("entity.test.attr"), "new_value")
+        result = state_manager.set_cached_state(AttributeId("maestro.test.attr"), "new_value")
 
         assert result == "old_value"
 
@@ -534,7 +534,7 @@ class TestStateManagerUnit:
         state_manager = StateManager()
 
         with pytest.raises(TypeError, match="State value must be a string"):
-            state_manager.set_cached_state(EntityId("entity.test"), 42)  # 2 parts, so it's a state
+            state_manager.set_cached_state(EntityId("maestro.test"), 42)  # 2 parts, so it's a state
 
     def test_set_cached_state_allows_non_string_attribute(self) -> None:
         """Test set_cached_state allows non-string for attribute values (3 parts)"""
@@ -545,7 +545,7 @@ class TestStateManagerUnit:
             patch.object(RedisClient, "build_key", return_value="key"),
         ):
             # This should not raise an error - 3 parts means it's an attribute
-            result = state_manager.set_cached_state(AttributeId("entity.test.attr"), 42)
+            result = state_manager.set_cached_state(AttributeId("maestro.test.attr"), 42)
             assert result is None
 
     @patch.object(RedisClient, "get_keys")

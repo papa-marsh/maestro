@@ -9,20 +9,20 @@ Write your Home Assistant automation logic here using Python instead of YAML. Th
 Create a new Python file (e.g., `lighting.py`) in this directory:
 
 ```python
-from maestro import state_change_trigger, Switch
+from maestro.domains import Switch
+from maestro.integrations import StateChangeEvent
+from maestro.triggers import state_change_trigger
 
 @state_change_trigger("binary_sensor.front_door")
-def front_door_automation(state_change):
-    if state_change.new_state == "on":  # Door opened
-        # Turn on entryway light
-        entryway_light = Switch("switch.entryway_light")
+def front_door_opened(state_change: StateChangeEvent) -> None:
+    if state_change.new_state == "on":
+        entryway_light = Switch("switch.entryway")
         entryway_light.turn_on()
-        print(f"Door opened at {state_change.timestamp}")
 ```
 
 ### How It Works
 
-1. **Import what you need** from `maestro` 
+1. **Import what you need** from `maestro`
 2. **Decorate functions** with `@state_change_trigger("entity.id")`
 3. **Write your logic** - your function gets called automatically when the entity changes
 4. **Access the state change** via the `state_change` parameter (optional)
@@ -31,19 +31,19 @@ def front_door_automation(state_change):
 
 ```python
 # Core trigger system
-from maestro import state_change_trigger
+from maestro.triggers import state_change_trigger
 
-# Entity types  
-from maestro import Switch, Climate  # Add more as they're implemented
+# Entity domain types
+from maestro.domains import Switch, Climate, ...
 
-# Home Assistant types
-from maestro import EntityId, StateChangeEvent
+# Home Assistant & middleware types
+from maestro.integrations import EntityId, StateChangeEvent
 
 # State management (advanced usage)
-from maestro import StateManager
+from maestro.integrations import StateManager
 ```
 
-## Entity Classes
+## Entity Class Examples
 
 ### Switch
 
@@ -96,7 +96,7 @@ from datetime import datetime
 def motion_lighting(state_change):
     if state_change.new_state == "on":
         current_hour = datetime.now().hour
-        
+
         light = Switch("switch.living_room_light")
         if 6 <= current_hour <= 22:  # Daytime
             light.turn_on()
@@ -115,11 +115,11 @@ def movie_mode(state_change):
         living_room_light = Switch("switch.living_room_light")
         kitchen_light = Switch("switch.kitchen_light")
         bedroom_light = Switch("switch.bedroom_light")
-        
+
         living_room_light.turn_off()
-        kitchen_light.turn_off() 
+        kitchen_light.turn_off()
         bedroom_light.turn_off()
-        
+
         # Adjust thermostat for comfort
         thermostat = Climate("climate.main")
         thermostat.set_temperature(70)
@@ -130,7 +130,7 @@ def movie_mode(state_change):
 ```python
 # Multiple entities can trigger the same function
 @state_change_trigger("binary_sensor.door_front")
-@state_change_trigger("binary_sensor.door_back") 
+@state_change_trigger("binary_sensor.door_back")
 @state_change_trigger("binary_sensor.door_garage")
 def door_opened(state_change):
     if state_change.new_state == "on":
@@ -147,7 +147,7 @@ def door_opened(state_change):
 def temperature_automation(state_change):
     outdoor_temp = float(state_change.new_state)
     thermostat = Climate("climate.main")
-    
+
     if outdoor_temp > 80:
         thermostat.set_temperature(72)  # Cool down
         thermostat.set_hvac_mode("cool")
@@ -214,7 +214,7 @@ scripts/
 ├── __init__.py
 ├── README.md           # This file
 ├── lighting.py         # Light-related automations
-├── climate.py          # Temperature/HVAC automations  
+├── climate.py          # Temperature/HVAC automations
 ├── security.py         # Door/window/motion automations
 ├── scenes.py           # Scene-based automations
 └── utils.py            # Shared helper functions
@@ -236,7 +236,7 @@ def is_nighttime() -> bool:
 def turn_off_all_lights():
     lights = [
         "switch.living_room_light",
-        "switch.kitchen_light", 
+        "switch.kitchen_light",
         "switch.bedroom_light"
     ]
     for light_id in lights:
@@ -278,7 +278,7 @@ def test_front_door_automation():
         old_attributes={},
         new_attributes={}
     )
-    
+
     # Test your function
     front_door_automation(state_change)
     # Add assertions as needed
@@ -290,72 +290,26 @@ Run your script tests using the project's test system:
 # Run all tests (including your script tests)
 make test
 
-# Run just your script tests  
+# Run just your script tests
 make test TEST=scripts/test_lighting.py
-```
-
-## Best Practices
-
-### 1. Keep Functions Focused
-Each function should handle one specific automation scenario.
-
-### 2. Use Descriptive Names
-```python
-@state_change_trigger("sensor.dishwasher_power")
-def dishwasher_cycle_complete(state_change):  # Clear intent
-    pass
-```
-
-### 3. Handle State Transitions Explicitly
-```python
-@state_change_trigger("binary_sensor.garage_door")
-def garage_door_handler(state_change):
-    if state_change.old_state == "off" and state_change.new_state == "on":
-        # Door just opened
-        pass
-    elif state_change.old_state == "on" and state_change.new_state == "off":
-        # Door just closed  
-        pass
-```
-
-### 4. Add Logging for Debugging
-```python
-import logging
-logger = logging.getLogger(__name__)
-
-@state_change_trigger("switch.living_room_light")
-def debug_lighting(state_change):
-    logger.info(f"Light changed from {state_change.old_state} to {state_change.new_state}")
-```
-
-### 5. Error Handling
-```python
-@state_change_trigger("sensor.temperature")
-def temperature_handler(state_change):
-    try:
-        temp = float(state_change.new_state)
-        # Your logic here
-    except ValueError:
-        print(f"Invalid temperature value: {state_change.new_state}")
 ```
 
 ## Troubleshooting
 
 ### My automation isn't triggering
+
 - Check that Maestro is receiving webhooks from Home Assistant
 - Verify the entity ID matches exactly (case-sensitive)
 - Check Maestro logs: `docker-compose logs maestro`
 
-### Entity not found errors  
+### Entity not found errors
+
 - Ensure the entity exists in Home Assistant
 - Check entity ID spelling and format
 - Verify Home Assistant API token has access
 
-### Import errors
-- Make sure you're importing from `maestro`, not `maestro.something`
-- Check that Maestro is running and the `maestro` package is importable
-
 ### Debug with interactive shell
+
 Use the Flask shell to test your entity connections:
 
 ```bash

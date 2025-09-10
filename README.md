@@ -1,23 +1,25 @@
 # Maestro
 
-**Write your Home Assistant automations in Python.** 
+**Write your Home Assistant automations in type-safe Python.**
 
 Maestro bridges Home Assistant with Python automation scripts, giving you real-time state synchronization, typed entity interfaces, and decorator-based triggers - all while keeping your Home Assistant setup unchanged.
 
 ## What is Maestro?
 
-Instead of writing complex YAML automations, write clean Python:
+Take full control of your automation logic with Python and all the advantages of developing with a modern IDE:
 
 ```python
-from maestro import state_change_trigger, EntityId
+from maestro.domains import Switch
+from maestro.integrations import StateChangeEvent
+from maestro.triggers import state_change_trigger
 
-@state_change_trigger("switch.living_room_light")
-def bedtime_routine(state_change):
-    if state_change.new_state == "off" and is_bedtime():
-        # Turn off all lights, lock doors, adjust thermostat
-        turn_off_all_lights()
-        lock_all_doors()
-        set_sleep_temperature()
+
+@state_change_trigger("binary_sensor.front_door")
+def front_door_automation(state_change: StateChangeEvent):
+    if state_change.new_state == "on":
+        entryway_light = Switch("switch.entryway_light")
+        entryway_light.turn_on()
+
 ```
 
 ## Quick Start
@@ -85,20 +87,21 @@ Add to your `automations.yaml`:
 Create your automation scripts in the `scripts/` directory (see [scripts/README.md](scripts/README.md) for details):
 
 ```python
-from maestro import state_change_trigger, Switch, Climate
+from maestro.domains import Climate, Switch
+from maestro.integrations import StateChangeEvent
+from maestro.triggers import state_change_trigger
 
 @state_change_trigger("binary_sensor.front_door")
-def front_door_opened(state_change):
-    if state_change.new_state == "on":  # Door opened
-        # Turn on entryway light
+def front_door_opened(state_change: StateChangeEvent) -> None:
+    if state_change.new_state == "on":
         entryway_light = Switch("switch.entryway")
         entryway_light.turn_on()
 
-@state_change_trigger("sensor.outdoor_temperature") 
-def adjust_thermostat(state_change):
+@state_change_trigger("sensor.outdoor_temperature")
+def adjust_thermostat(state_change: StateChangeEvent) -> None:
     temp = float(state_change.new_state)
     thermostat = Climate("climate.main")
-    
+
     if temp > 75:
         thermostat.set_temperature(72)
     elif temp < 60:
@@ -109,7 +112,7 @@ def adjust_thermostat(state_change):
 
 - **🎯 Event-driven** - React to Home Assistant state changes in real-time
 - **🔒 Type-safe** - Full typing support with intelligent parameter injection
-- **⚡ High-performance** - Redis caching minimizes Home Assistant API calls  
+- **⚡ High-performance** - Redis caching minimizes Home Assistant API calls
 - **🏗️ Object-oriented** - `switch.turn_on()` instead of service calls
 - **🧪 Testable** - Isolated test registry system for reliable testing
 - **📦 Extensible** - Clean architecture for adding new trigger types
@@ -134,10 +137,8 @@ NGINX_TOKEN=your-secure-token
 
 ## Requirements
 
-- Python 3.12+
-- Docker & Docker Compose
 - Home Assistant with REST API access
-- Redis (included in docker-compose)
+- Docker & Docker Compose
 
 ## Contributing
 
