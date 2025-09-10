@@ -1,135 +1,122 @@
 # Maestro
 
-A Python middleware Flask application that bridges Home Assistant with custom automation logic engines. Maestro provides a typed, object-oriented interface for Home Assistant entities with intelligent caching and real-time state synchronization.
+**Write your Home Assistant automations in Python.** 
 
-## Architecture
+Maestro bridges Home Assistant with Python automation scripts, giving you real-time state synchronization, typed entity interfaces, and decorator-based triggers - all while keeping your Home Assistant setup unchanged.
 
-- **Flask API Server** - Receives Home Assistant state change webhooks
-- **Redis Cache Layer** - High-performance entity state storage with type preservation
-- **Home Assistant Client** - Full REST API integration for bidirectional communication
-- **Entity Abstraction** - Typed Python classes for Home Assistant entities
+## What is Maestro?
+
+Instead of writing complex YAML automations, write clean Python:
+
+```python
+from maestro import state_change_trigger, EntityId
+
+@state_change_trigger("switch.living_room_light")
+def bedtime_routine(state_change):
+    if state_change.new_state == "off" and is_bedtime():
+        # Turn off all lights, lock doors, adjust thermostat
+        turn_off_all_lights()
+        lock_all_doors()
+        set_sleep_temperature()
+```
 
 ## Quick Start
 
-1. **Configure Environment**
-
-   ```bash
-   cp .env.example .env
-   # Edit .env with your Home Assistant URL and long-lived access token
-   ```
-
-2. **Start Services**
-
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **Configure Home Assistant REST Command Service**
-   Give Home Assistant a command that can send state changes to Maestro:
-
-   ```yaml
-   # config.yaml
-
-   rest_command:
-   send_state_change_to_maestro:
-     url: !secret maestro_state_changed_url
-     method: POST
-     headers:
-       Content-Type: "application/json"
-       X-Auth-Token: !secret maestro_token
-     payload: >
-       {
-          "timestamp": {{ now().isoformat()| tojson }},
-          "time_fired": {{ time_fired | tojson }},
-          "event_type": {{ event_type | tojson }},
-          "entity_id": {{ entity_id | tojson }},
-          "old_state": {{ old_state | tojson }},
-          "new_state": {{ new_state | tojson }},
-          "old_attributes": {{ old_attributes }},
-          "new_attributes": {{ new_attributes }}
-       }
-   ```
-
-4. **Configure Home Assistant Automation**
-   Create an automation that will trigger the REST command on state changes:
-
-   ```yaml
-   # automations.yaml
-
-   - id: "1234567890123"
-     alias: Maestro Send State Changed
-     description: ""
-     triggers:
-        - trigger: event
-           event_type: state_changed
-           context: {}
-     conditions:
-        - condition: not
-           conditions:
-           - condition: template
-              value_template: "{{ trigger.event.data.entity_id.startswith('automation.') }}"
-     actions:
-        - action: rest_command.send_to_maestro
-           metadata: {}
-           data:
-           time_fired: "{{ trigger.event.time_fired }}"
-           event_type: "{{ trigger.event.event_type }}"
-           entity_id: "{{ trigger.event.data.entity_id }}"
-           old_state: "{{ trigger.event.data.old_state.state }}"
-           new_state: "{{ trigger.event.data.new_state.state }}"
-           old_attributes: "{{ trigger.event.data.old_state.attributes | tojson }}"
-           new_attributes: "{{ trigger.event.data.new_state.attributes | tojson }}"
-     mode: parallel
-   ```
-
-## Usage
-
-### Entity Management
-
-```python
-from maestro.entities.switch import Switch
-from maestro.entities.climate import Climate
-
-# Work with entities using typed interfaces
-living_room_light = Switch("switch.living_room_light")
-living_room_light.turn_on()
-
-thermostat = Climate("climate.living_room")
-thermostat.set_temperature(72)
-print(f"Current temp: {thermostat.current_temperature}°F")
-```
-
-## API Endpoints
-
-- `GET /` - Health check
-- `POST /events/state-changed` - Webhook for Home Assistant state changes
-- `POST /payload-testing` - Development endpoint for testing payloads
-
-## Development
-
-### Requirements
-
-- Python 3.12+
-- Docker & Docker Compose
-- Home Assistant with REST API access
-
-### Local Development
+### 1. Deploy Maestro
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Run tests
-pytest
-
-# Type checking
-mypy maestro/
-
-# Code formatting
-ruff check maestro/
+git clone https://github.com/your-repo/maestro.git
+cd maestro
+cp .env.example .env
+# Edit .env with your Home Assistant URL and access token
+make build
+docker-compose up -d
 ```
 
-### Environment Variables
+### 2. Connect Home Assistant
+
+Add to your Home Assistant `configuration.yaml`:
+
+```yaml
+rest_command:
+  send_to_maestro:
+    url: "http://your-maestro-server/events/state-changed"
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    payload: >
+      {
+        "timestamp": "{{ now().isoformat() }}",
+        "time_fired": "{{ time_fired }}",
+        "event_type": "{{ event_type }}",
+        "entity_id": "{{ entity_id }}",
+        "old_state": "{{ old_state }}",
+        "new_state": "{{ new_state }}",
+        "old_attributes": {{ old_attributes | tojson }},
+        "new_attributes": {{ new_attributes | tojson }}
+      }
+```
+
+Add to your `automations.yaml`:
+
+```yaml
+- alias: "Send state changes to Maestro"
+  trigger:
+    - platform: event
+      event_type: state_changed
+  condition:
+    - condition: template
+      value_template: "{{ not trigger.event.data.entity_id.startswith('automation.') }}"
+  action:
+    - service: rest_command.send_to_maestro
+      data:
+        time_fired: "{{ trigger.event.time_fired }}"
+        event_type: "{{ trigger.event.event_type }}"
+        entity_id: "{{ trigger.event.data.entity_id }}"
+        old_state: "{{ trigger.event.data.old_state.state if trigger.event.data.old_state else none }}"
+        new_state: "{{ trigger.event.data.new_state.state if trigger.event.data.new_state else none }}"
+        old_attributes: "{{ trigger.event.data.old_state.attributes if trigger.event.data.old_state else {} }}"
+        new_attributes: "{{ trigger.event.data.new_state.attributes if trigger.event.data.new_state else {} }}"
+  mode: parallel
+```
+
+### 3. Write Your Automations
+
+Create your automation scripts in the `scripts/` directory (see [scripts/README.md](scripts/README.md) for details):
+
+```python
+from maestro import state_change_trigger, Switch, Climate
+
+@state_change_trigger("binary_sensor.front_door")
+def front_door_opened(state_change):
+    if state_change.new_state == "on":  # Door opened
+        # Turn on entryway light
+        entryway_light = Switch("switch.entryway")
+        entryway_light.turn_on()
+
+@state_change_trigger("sensor.outdoor_temperature") 
+def adjust_thermostat(state_change):
+    temp = float(state_change.new_state)
+    thermostat = Climate("climate.main")
+    
+    if temp > 75:
+        thermostat.set_temperature(72)
+    elif temp < 60:
+        thermostat.set_temperature(70)
+```
+
+## Key Features
+
+- **🎯 Event-driven** - React to Home Assistant state changes in real-time
+- **🔒 Type-safe** - Full typing support with intelligent parameter injection
+- **⚡ High-performance** - Redis caching minimizes Home Assistant API calls  
+- **🏗️ Object-oriented** - `switch.turn_on()` instead of service calls
+- **🧪 Testable** - Isolated test registry system for reliable testing
+- **📦 Extensible** - Clean architecture for adding new trigger types
+
+## Environment Setup
+
+Copy `.env.example` to `.env` and configure:
 
 ```bash
 HOME_ASSISTANT_URL=http://your-hass-ip:8123
@@ -139,23 +126,21 @@ REDIS_PORT=6379
 NGINX_TOKEN=your-secure-token
 ```
 
-## Entity Types
+## Project Structure
 
-Currently supported Home Assistant domains:
+- **`/`** - This README and deployment configuration
+- **`maestro/`** - Core middleware system ([README](maestro/README.md))
+- **`scripts/`** - Your automation scripts ([README](scripts/README.md))
 
-- `switch` - Binary switches with on/off/toggle actions
-- `climate` - HVAC systems with temperature and fan controls
-- `calendar` - Calendar entities (basic support)
+## Requirements
 
-## Cache Architecture
-
-Maestro intelligently caches entity states and attributes in Redis:
-
-- **Type Preservation** - Maintains Python types (int, float, dict, etc.)
-- **Selective Caching** - Ignores UI-only attributes like icons
-- **30-Day TTL** - Automatic expiration prevents stale data
-- **Real-time Updates** - Webhook integration keeps cache current
+- Python 3.12+
+- Docker & Docker Compose
+- Home Assistant with REST API access
+- Redis (included in docker-compose)
 
 ## Contributing
 
-This project serves as middleware for Python-based Home Assistant automation engines. The current implementation provides the foundation - entity management, caching, and HA integration - ready for your custom automation logic.
+Maestro provides the foundation for Python-based Home Assistant automation. The core system handles entity management, caching, webhooks, and triggers - ready for your custom automation logic.
+
+See [maestro/README.md](maestro/README.md) for development and contribution guidelines.
