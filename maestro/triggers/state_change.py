@@ -14,9 +14,10 @@ class StateChangeTriggerManager(TriggerManager):
     @classmethod
     def execute_triggers(cls, state_change: StateChangeEvent) -> None:
         """Execute all registered state change functions for the given entity."""
-        if state_change.entity_id in cls.registry[TriggerType.STATE_CHANGE]:
+        target_registry = getattr(cls, "_test_registry", None) or cls.registry
+        if state_change.entity_id in target_registry[TriggerType.STATE_CHANGE]:
             trigger_params = StateChangeTriggerParams(state_change=state_change)
-            funcs_to_execute = cls.registry[TriggerType.STATE_CHANGE][state_change.entity_id]
+            funcs_to_execute = target_registry[TriggerType.STATE_CHANGE][state_change.entity_id]
             cls.invoke_funcs(
                 funcs_to_execute=funcs_to_execute,
                 trigger_params=trigger_params,
@@ -42,23 +43,3 @@ def state_change_trigger(entity_id: str | EntityId) -> Callable:
         return wrapper
 
     return decorator
-
-
-@state_change_trigger("sensor.processor_use")
-def test(state_change: StateChangeEvent) -> None:
-    log.info(f"HERE {state_change.entity_id}")
-
-
-@state_change_trigger("sensor.processor_use")
-def test2() -> None:
-    log.info("HEREEE")
-
-
-@state_change_trigger("sensor.memory_free")
-def test3(state_change: StateChangeEvent) -> None:
-    log.info(f"HERE {state_change.entity_id}")
-
-
-@state_change_trigger("sensor.memory_free")
-def test4() -> None:
-    log.info("HEREEE")

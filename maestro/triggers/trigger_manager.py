@@ -28,8 +28,14 @@ WrappedFuncParamsT = StateChangeTriggerParams | CronTriggerParams
 RegistryT = dict[TriggerType, defaultdict[str, list[Callable]]]
 
 
+def initialize_trigger_registry() -> RegistryT:
+    """Build the trigger registry dictionary that will map triggers to functions."""
+    return {trig_type: defaultdict(list) for trig_type in TriggerType}
+
+
 class TriggerManager(ABC):
-    registry: ClassVar[RegistryT] = {trig_type: defaultdict(list) for trig_type in TriggerType}
+    registry: ClassVar[RegistryT] = initialize_trigger_registry()
+    _test_registry: RegistryT  # Initialize to use a temporary testing registry
 
     @classmethod
     @final
@@ -40,7 +46,8 @@ class TriggerManager(ABC):
         func: Callable,
     ) -> None:
         """Register a function to be called when the specified trigger fires."""
-        cls.registry[trigger_type][registry_key].append(func)
+        target_registry = getattr(cls, "_test_registry", None) or cls.registry
+        target_registry[trigger_type][registry_key].append(func)
         log.info(
             "Successfully registered state trigger function",
             function_name=func.__name__,
