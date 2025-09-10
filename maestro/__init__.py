@@ -1,4 +1,3 @@
-import json
 from enum import StrEnum, auto
 from http import HTTPMethod
 
