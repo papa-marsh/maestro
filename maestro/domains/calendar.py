@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from maestro.entities.entity import Entity, EntityAttribute
+from maestro.domains.entity import Entity, EntityAttribute
 from maestro.integrations.home_assistant.types import Domain
 
 

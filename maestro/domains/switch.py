@@ -1,4 +1,4 @@
-from maestro.entities.entity import Entity
+from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.types import Domain
 
 

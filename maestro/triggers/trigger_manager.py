@@ -35,7 +35,7 @@ def initialize_trigger_registry() -> RegistryT:
 
 class TriggerManager(ABC):
     registry: ClassVar[RegistryT] = initialize_trigger_registry()
-    _test_registry: RegistryT  # Initialize to use a temporary testing registry
+    _test_registry: RegistryT  # Initialize to override with a temporary testing registry
 
     @classmethod
     @final
