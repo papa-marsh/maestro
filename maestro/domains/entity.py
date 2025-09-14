@@ -35,7 +35,6 @@ class EntityAttribute[T]:
 
 
 class Entity(ABC):
-    state_manager: StateManager
     id: EntityId
 
     friendly_name = EntityAttribute(str)
@@ -49,11 +48,16 @@ class Entity(ABC):
         state_manager: StateManager | None = None,
     ) -> None:
         self.id = EntityId(entity_id) if isinstance(entity_id, str) else entity_id
+        self._state_manager = state_manager
 
         if self.id.domain != type(self).__name__.lower():
             raise ValueError("Mismatch between entity domain and domain class")
 
-        self.state_manager = state_manager or StateManager()
+    @property
+    def state_manager(self) -> StateManager:
+        if self._state_manager is None:
+            self._state_manager = StateManager()
+        return self._state_manager
 
     @property
     def state(self) -> str:

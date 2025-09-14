@@ -17,6 +17,7 @@ from maestro.integrations.home_assistant.types import (
 )
 from maestro.integrations.redis import RedisClient
 from maestro.utils.dates import resolve_timestamp
+from maestro.utils.misc import add_entity_to_registry
 
 STATE_CACHE_PREFIX = "STATE"
 
@@ -90,6 +91,8 @@ class StateManager:
         old_encoded_value = self.redis_client.set(key=id.cache_key, value=encoded_value)
 
         if old_encoded_value is None:
+            if id.is_entity:
+                add_entity_to_registry(EntityId(id))
             return None
 
         old_data = json.loads(old_encoded_value)
@@ -186,7 +189,7 @@ class StateManager:
         )
 
     def cache_entity(self, entity_id: EntityId, state: str, attributes: dict) -> None:
-        self.set_cached_state(entity_id, state)
+        self.set_cached_state(id=entity_id, value=state)
         for attribute, value in attributes.items():
             try:
                 attribute_id = AttributeId(f"{entity_id}.{attribute}")

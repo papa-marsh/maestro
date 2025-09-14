@@ -67,3 +67,6 @@ logs/
 
 .cache
 TODO.txt
+
+scripts/registry/*
+
