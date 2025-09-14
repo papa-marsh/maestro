@@ -1,17 +1,21 @@
-from enum import StrEnum, auto
+import atexit
 from http import HTTPMethod
 
+from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
 from flask import Flask, Response, request
 from structlog.stdlib import get_logger
 
 from maestro.routes.state_changed import handle_state_changed
+from maestro.triggers.cron import CronTriggerManager
 
 app = Flask(__name__)
 log = get_logger()
 
-
-class EventType(StrEnum):
-    STATE_CHANGED = auto()
+# TODO: Migrate to AsyncIOScheduler
+app.scheduler = BackgroundScheduler()  # type:ignore[attr-defined]
+app.scheduler.start()  # type:ignore[attr-defined]
+CronTriggerManager.register_jobs(app.scheduler)  # type:ignore[attr-defined]
+atexit.register(lambda: app.scheduler.shutdown())  # type:ignore[attr-defined]
 
 
 @app.shell_context_processor

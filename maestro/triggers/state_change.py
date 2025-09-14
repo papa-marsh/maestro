@@ -11,17 +11,15 @@ log = get_logger()
 
 
 class StateChangeTriggerManager(TriggerManager):
+    trigger_type = TriggerType.STATE_CHANGE
+
     @classmethod
     def execute_triggers(cls, state_change: StateChangeEvent) -> None:
         """Execute all registered state change functions for the given entity."""
-        target_registry = getattr(cls, "_test_registry", None) or cls.registry
-        if state_change.entity_id in target_registry[TriggerType.STATE_CHANGE]:
-            trigger_params = StateChangeTriggerParams(state_change=state_change)
-            funcs_to_execute = target_registry[TriggerType.STATE_CHANGE][state_change.entity_id]
-            cls.invoke_funcs(
-                funcs_to_execute=funcs_to_execute,
-                trigger_params=trigger_params,
-            )
+        trigger_params = StateChangeTriggerParams(state_change=state_change)
+        registry_key = state_change.entity_id
+
+        cls.invoke_funcs(registry_key, trigger_params)
 
 
 def state_change_trigger(entity_id: str | EntityId) -> Callable:

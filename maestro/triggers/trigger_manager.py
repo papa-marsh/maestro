@@ -5,6 +5,7 @@ from enum import StrEnum, auto
 from inspect import signature
 from typing import Any, ClassVar, TypedDict, final
 
+from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 from structlog.stdlib import get_logger
 
 from maestro.integrations.home_assistant.types import StateChangeEvent
@@ -25,7 +26,7 @@ class CronTriggerParams(TypedDict): ...
 
 
 WrappedFuncParamsT = StateChangeTriggerParams | CronTriggerParams
-RegistryT = dict[TriggerType, defaultdict[str, list[Callable]]]
+RegistryT = dict[TriggerType, defaultdict[str | CronTrigger, list[Callable]]]
 
 
 def initialize_trigger_registry() -> RegistryT:
@@ -34,22 +35,27 @@ def initialize_trigger_registry() -> RegistryT:
 
 
 class TriggerManager(ABC):
-    registry: ClassVar[RegistryT] = initialize_trigger_registry()
-    _test_registry: RegistryT  # Initialize to override with a temporary testing registry
+    trigger_type: TriggerType
+    _registry: ClassVar[RegistryT] = initialize_trigger_registry()
+    _test_registry: RegistryT  # Initialize to override with a temporary registry for testing
+
+    @classmethod
+    @final
+    def get_registry(cls) -> RegistryT:
+        return getattr(cls, "_test_registry", None) or cls._registry
 
     @classmethod
     @final
     def register_function(
         cls,
         trigger_type: TriggerType,
-        registry_key: str,
+        registry_key: str | CronTrigger,
         func: Callable,
     ) -> None:
         """Register a function to be called when the specified trigger fires."""
-        target_registry = getattr(cls, "_test_registry", None) or cls.registry
-        target_registry[trigger_type][registry_key].append(func)
+        cls.get_registry()[trigger_type][registry_key].append(func)
         log.info(
-            "Successfully registered state trigger function",
+            "Successfully registered trigger function",
             function_name=func.__name__,
             trigger_type=trigger_type,
             registry_key=registry_key,
@@ -58,17 +64,23 @@ class TriggerManager(ABC):
     @classmethod
     @abstractmethod
     def execute_triggers(cls, *args: Any, **kwargs: Any) -> None:
-        """Execute all registered functions for the given trigger. Must call `cls.invoke_funcs`"""
+        """Execute registered functions for the given trigger. Should call `cls.invoke_funcs`"""
         raise NotImplementedError
 
     @classmethod
     @final
     def invoke_funcs(
         cls,
-        funcs_to_execute: list[Callable],
+        registry_key: str,
         trigger_params: WrappedFuncParamsT,
     ) -> None:
         params_dict = dict(trigger_params)
+
+        # Handle edge case during an ongoing unit test where a test registry exists temporarily
+        registry = (
+            cls._test_registry | cls._registry if hasattr(cls, "_test_registry") else cls._registry
+        )
+        funcs_to_execute = registry[cls.trigger_type].get(registry_key, [])
 
         for func in funcs_to_execute:
             execution_args = []
