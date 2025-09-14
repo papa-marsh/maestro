@@ -38,6 +38,7 @@ def make_shell_context() -> dict:
     from maestro.integrations.state_manager import StateManager
     from maestro.triggers.trigger_manager import TriggerManager
     from maestro.utils.dates import resolve_timestamp, utc_now
+    from maestro.utils.infra import load_script_modules
 
     hass = HomeAssistantClient()
     redis = RedisClient()

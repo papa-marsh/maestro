@@ -1,14 +1,8 @@
 from datetime import datetime
-from enum import StrEnum
 from typing import Any
 
 from maestro.domains.entity import Entity, EntityAttribute
 from maestro.integrations.home_assistant.types import Domain
-
-
-class CalendarAction(StrEnum):
-    CREATE_EVENT = "create_event"  # There's also a google.create_event (?)
-    GET_EVENTS = "get_events"
 
 
 class Calendar(Entity):
@@ -22,7 +16,7 @@ class Calendar(Entity):
     description = EntityAttribute(str)
 
     def create_event(self, **kwargs: Any) -> None:
-        self.perform_action(CalendarAction.CREATE_EVENT, **kwargs)
+        self.perform_action("create_event", **kwargs)
 
     def get_events(
         self,
@@ -35,7 +29,7 @@ class Calendar(Entity):
         Duration example: {"hours": 48} or {"days": 7}.
         """
         self.perform_action(
-            CalendarAction.GET_EVENTS,
+            "get_events",
             start_date_time=start_date_time,
             end_date_time=end_date_time,
             duration=duration,
