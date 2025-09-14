@@ -55,8 +55,8 @@ class Entity(ABC):
 
     @property
     def state_manager(self) -> StateManager:
-        if self._state_manager is None:
-            self._state_manager = StateManager()
+        """Lazy load the state manager only once it's needed"""
+        self._state_manager = self._state_manager or StateManager()
         return self._state_manager
 
     @property

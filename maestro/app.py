@@ -24,9 +24,7 @@ atexit.register(lambda: app.scheduler.shutdown())  # type:ignore[attr-defined]
 @app.shell_context_processor
 def make_shell_context() -> dict:
     """Pre-load common imports for flask shell command"""
-    from maestro.domains.climate import Climate
-    from maestro.domains.entity import Entity
-    from maestro.domains.switch import Switch
+    from maestro.domains import Calendar, Climate, Switch
     from maestro.integrations.home_assistant.client import HomeAssistantClient
     from maestro.integrations.home_assistant.types import (
         AttributeId,
@@ -38,6 +36,7 @@ def make_shell_context() -> dict:
     )
     from maestro.integrations.redis import RedisClient
     from maestro.integrations.state_manager import StateManager
+    from maestro.triggers.trigger_manager import TriggerManager
     from maestro.utils.dates import resolve_timestamp, utc_now
 
     hass = HomeAssistantClient()
