@@ -10,7 +10,7 @@ test: build
 
 # Open a Flask shell in the container with pre-loaded imports
 shell: build
-	docker compose run --rm -e FLASK_APP=maestro maestro flask shell
+	docker compose run --rm -e FLASK_APP=maestro.app:app maestro flask shell
 
 # Open an interactive bash shell in the container
 bash: build

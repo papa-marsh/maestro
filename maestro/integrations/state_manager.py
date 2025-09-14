@@ -17,7 +17,7 @@ from maestro.integrations.home_assistant.types import (
 )
 from maestro.integrations.redis import RedisClient
 from maestro.utils.dates import resolve_timestamp
-from maestro.utils.misc import add_entity_to_registry
+from maestro.utils.infra import add_entity_to_registry
 
 STATE_CACHE_PREFIX = "STATE"
 

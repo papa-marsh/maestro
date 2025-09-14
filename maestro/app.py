@@ -7,9 +7,12 @@ from structlog.stdlib import get_logger
 
 from maestro.routes.state_changed import handle_state_changed
 from maestro.triggers.cron import CronTriggerManager
+from maestro.utils.infra import load_script_modules
 
 app = Flask(__name__)
 log = get_logger()
+
+load_script_modules()
 
 # TODO: Migrate to AsyncIOScheduler
 app.scheduler = BackgroundScheduler()  # type:ignore[attr-defined]

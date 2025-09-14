@@ -4,6 +4,7 @@ from typing import Any
 
 from structlog.stdlib import get_logger
 
+from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.types import EntityId, StateChangeEvent
 from maestro.triggers.trigger_manager import StateChangeTriggerParams, TriggerManager, TriggerType
 
@@ -22,15 +23,15 @@ class StateChangeTriggerManager(TriggerManager):
         cls.invoke_funcs(registry_key, trigger_params)
 
 
-def state_change_trigger(entity_id: str | EntityId) -> Callable:
+def state_change_trigger(entity: Entity | EntityId | str) -> Callable:
     """Decorator to register a function as a state change trigger for the specified entity."""
 
     def decorator(func: Callable) -> Callable:
-        entity_id_obj = EntityId(entity_id) if isinstance(entity_id, str) else entity_id
+        entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
 
         StateChangeTriggerManager.register_function(
             trigger_type=TriggerType.STATE_CHANGE,
-            registry_key=entity_id_obj,
+            registry_key=entity_id,
             func=func,
         )
 
