@@ -48,17 +48,16 @@ def load_script_modules() -> None:
 
 
 def add_entity_to_registry(entity_id: EntityId) -> None:
-    module_filepath = Path(f"maestro/registry/{entity_id.domain}.py")
+    module_filepath = Path(f"/maestro/registry/{entity_id.domain}.py")
     domain_class = entity_id.domain.capitalize()
     new_entity_entry = f'{entity_id.entity} = {domain_class}("{entity_id}")'
+    header = "# THIS MODULE IS PROGRAMMATICALLY UPDATED - EDIT WITH CAUTION\n\n"
 
     try:
         if not module_filepath.exists():
-            content = (
-                "# THIS MODULE IS PROGRAMMATICALLY UPDATED - EDIT WITH CAUTION\n\n"
-                f"from maestro.domains import {domain_class}\n\n{new_entity_entry}\n"
-            )
+            content = f"{header}from maestro.domains import {domain_class}\n\n{new_entity_entry}\n"
             module_filepath.write_text(content)
+            log.info("Created new registry file", filepath=module_filepath, entity=entity_id)
         else:
             content = module_filepath.read_text()
             lines = content.strip().split("\n")
@@ -76,14 +75,14 @@ def add_entity_to_registry(entity_id: EntityId) -> None:
             sorted_entries = sorted(entity_entries)
 
             if import_line:
-                content = f"{import_line}\n\n" + "\n".join(sorted_entries) + "\n"
+                content = f"{header}{import_line}\n\n" + "\n".join(sorted_entries) + "\n"
             else:
                 content = (
-                    f"from maestro.domains import {domain_class}\n\n"
-                    + "\n".join(sorted_entries)
-                    + "\n"
+                    f"{header}from maestro.domains import {domain_class}\n\n"
+                    f"{'\n'.join(sorted_entries)}\n"
                 )
 
             module_filepath.write_text(content)
+            log.info("Added entity to registry", filepath=module_filepath, entity=entity_id)
     except Exception:
         log.exception(f"Failed to add entity {entity_id} to registry")
