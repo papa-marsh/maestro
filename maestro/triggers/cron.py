@@ -7,7 +7,13 @@ from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore
 from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 from structlog.stdlib import get_logger
 
-from maestro.triggers.trigger_manager import TriggerManager, TriggerType
+from maestro.config import TIMEZONE
+from maestro.triggers.trigger_manager import (
+    CronTriggerArgs,
+    TriggerManager,
+    TriggerRegistryEntry,
+    TriggerType,
+)
 
 log = get_logger()
 
@@ -17,12 +23,15 @@ class CronTriggerManager(TriggerManager):
 
     @classmethod
     def register_jobs(cls, scheduler: BackgroundScheduler) -> None:
-        for trigger, funcs in cls.get_registry()[cls.trigger_type].items():
-            for func in funcs:
-                scheduler.add_job(func, trigger)
+        for trigger_obj, trigger_entries in cls.get_registry()[cls.trigger_type].items():
+            for trigger_entry in trigger_entries:
+                scheduler.add_job(
+                    func=trigger_entry["func"],
+                    trigger=trigger_obj,
+                )
 
     @classmethod
-    def execute_triggers(cls) -> None:
+    def resolve_triggers(cls) -> None:
         """Not used for cron triggers"""
         raise NotImplementedError
 
@@ -60,7 +69,7 @@ def cron_trigger(
         )
 
         trigger = (
-            CronTrigger.from_crontab(expr=pattern)
+            CronTrigger.from_crontab(expr=pattern, timezone=TIMEZONE)
             if pattern is not None
             else CronTrigger(
                 minute=minute,
@@ -68,13 +77,26 @@ def cron_trigger(
                 day=_day_of_month,
                 month=_month,
                 day_of_week=_day_of_week,
+                timezone=TIMEZONE,
             )
+        )
+        trigger_args = CronTriggerArgs(
+            pattern=pattern,
+            minute=minute,
+            hour=hour,
+            day_of_month=_day_of_month,
+            month=_month,
+            day_of_week=_day_of_week,
+        )
+        registry_entry = TriggerRegistryEntry(
+            func=func,
+            trigger_args=trigger_args,
         )
 
         CronTriggerManager.register_function(
             trigger_type=TriggerType.CRON,
             registry_key=trigger,
-            func=func,
+            registry_entry=registry_entry,
         )
 
         @wraps(func)

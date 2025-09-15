@@ -45,6 +45,6 @@ def handle_state_changed() -> tuple[Response, int]:
     state_manager.cache_state_change(state_change)
     log.info("State change cached", entity_id=state_change.entity_id, changes=changes)
 
-    StateChangeTriggerManager.execute_triggers(state_change)
+    StateChangeTriggerManager.resolve_triggers(state_change)
 
     return jsonify({"status": "success"}), 200

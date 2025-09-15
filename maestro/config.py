@@ -1,5 +1,7 @@
 import os
 
+TIMEZONE = os.environ.get("TIMEZONE", "America/New_York")
+
 HOME_ASSISTANT_URL = os.environ["HOME_ASSISTANT_URL"].rstrip("/")
 HOME_ASSISTANT_TOKEN = os.environ["HOME_ASSISTANT_TOKEN"]
 

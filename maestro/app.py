@@ -5,6 +5,7 @@ from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore
 from flask import Flask, Response, request
 from structlog.stdlib import get_logger
 
+from maestro.config import TIMEZONE
 from maestro.routes.state_changed import handle_state_changed
 from maestro.triggers.cron import CronTriggerManager
 from maestro.utils.infra import load_script_modules
@@ -15,7 +16,7 @@ log = get_logger()
 load_script_modules()
 
 # TODO: Migrate to AsyncIOScheduler
-app.scheduler = BackgroundScheduler()  # type:ignore[attr-defined]
+app.scheduler = BackgroundScheduler(timezone=TIMEZONE)  # type:ignore[attr-defined]
 app.scheduler.start()  # type:ignore[attr-defined]
 CronTriggerManager.register_jobs(app.scheduler)  # type:ignore[attr-defined]
 atexit.register(lambda: app.scheduler.shutdown())  # type:ignore[attr-defined]
