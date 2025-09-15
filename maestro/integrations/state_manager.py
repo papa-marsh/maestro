@@ -5,6 +5,7 @@ from datetime import datetime
 
 from structlog.stdlib import get_logger
 
+from maestro.config import AUTOPOPULATE_REGISTRY
 from maestro.integrations.home_assistant.client import (
     HomeAssistantClient,
 )
@@ -91,7 +92,7 @@ class StateManager:
         old_encoded_value = self.redis_client.set(key=id.cache_key, value=encoded_value)
 
         if old_encoded_value is None:
-            if id.is_entity:
+            if id.is_entity and AUTOPOPULATE_REGISTRY:
                 add_entity_to_registry(EntityId(id))
             return None
 
