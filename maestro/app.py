@@ -37,6 +37,24 @@ def make_shell_context() -> dict:
     )
     from maestro.integrations.redis import RedisClient
     from maestro.integrations.state_manager import StateManager
+    from maestro.registry import (
+        binary_sensor,
+        button,
+        calendar,
+        climate,
+        cover,
+        device_tracker,
+        event,
+        humidifier,
+        lock,
+        number,
+        person,
+        pyscript,
+        sensor,
+        sun,
+        switch,
+        weather,
+    )
     from maestro.triggers.trigger_manager import TriggerManager
     from maestro.utils.dates import resolve_timestamp, utc_now
     from maestro.utils.infra import load_script_modules

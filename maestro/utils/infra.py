@@ -49,7 +49,7 @@ def load_script_modules() -> None:
 
 def add_entity_to_registry(entity_id: EntityId) -> None:
     module_filepath = Path(f"/maestro/registry/{entity_id.domain}.py")
-    domain_class = entity_id.domain.capitalize()
+    domain_class = "".join(word.capitalize() for word in entity_id.domain.split("_"))
     new_entity_entry = f'{entity_id.entity} = {domain_class}("{entity_id}")'
     header = "# THIS MODULE IS PROGRAMMATICALLY UPDATED - EDIT WITH CAUTION\n\n"
 

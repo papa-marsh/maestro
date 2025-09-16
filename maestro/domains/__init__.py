@@ -1,9 +1,47 @@
+from .binary_sensor import BinarySensor
+from .button import Button
 from .calendar import Calendar
 from .climate import Climate
+from .cover import Cover
+from .device_tracker import DeviceTracker
+from .event import Event
+from .fan import Fan
+from .humidifier import Humidifier
+from .input_boolean import InputBoolean
+from .light import Light
+from .lock import Lock
+from .maestro import Maestro
+from .media_player import MediaPlayer
+from .number import Number
+from .person import Person
+from .pyscript import Pyscript
+from .sensor import Sensor
+from .sun import Sun
 from .switch import Switch
+from .update import Update
+from .weather import Weather
 
 __all__ = [
+    BinarySensor.__name__,
+    Button.__name__,
     Calendar.__name__,
     Climate.__name__,
+    Cover.__name__,
+    DeviceTracker.__name__,
+    Event.__name__,
+    Fan.__name__,
+    Humidifier.__name__,
+    InputBoolean.__name__,
+    Light.__name__,
+    Lock.__name__,
+    Maestro.__name__,
+    MediaPlayer.__name__,
+    Number.__name__,
+    Person.__name__,
+    Pyscript.__name__,
+    Sensor.__name__,
+    Sun.__name__,
     Switch.__name__,
+    Update.__name__,
+    Weather.__name__,
 ]

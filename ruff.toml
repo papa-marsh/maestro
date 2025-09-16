@@ -25,5 +25,6 @@ select = [
 ignore = []
 
 [lint.per-file-ignores]
-"**/tests/**.py" = ["S101"] # Allow assert statements in test files
-"maestro/app.py" = ["F401"] # Allow unused imports for Flask shell context
+"**/tests/**.py" = ["S101"]         # Allow assert statements in test files
+"maestro/app.py" = ["F401"]         # Allow unused imports for Flask shell context
+"maestro/registry/**.py" = ["E501"] # Ignore line length
