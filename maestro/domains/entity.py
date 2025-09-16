@@ -50,7 +50,8 @@ class Entity(ABC):
         self.id = EntityId(entity_id) if isinstance(entity_id, str) else entity_id
         self._state_manager = state_manager
 
-        if self.id.domain_class_name != type(self).__name__:
+        valid_classes = {c.__name__ for c in type(self).__mro__ if c not in [Entity, ABC, object]}
+        if self.id.domain_class_name not in valid_classes:
             raise ValueError("Mismatch between entity domain and domain class")
 
     @property

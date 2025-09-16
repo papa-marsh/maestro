@@ -1,7 +1,7 @@
 from .binary_sensor import BinarySensor
 from .button import Button
 from .calendar import Calendar
-from .climate import Climate
+from .climate import Climate, HeatedFloorClimate, TeslaClimate, ThermostatClimate
 from .cover import Cover
 from .device_tracker import DeviceTracker
 from .event import Event
@@ -26,6 +26,9 @@ __all__ = [
     Button.__name__,
     Calendar.__name__,
     Climate.__name__,
+    HeatedFloorClimate.__name__,
+    TeslaClimate.__name__,
+    ThermostatClimate.__name__,
     Cover.__name__,
     DeviceTracker.__name__,
     Event.__name__,

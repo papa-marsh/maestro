@@ -1,4 +1,5 @@
 import importlib
+import re
 import sys
 from pathlib import Path
 
@@ -56,35 +57,35 @@ def add_entity_to_registry(entity_id: EntityId) -> None:
         if not module_filepath.exists():
             content = (
                 f"{header}from maestro.domains import {entity_id.domain_class_name}"
-                "\n\n{new_entity_entry}\n"
+                f"\n\n{new_entity_entry}\n"
             )
             module_filepath.write_text(content)
             log.info("Created new registry file", filepath=module_filepath, entity=entity_id)
+
         else:
             content = module_filepath.read_text()
-            lines = content.strip().split("\n")
-            entity_entries = set()
+            registered_entities = re.findall(
+                pattern=r'\(["\']([^"\']*)["\'\)]',
+                string=content,
+            )
+            if entity_id in registered_entities:
+                return
 
-            import_line = None
+            lines = content.strip().split("\n")
+            new_lines = [header, ""] if header not in content else []
+            entity_entries = set()
             for line in lines:
-                line = line.strip()
-                if line.startswith("from maestro.domains import"):
-                    import_line = line
-                elif line and "=" in line and not line.startswith("#"):
+                if " = " in line:
                     entity_entries.add(line)
+                else:
+                    new_lines.append(line)
 
             entity_entries.add(new_entity_entry)
-            sorted_entries = sorted(entity_entries)
+            new_lines.extend(sorted(entity_entries))
 
-            if import_line:
-                content = f"{header}{import_line}\n\n" + "\n".join(sorted_entries) + "\n"
-            else:
-                content = (
-                    f"{header}from maestro.domains import {entity_id.domain_class_name}\n\n"
-                    f"{'\n'.join(sorted_entries)}\n"
-                )
-
-            module_filepath.write_text(content)
+            new_content = "\n".join(new_lines) + "\n"
+            module_filepath.write_text(new_content)
             log.info("Added entity to registry", filepath=module_filepath, entity=entity_id)
+
     except Exception:
         log.exception(f"Failed to add entity {entity_id} to registry")
