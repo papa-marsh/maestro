@@ -56,6 +56,7 @@ class StateId(str):
         self.is_entity = self.attribute is None
         self.is_attribute = self.attribute is not None
 
+        self.domain_class_name = "".join(word.capitalize() for word in self.domain.split("_"))
         self.cache_key = RedisClient.build_key(STATE_CACHE_PREFIX, *parts)
 
 

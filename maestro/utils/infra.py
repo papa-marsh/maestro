@@ -49,13 +49,15 @@ def load_script_modules() -> None:
 
 def add_entity_to_registry(entity_id: EntityId) -> None:
     module_filepath = Path(f"/maestro/registry/{entity_id.domain}.py")
-    domain_class = "".join(word.capitalize() for word in entity_id.domain.split("_"))
-    new_entity_entry = f'{entity_id.entity} = {domain_class}("{entity_id}")'
+    new_entity_entry = f'{entity_id.entity} = {entity_id.domain_class_name}("{entity_id}")'
     header = "# THIS MODULE IS PROGRAMMATICALLY UPDATED - EDIT WITH CAUTION\n\n"
 
     try:
         if not module_filepath.exists():
-            content = f"{header}from maestro.domains import {domain_class}\n\n{new_entity_entry}\n"
+            content = (
+                f"{header}from maestro.domains import {entity_id.domain_class_name}"
+                "\n\n{new_entity_entry}\n"
+            )
             module_filepath.write_text(content)
             log.info("Created new registry file", filepath=module_filepath, entity=entity_id)
         else:
@@ -78,7 +80,7 @@ def add_entity_to_registry(entity_id: EntityId) -> None:
                 content = f"{header}{import_line}\n\n" + "\n".join(sorted_entries) + "\n"
             else:
                 content = (
-                    f"{header}from maestro.domains import {domain_class}\n\n"
+                    f"{header}from maestro.domains import {entity_id.domain_class_name}\n\n"
                     f"{'\n'.join(sorted_entries)}\n"
                 )
 
