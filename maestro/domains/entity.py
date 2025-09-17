@@ -17,7 +17,10 @@ class EntityAttribute[T]:
         id = AttributeId(f"{obj.id}.{self.name}")
         value = obj.state_manager.get_cached_state(id)
         if not isinstance(value, self.attribute_type):
-            raise TypeError(f"Type mismatch for cached attribute {id}")
+            raise TypeError(
+                f"Type mismatch for cached attribute {id}. "
+                f"Expected {self.attribute_type.__name__} but got {type(value).__name__}"
+            )
 
         return value
 

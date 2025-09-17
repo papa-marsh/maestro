@@ -51,8 +51,11 @@ def make_shell_context() -> dict:
         cover,
         device_tracker,
         event,
+        fan,
         humidifier,
+        light,
         lock,
+        media_player,
         number,
         person,
         pyscript,
@@ -62,8 +65,8 @@ def make_shell_context() -> dict:
         weather,
     )
     from maestro.triggers.trigger_manager import TriggerManager
-    from maestro.utils.dates import resolve_timestamp, utc_now
-    from maestro.utils.infra import load_script_modules
+    from maestro.utils import local_now, resolve_timestamp
+    from maestro.utils.misc import validate_attributes
 
     hass = HomeAssistantClient()
     redis = RedisClient()

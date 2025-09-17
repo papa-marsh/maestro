@@ -12,7 +12,7 @@ from maestro.integrations.home_assistant.types import (
 )
 from maestro.integrations.redis import RedisClient
 from maestro.integrations.state_manager import STATE_CACHE_PREFIX, CachedState, StateManager
-from maestro.utils.dates import utc_now
+from maestro.utils.dates import local_now
 
 
 class TestStateManagerIntegration:
@@ -91,7 +91,7 @@ class TestStateManagerIntegration:
             state_manager.redis_client.delete(*cached_keys)
 
         # Create a dummy state change event
-        now = utc_now()
+        now = local_now()
         new_attributes = {
             "friendly_name": "Test Cache Entity",
             "changed": True,
@@ -176,7 +176,7 @@ class TestStateManagerIntegration:
         )
 
         # Create a state change event representing entity deletion
-        now = utc_now()
+        now = local_now()
         deletion_event = StateChangeEvent(
             timestamp=now,
             time_fired=now,
@@ -226,7 +226,7 @@ class TestStateManagerIntegration:
         )
 
         # Create state change event where old_attribute is removed but persistent_attribute remains
-        now = utc_now()
+        now = local_now()
         state_change_event = StateChangeEvent(
             timestamp=now,
             time_fired=now,
@@ -280,7 +280,7 @@ class TestStateManagerIntegration:
         test_entity_id = EntityId("maestro.unit_test")
 
         # Create a state change event with invalid attribute names
-        now = utc_now()
+        now = local_now()
         new_attributes = {
             "valid_attribute": "good_value",
             "invalid(attribute)": "bad_value",  # Contains parentheses
@@ -363,7 +363,9 @@ class TestStateManagerUnit:
 
     def test_encode_cached_state_datetime(self) -> None:
         """Test encoding datetime values"""
-        test_datetime = utc_now().replace(microsecond=0)  # Remove microseconds for clean comparison
+        test_datetime = local_now().replace(
+            microsecond=0
+        )  # Remove microseconds for clean comparison
         result = StateManager.encode_cached_state(test_datetime)
         data = json.loads(result)
 
@@ -418,7 +420,9 @@ class TestStateManagerUnit:
 
     def test_decode_cached_state_datetime(self) -> None:
         """Test decoding datetime values"""
-        test_datetime = utc_now().replace(microsecond=0)  # Remove microseconds for clean comparison
+        test_datetime = local_now().replace(
+            microsecond=0
+        )  # Remove microseconds for clean comparison
         cached_state = CachedState(value=test_datetime.isoformat(), type="datetime")
         result = StateManager.decode_cached_state(cached_state)
 

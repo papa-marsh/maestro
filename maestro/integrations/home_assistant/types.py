@@ -16,6 +16,7 @@ class Domain(StrEnum):
     FAN = auto()
     HUMIDIFIER = auto()
     INPUT_BOOLEAN = auto()
+    INPUT_SELECT = auto()
     LIGHT = auto()
     LOCK = auto()
     MAESTRO = auto()
@@ -23,6 +24,7 @@ class Domain(StrEnum):
     NUMBER = auto()
     PERSON = auto()
     PYSCRIPT = auto()  # TODO: Remove once pyscript is gone
+    SELECT = auto()
     SENSOR = auto()
     SUN = auto()
     SWITCH = auto()

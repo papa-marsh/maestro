@@ -7,7 +7,7 @@ from maestro.integrations.home_assistant.types import Domain
 class Climate(Entity):
     domain = Domain.CLIMATE
 
-    hvac_modes = EntityAttribute(str)
+    hvac_modes = EntityAttribute(list)
     min_temp = EntityAttribute(int)
     max_temp = EntityAttribute(int)
     preset_modes = EntityAttribute(list)
@@ -51,7 +51,7 @@ class ThermostatClimate(Climate):
         AWAY = auto()
         HOLD = auto()
 
-    current_humidity = EntityAttribute(int)
+    current_humidity = EntityAttribute(float)
     fan_modes = EntityAttribute(list)
     fan_mode = EntityAttribute(str)
     hvac_action = EntityAttribute(str)

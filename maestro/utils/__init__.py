@@ -1,6 +1,6 @@
-from .dates import resolve_timestamp, utc_now
+from .dates import local_now, resolve_timestamp
 
 __all__ = [
-    utc_now.__name__,
+    local_now.__name__,
     resolve_timestamp.__name__,
 ]

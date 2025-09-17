@@ -1,3 +1,4 @@
+import contextlib
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -87,6 +88,10 @@ class StateManager:
         """Caches an entity's type-encoded state or attribute value. Returns the previous value"""
         if id.is_entity and not isinstance(value, str):
             raise TypeError("State value must be a string")
+
+        if id.is_attribute and isinstance(value, str):
+            with contextlib.suppress(ValueError):
+                value = resolve_timestamp(value)
 
         encoded_value = self.encode_cached_state(value)
         old_encoded_value = self.redis_client.set(key=id.cache_key, value=encoded_value)

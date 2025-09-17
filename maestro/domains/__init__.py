@@ -4,6 +4,7 @@ from .calendar import Calendar
 from .climate import Climate, HeatedFloorClimate, TeslaClimate, ThermostatClimate
 from .cover import Cover
 from .device_tracker import DeviceTracker
+from .entity import Entity
 from .event import Event
 from .fan import Fan
 from .humidifier import Humidifier
@@ -31,6 +32,7 @@ __all__ = [
     ThermostatClimate.__name__,
     Cover.__name__,
     DeviceTracker.__name__,
+    Entity.__name__,
     Event.__name__,
     Fan.__name__,
     Humidifier.__name__,
