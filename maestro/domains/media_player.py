@@ -5,6 +5,14 @@ from maestro.integrations.home_assistant.types import Domain
 class MediaPlayer(Entity):
     domain = Domain.MEDIA_PLAYER
 
+    source_list = EntityAttribute(list)
+    group_members = EntityAttribute(list)
+    volume_level = EntityAttribute(float)
+    is_volume_muted = EntityAttribute(bool)
+    media_content_type = EntityAttribute(str)
+    shuffle = EntityAttribute(bool)
+    repeat = EntityAttribute(str)
+
     def turn_on(self) -> None:
         self.perform_action("turn_on")
 

@@ -30,6 +30,7 @@ class Domain(StrEnum):
     SWITCH = auto()
     UPDATE = auto()
     WEATHER = auto()
+    ZONE = auto()
 
 
 class StateId(str):

@@ -31,7 +31,7 @@ def load_script_modules() -> None:
     error_count = 0
 
     for python_file in python_files:
-        if python_file.name.startswith("_") or "tests" in str(python_file):
+        if python_file.name.startswith("_") or python_file.name.startswith("test"):
             continue
 
         relative_path = python_file.relative_to(scripts_dir)

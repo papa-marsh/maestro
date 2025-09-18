@@ -21,6 +21,7 @@ from .sun import Sun
 from .switch import Switch
 from .update import Update
 from .weather import Weather
+from .zone import Zone
 
 __all__ = [
     BinarySensor.__name__,
@@ -49,4 +50,5 @@ __all__ = [
     Switch.__name__,
     Update.__name__,
     Weather.__name__,
+    Zone.__name__,
 ]
