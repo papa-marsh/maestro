@@ -33,6 +33,8 @@ services:
       - maestro-network
     volumes:
       - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
 
 volumes:
   redis_data:
