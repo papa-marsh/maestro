@@ -23,10 +23,10 @@ class TestHomeAssistantClient:
         assert is_healthy is True
 
     def test_get_entity(self, home_assistant_client: HomeAssistantClient) -> None:
-        entity = home_assistant_client.get_entity("person.marshall")
+        entity = home_assistant_client.get_entity("sensor.home_assistant_uptime")
 
         assert isinstance(entity, EntityData)
-        assert entity.entity_id == "person.marshall"
+        assert entity.entity_id == "sensor.home_assistant_uptime"
         assert isinstance(entity.state, str)
         assert isinstance(entity.attributes, dict)
         assert isinstance(entity.attributes["last_changed"], datetime)
