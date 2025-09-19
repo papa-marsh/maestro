@@ -31,7 +31,7 @@ class CronTriggerManager(TriggerManager):
                 )
 
     @classmethod
-    def resolve_triggers(cls) -> None:
+    def fire_triggers(cls) -> None:
         """Not used for cron triggers"""
         raise NotImplementedError
 

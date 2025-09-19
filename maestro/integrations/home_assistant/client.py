@@ -6,7 +6,7 @@ import requests
 from structlog.stdlib import get_logger
 
 from maestro.config import HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
-from maestro.integrations.home_assistant.types import Domain, EntityId, EntityResponse
+from maestro.integrations.home_assistant.types import Domain, EntityData, EntityId
 from maestro.utils.dates import resolve_timestamp
 
 log = get_logger()
@@ -26,7 +26,7 @@ class HomeAssistantClient:
             and response_data.get("message") == "API running."
         )
 
-    def get_entity(self, entity_id: str) -> EntityResponse:
+    def get_entity(self, entity_id: str) -> EntityData:
         """Get the current state of a specific entity"""
         path = f"/api/states/{entity_id}"
 
@@ -39,7 +39,7 @@ class HomeAssistantClient:
 
         return self.resolve_entity_response(response_data)
 
-    def get_all_entities(self) -> list[EntityResponse]:
+    def get_all_entities(self) -> list[EntityData]:
         """Get the current state of all entities"""
         path = "/api/states"
         response_data, status = self.execute_request(
@@ -65,7 +65,7 @@ class HomeAssistantClient:
         entity_id: str,
         state: str,
         attributes: dict[str, Any],
-    ) -> tuple[EntityResponse, bool]:
+    ) -> tuple[EntityData, bool]:
         """Set the state and attributes of an entity. Returns (EntityResponse, created)"""
         path = f"/api/states/{entity_id}"
         body = {
@@ -112,7 +112,7 @@ class HomeAssistantClient:
         action: str,
         entity_id: str | list[str],
         **kwargs: Any,
-    ) -> list[EntityResponse]:
+    ) -> list[EntityData]:
         """Perform an action on one or more entities"""
         path = f"/api/services/{domain}/{action}"
         body = {
@@ -174,7 +174,7 @@ class HomeAssistantClient:
         return data, response.status_code
 
     @staticmethod
-    def resolve_entity_response(raw_dict: dict) -> EntityResponse:
+    def resolve_entity_response(raw_dict: dict) -> EntityData:
         """Convert raw API response data to EntityResponse object"""
         keys = {
             "entity_id",
@@ -187,13 +187,13 @@ class HomeAssistantClient:
         if not all(key in raw_dict for key in keys):
             raise KeyError("Couldn't resolve EntityResponse. Missing required keys.")
 
-        entity = EntityResponse(
+        entity = EntityData(
             entity_id=EntityId(raw_dict["entity_id"]),
-            state=raw_dict["state"] or "",
+            state=str(raw_dict["state"]),
             attributes=raw_dict["attributes"] or {},
-            last_changed=resolve_timestamp(raw_dict["last_changed"]),
-            last_reported=resolve_timestamp(raw_dict["last_reported"]),
-            last_updated=resolve_timestamp(raw_dict["last_updated"]),
         )
+        entity.attributes["last_changed"] = resolve_timestamp(raw_dict["last_changed"])
+        entity.attributes["last_reported"] = resolve_timestamp(raw_dict["last_reported"])
+        entity.attributes["last_updated"] = resolve_timestamp(raw_dict["last_updated"])
 
         return entity

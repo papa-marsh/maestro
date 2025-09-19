@@ -21,7 +21,7 @@ class StateChangeTriggerManager(TriggerManager):
     trigger_type = TriggerType.STATE_CHANGE
 
     @classmethod
-    def resolve_triggers(cls, state_change: StateChangeEvent) -> None:
+    def fire_triggers(cls, state_change: StateChangeEvent) -> None:
         """Execute all registered state change functions for the given entity."""
         trigger_params = StateChangeTriggerFuncParams(state_change=state_change)
         registry = cls.get_registry(registry_union=True)
@@ -32,9 +32,9 @@ class StateChangeTriggerManager(TriggerManager):
             from_state = trigger_args["from_state"]
             to_state = trigger_args["to_state"]
 
-            if from_state is not None and state_change.old_state != from_state:
+            if from_state is not None and state_change.old.state != from_state:
                 continue
-            if to_state is not None and state_change.new_state != to_state:
+            if to_state is not None and state_change.new.state != to_state:
                 continue
             funcs_to_execute.append(registry_entry["func"])
 

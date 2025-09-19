@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 
 from maestro.integrations.home_assistant.client import HomeAssistantClient
-from maestro.integrations.home_assistant.types import Domain, EntityResponse
+from maestro.integrations.home_assistant.types import Domain, EntityData
 
 
 class TestHomeAssistantClient:
@@ -25,13 +25,13 @@ class TestHomeAssistantClient:
     def test_get_entity(self, home_assistant_client: HomeAssistantClient) -> None:
         entity = home_assistant_client.get_entity("person.marshall")
 
-        assert isinstance(entity, EntityResponse)
+        assert isinstance(entity, EntityData)
         assert entity.entity_id == "person.marshall"
         assert isinstance(entity.state, str)
         assert isinstance(entity.attributes, dict)
-        assert isinstance(entity.last_changed, datetime)
-        assert isinstance(entity.last_reported, datetime)
-        assert isinstance(entity.last_updated, datetime)
+        assert isinstance(entity.attributes["last_changed"], datetime)
+        assert isinstance(entity.attributes["last_reported"], datetime)
+        assert isinstance(entity.attributes["last_updated"], datetime)
 
     def test_set_entity(self, home_assistant_client: HomeAssistantClient) -> None:
         test_entity_id = "maestro.unit_test"
@@ -44,7 +44,7 @@ class TestHomeAssistantClient:
             attributes={"test_attr": "test_value"},
         )
 
-        assert isinstance(entity, EntityResponse)
+        assert isinstance(entity, EntityData)
         assert created is True
         assert entity.entity_id == test_entity_id
         assert entity.state == "test_state"
@@ -57,7 +57,7 @@ class TestHomeAssistantClient:
             attributes={"test_attr": "updated_value", "new_attr": "new_value"},
         )
 
-        assert isinstance(entity, EntityResponse)
+        assert isinstance(entity, EntityData)
         assert created is False
         assert entity.entity_id == test_entity_id
         assert entity.state == "updated_state"
@@ -79,7 +79,7 @@ class TestHomeAssistantClient:
         assert isinstance(result_states, list)
 
         for state in result_states:
-            assert isinstance(state, EntityResponse)
+            assert isinstance(state, EntityData)
 
         # Get state after first toggle
         toggled_state = home_assistant_client.get_entity(test_entity_id)

@@ -88,7 +88,7 @@ class TriggerManager(ABC):
 
     @classmethod
     @abstractmethod
-    def resolve_triggers(cls, *args: Any, **kwargs: Any) -> None:
+    def fire_triggers(cls, *args: Any, **kwargs: Any) -> None:
         """Execute registered functions for the given trigger. Should call `cls.invoke_funcs`"""
         raise NotImplementedError
 

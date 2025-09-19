@@ -36,8 +36,8 @@ def make_shell_context() -> dict:
     from maestro.integrations.home_assistant.types import (
         AttributeId,
         Domain,
+        EntityData,
         EntityId,
-        EntityResponse,
         StateChangeEvent,
         StateId,
     )

@@ -12,9 +12,8 @@ from maestro.integrations.home_assistant.client import (
 )
 from maestro.integrations.home_assistant.types import (
     AttributeId,
+    EntityData,
     EntityId,
-    EntityResponse,
-    StateChangeEvent,
     StateId,
 )
 from maestro.integrations.redis import RedisClient
@@ -147,64 +146,42 @@ class StateManager:
 
         return decoder_function(cached_state.value)
 
-    def fetch_hass_entity(self, entity_id: EntityId) -> EntityResponse:
+    def fetch_hass_entity(self, entity_id: EntityId) -> EntityData:
         """Fetch and cache up-to-date data for a Home Assistant entity"""
-        entity_response = self.hass_client.get_entity(entity_id)
-        if not entity_response:
+        entity_data = self.hass_client.get_entity(entity_id)
+        if not entity_data:
             raise ValueError(f"Failed to retrieve an entity response for {entity_id}")
-        self.cache_entity_response(entity_response)
+        self.cache_entity(entity_data)
 
-        return entity_response
+        return entity_data
 
-    def cache_state_change(self, state_change: StateChangeEvent) -> None:
-        """Given an EntityResponse object, cache its state and attributes"""
-        cached_states = set(self.get_all_entity_keys(entity_id=state_change.entity_id))
-        if state_change.new_state is None:
-            if cached_states:
-                self.redis_client.delete(*cached_states)
-            return
+    def cache_entity(self, entity_data: EntityData) -> None:
+        """Overwrite an entity's state and attributes, removing any stale attributes"""
+        keys_to_delete = set(self.get_all_entity_keys(entity_data.entity_id))
+        keys_to_delete.remove(entity_data.entity_id.cache_key)
 
-        cached_states.discard(state_change.entity_id.cache_key)
-        keys_to_delete = []
-        for key in cached_states:
-            id = AttributeId(key.split(f"{STATE_CACHE_PREFIX}:")[1].replace(":", "."))
-            if (
-                id.attribute in state_change.old_attributes
-                and id.attribute not in state_change.new_attributes
-            ):
-                keys_to_delete.append(key)
-        if keys_to_delete:
-            self.redis_client.delete(*keys_to_delete)
+        self.set_cached_state(id=entity_data.entity_id, value=entity_data.state)
 
-        self.cache_entity(
-            entity_id=state_change.entity_id,
-            state=state_change.new_state,
-            attributes=state_change.new_attributes,
-        )
-
-    def cache_entity_response(self, entity: EntityResponse) -> None:
-        """Given an EntityResponse object, cache its state and attributes"""
-        custom_attributes = {
-            "last_changed": entity.last_changed,
-            "last_updated": entity.last_updated,
-        }
-        self.cache_entity(
-            entity_id=entity.entity_id,
-            state=entity.state,
-            attributes=custom_attributes | entity.attributes,
-        )
-
-    def cache_entity(self, entity_id: EntityId, state: str, attributes: dict) -> None:
-        self.set_cached_state(id=entity_id, value=state)
-        for attribute, value in attributes.items():
+        for attribute, value in entity_data.attributes.items():
             try:
-                attribute_id = AttributeId(f"{entity_id}.{attribute}")
+                attribute_id = AttributeId(f"{entity_data.entity_id}.{attribute}")
             except ValueError:
                 log.warning(
                     "Attribute name failed validation while caching entity. Skipping attribute.",
-                    entity_id=entity_id,
+                    entity_id=entity_data.entity_id,
                     attribute_name=attribute,
                 )
                 continue
 
             self.set_cached_state(id=attribute_id, value=value)
+            keys_to_delete.discard(attribute_id.cache_key)
+
+        if keys_to_delete:
+            self.redis_client.delete(*keys_to_delete)
+
+    def delete_cached_entity(self, entity_id: EntityId) -> int:
+        """Remove an entity and its attributes from the cache. Returns the count deleted."""
+        if keys_to_delete := self.get_all_entity_keys(entity_id):
+            return self.redis_client.delete(*keys_to_delete)
+
+        return 0

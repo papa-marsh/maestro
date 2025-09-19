@@ -9,6 +9,7 @@ from .event import Event
 from .fan import Fan
 from .humidifier import Humidifier
 from .input_boolean import InputBoolean
+from .input_select import InputSelect
 from .light import Light
 from .lock import Lock
 from .maestro import Maestro
@@ -16,6 +17,7 @@ from .media_player import MediaPlayer
 from .number import Number
 from .person import Person
 from .pyscript import Pyscript
+from .select import Select
 from .sensor import Sensor
 from .sun import Sun
 from .switch import Switch
@@ -38,6 +40,7 @@ __all__ = [
     Fan.__name__,
     Humidifier.__name__,
     InputBoolean.__name__,
+    InputSelect.__name__,
     Light.__name__,
     Lock.__name__,
     Maestro.__name__,
@@ -45,6 +48,7 @@ __all__ = [
     Number.__name__,
     Person.__name__,
     Pyscript.__name__,
+    Select.__name__,
     Sensor.__name__,
     Sun.__name__,
     Switch.__name__,

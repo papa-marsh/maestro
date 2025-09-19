@@ -84,15 +84,12 @@ class AttributeId(StateId):
 
 
 @dataclass
-class EntityResponse:
+class EntityData:
     """An entity's state and metadata as represented by the Home Assistant API"""
 
     entity_id: EntityId
     state: str
     attributes: dict[str, Any]
-    last_changed: datetime
-    last_reported: datetime
-    last_updated: datetime
 
     def __post_init__(self) -> None:
         self.attributes = sanitize_attribute_keys(self.attributes)
@@ -104,16 +101,9 @@ class StateChangeEvent:
 
     timestamp: datetime
     time_fired: datetime
-    event_type: str
     entity_id: EntityId
-    old_state: str | None
-    new_state: str | None
-    old_attributes: dict[str, Any]
-    new_attributes: dict[str, Any]
-
-    def __post_init__(self) -> None:
-        self.old_attributes = sanitize_attribute_keys(self.old_attributes)
-        self.new_attributes = sanitize_attribute_keys(self.new_attributes)
+    old: EntityData
+    new: EntityData
 
 
 def sanitize_attribute_keys(attributes: dict[str, Any]) -> dict[str, Any]:
