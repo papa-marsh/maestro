@@ -95,4 +95,4 @@ class Entity(ABC):
             **kwargs,
         )
         if len(response) > 1:
-            raise ValueError("Unexpectedly received more than one EntityResponse from action call")
+            raise ValueError("Unexpectedly received more than one EntityData from action call")

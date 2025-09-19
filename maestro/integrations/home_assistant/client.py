@@ -66,7 +66,7 @@ class HomeAssistantClient:
         state: str,
         attributes: dict[str, Any],
     ) -> tuple[EntityData, bool]:
-        """Set the state and attributes of an entity. Returns (EntityResponse, created)"""
+        """Set the state and attributes of an entity. Returns (EntityData, created)"""
         path = f"/api/states/{entity_id}"
         body = {
             "state": state,
@@ -175,7 +175,7 @@ class HomeAssistantClient:
 
     @staticmethod
     def resolve_entity_response(raw_dict: dict) -> EntityData:
-        """Convert raw API response data to EntityResponse object"""
+        """Convert raw API response data to EntityData object"""
         keys = {
             "entity_id",
             "state",
@@ -185,7 +185,7 @@ class HomeAssistantClient:
             "last_updated",
         }
         if not all(key in raw_dict for key in keys):
-            raise KeyError("Couldn't resolve EntityResponse. Missing required keys.")
+            raise KeyError("Couldn't resolve EntityData. Missing required keys.")
 
         entity = EntityData(
             entity_id=EntityId(raw_dict["entity_id"]),
