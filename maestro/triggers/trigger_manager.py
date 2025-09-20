@@ -4,6 +4,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from enum import StrEnum, auto
 from inspect import signature
+from threading import Thread
 from typing import Any, ClassVar, TypedDict, final
 
 from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
@@ -94,13 +95,14 @@ class TriggerManager(ABC):
 
     @classmethod
     @final
-    def invoke_funcs(
+    def invoke_threaded_funcs(
         cls,
         funcs_to_execute: list[Callable],
         trigger_params: TriggerFuncParamsT,
     ) -> None:
         """
         Wrapper logic to handle a varied number of optional args passed to a decorated function.
+        Each function is executed in its own thread for concurrent execution.
 
         Both of these examples are valid depending on whether or not the state change var is needed:
             @state_change_trigger(): ...
@@ -111,6 +113,25 @@ class TriggerManager(ABC):
         params_dict = dict(trigger_params)
 
         for func in funcs_to_execute:
+            thread = Thread(
+                target=cls._invoke_func_with_param_handling,
+                args=(func, params_dict),
+                name=f"script-{cls.trigger_type}-{func.__name__}",
+                daemon=True,
+            )
+            thread.start()
+            log.info(
+                "Thread spawned for triggered script",
+                function_name=func.__name__,
+                trigger_type=cls.trigger_type,
+                thread_name=thread.name,
+            )
+
+    @classmethod
+    @final
+    def _invoke_func_with_param_handling(cls, func: Callable, params_dict: dict[str, Any]) -> None:
+        """Execute a single trigger function with error handling in a background thread."""
+        try:
             execution_args = []
             for signature_param in signature(func).parameters:
                 if signature_param not in params_dict:
@@ -122,7 +143,7 @@ class TriggerManager(ABC):
                     )
                     continue
                 execution_args.append(params_dict[signature_param])
-            try:
-                func(*execution_args)
-            except Exception:
-                log.exception("Error executing triggered function", function_name=func.__name__)
+
+            func(*execution_args)
+        except Exception:
+            log.exception("Error executing triggered function", function_name=func.__name__)
