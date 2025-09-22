@@ -6,13 +6,8 @@ from structlog.stdlib import get_logger
 
 from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.types import EntityId, StateChangeEvent
-from maestro.triggers.trigger_manager import (
-    StateChangeTriggerArgs,
-    StateChangeTriggerFuncParams,
-    TriggerManager,
-    TriggerRegistryEntry,
-    TriggerType,
-)
+from maestro.triggers.trigger_manager import TriggerManager
+from maestro.triggers.types import StateChangeParams, TriggerRegistryEntry, TriggerType
 
 log = get_logger()
 
@@ -23,12 +18,12 @@ class StateChangeTriggerManager(TriggerManager):
     @classmethod
     def fire_triggers(cls, state_change: StateChangeEvent) -> None:
         """Execute all registered state change functions for the given entity."""
-        trigger_params = StateChangeTriggerFuncParams(state_change=state_change)
+        trigger_params = StateChangeParams.FuncParams(state_change=state_change)
         registry = cls.get_registry(registry_union=True)
         funcs_to_execute = []
 
         for registry_entry in registry[cls.trigger_type].get(state_change.entity_id, []):
-            trigger_args = cast(StateChangeTriggerArgs, registry_entry["trigger_args"])
+            trigger_args = cast(StateChangeParams.TriggerParams, registry_entry["trigger_args"])
             from_state = trigger_args["from_state"]
             to_state = trigger_args["to_state"]
 
@@ -36,6 +31,7 @@ class StateChangeTriggerManager(TriggerManager):
                 continue
             if to_state is not None and state_change.new.state != to_state:
                 continue
+
             funcs_to_execute.append(registry_entry["func"])
 
         cls.invoke_threaded_funcs(funcs_to_execute, trigger_params)
@@ -46,11 +42,16 @@ def state_change_trigger(
     from_state: str | None = None,
     to_state: str | None = None,
 ) -> Callable:
-    """Decorator to register a function as a state change trigger for the specified entity."""
+    """
+    Decorator to register a function as a state change trigger for the specified entity.
+
+    Available function params:
+        `state_change: StateChangeEvent`
+    """
 
     def decorator(func: Callable) -> Callable:
         entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
-        trigger_args = StateChangeTriggerArgs(
+        trigger_args = StateChangeParams.TriggerParams(
             {
                 "entity_id": entity_id,
                 "from_state": from_state,

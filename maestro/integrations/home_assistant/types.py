@@ -97,7 +97,7 @@ class EntityData:
 
 @dataclass
 class StateChangeEvent:
-    """A state change event as represented by the send_to_maestro automation"""
+    """A state change event as represented by the maestro_send_state_changed automation"""
 
     timestamp: datetime
     time_fired: datetime
@@ -120,3 +120,14 @@ def sanitize_attribute_keys(attributes: dict[str, Any]) -> dict[str, Any]:
         sanitized[new_key] = attributes[key]
 
     return sanitized
+
+
+@dataclass
+class FiredEvent:
+    """Event data payload as captured by the maestro_event_fired_url automation"""
+
+    timestamp: datetime
+    time_fired: datetime
+    type: str
+    data: dict
+    user_id: EntityId | str | None

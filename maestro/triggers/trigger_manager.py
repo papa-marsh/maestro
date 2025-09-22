@@ -1,51 +1,23 @@
 from abc import ABC, abstractmethod
-from calendar import Day, Month
 from collections import defaultdict
 from collections.abc import Callable
-from enum import StrEnum, auto
 from inspect import signature
 from threading import Thread
-from typing import Any, ClassVar, TypedDict, final
+from typing import Any, ClassVar, final
 
 from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 from structlog.stdlib import get_logger
 
-from maestro.integrations.home_assistant.types import EntityId, StateChangeEvent
+from maestro.triggers.types import (
+    TriggerFuncParamsT,
+    TriggerRegistryEntry,
+    TriggerType,
+)
 
 log = get_logger()
 
 
-class TriggerType(StrEnum):
-    STATE_CHANGE = auto()
-    CRON = auto()
-
-
-class StateChangeTriggerArgs(TypedDict):
-    entity_id: EntityId
-    from_state: str | None
-    to_state: str | None
-
-
-class CronTriggerArgs(TypedDict):
-    pattern: str | None
-    minute: int | str | None
-    hour: int | str | None
-    day_of_month: int | list[int] | str | None
-    month: int | Month | list[int | Month] | str | None
-    day_of_week: int | Day | list[int | Day] | str | None
-
-
-class TriggerRegistryEntry(TypedDict):
-    func: Callable
-    trigger_args: StateChangeTriggerArgs | CronTriggerArgs
-
-
-class StateChangeTriggerFuncParams(TypedDict):
-    state_change: StateChangeEvent
-
-
 RegistryT = dict[TriggerType, defaultdict[str, list[TriggerRegistryEntry]]]
-TriggerFuncParamsT = StateChangeTriggerFuncParams
 
 
 def initialize_trigger_registry() -> RegistryT:
@@ -100,28 +72,18 @@ class TriggerManager(ABC):
         funcs_to_execute: list[Callable],
         trigger_params: TriggerFuncParamsT,
     ) -> None:
-        """
-        Wrapper logic to handle a varied number of optional args passed to a decorated function.
-        Each function is executed in its own thread for concurrent execution.
-
-        Both of these examples are valid depending on whether or not the state change var is needed:
-            @state_change_trigger(): ...
-            @state_change_trigger(state_change: StateChangeEvent): ...
-
-        trigger_params is a typeddict to enumerate the available valid arguments.
-        """
+        """Execute a list of trigger functions in background threads."""
         params_dict = dict(trigger_params)
 
         for func in funcs_to_execute:
             thread = Thread(
                 target=cls._invoke_func_with_param_handling,
                 args=(func, params_dict),
-                name=f"script-{cls.trigger_type}-{func.__name__}",
                 daemon=True,
             )
             thread.start()
             log.info(
-                "Thread spawned for triggered script",
+                "Thread created for triggered script",
                 function_name=func.__name__,
                 trigger_type=cls.trigger_type,
                 thread_name=thread.name,
@@ -129,8 +91,21 @@ class TriggerManager(ABC):
 
     @classmethod
     @final
-    def _invoke_func_with_param_handling(cls, func: Callable, params_dict: dict[str, Any]) -> None:
-        """Execute a single trigger function with error handling in a background thread."""
+    def _invoke_func_with_param_handling(
+        cls,
+        func: Callable,
+        params_dict: dict[str, Any],
+    ) -> None:
+        """
+        Wrapper logic to handle a varied number of optional args passed to a decorated function.
+        Each function is executed in its own thread for concurrent execution.
+
+        Both of these examples are valid depending on whether or not the state change arg is needed:
+            @state_change_trigger(): ...
+            @state_change_trigger(state_change: StateChangeEvent): ...
+
+        trigger_params is a typeddict to enumerate the available valid arguments.
+        """
         try:
             execution_args = []
             for signature_param in signature(func).parameters:

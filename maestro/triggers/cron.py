@@ -8,12 +8,8 @@ from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 from structlog.stdlib import get_logger
 
 from maestro.config import TIMEZONE
-from maestro.triggers.trigger_manager import (
-    CronTriggerArgs,
-    TriggerManager,
-    TriggerRegistryEntry,
-    TriggerType,
-)
+from maestro.triggers.trigger_manager import TriggerManager
+from maestro.triggers.types import CronParams, TriggerRegistryEntry, TriggerType
 
 log = get_logger()
 
@@ -48,9 +44,21 @@ def cron_trigger(
     Decorator to register a function as a time-based trigger for the specified cron pattern.
     For parameter format, see:
         https://apscheduler.readthedocs.io/en/3.x/modules/triggers/cron.html#module-apscheduler.triggers.cron
+
+    Available function params:
+        `None`
     """
 
     def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            log.info(
+                "Thread created for triggered script",
+                function_name=func.__name__,
+                trigger_type=TriggerType.CRON,
+            )
+            return func(*args, **kwargs)
+
         if pattern is not None and any(
             arg is not None for arg in [minute, hour, day_of_month, month, day_of_week]
         ):
@@ -80,7 +88,7 @@ def cron_trigger(
                 timezone=TIMEZONE,
             )
         )
-        trigger_args = CronTriggerArgs(
+        trigger_args = CronParams.TriggerParams(
             pattern=pattern,
             minute=minute,
             hour=hour,
@@ -89,7 +97,7 @@ def cron_trigger(
             day_of_week=_day_of_week,
         )
         registry_entry = TriggerRegistryEntry(
-            func=func,
+            func=wrapper,
             trigger_args=trigger_args,
         )
 
@@ -98,10 +106,6 @@ def cron_trigger(
             registry_key=trigger,
             registry_entry=registry_entry,
         )
-
-        @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return func(*args, **kwargs)
 
         return wrapper
 

@@ -69,4 +69,4 @@ logs/
 TODO.txt
 
 maestro/registry/*
-
+maestro/integrations/home_assistant/users.py

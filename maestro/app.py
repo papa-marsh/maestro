@@ -7,6 +7,7 @@ from flask import Flask, Response, request
 from structlog.stdlib import get_logger
 
 from maestro.config import TIMEZONE
+from maestro.routes.event_fired import handle_event_fired
 from maestro.routes.state_changed import handle_state_changed
 from maestro.triggers.cron import CronTriggerManager
 from maestro.utils.infra import load_script_modules
@@ -87,5 +88,11 @@ def hello_world() -> str:
 
 @app.route("/events/state-changed", methods=[HTTPMethod.POST])
 def state_changed() -> tuple[Response, int]:
-    app.logger.info("Handling state change event")
+    app.logger.info("Handling webhook: state changed")
     return handle_state_changed()
+
+
+@app.route("/events/event-fired", methods=[HTTPMethod.POST])
+def event_fired() -> tuple[Response, int]:
+    app.logger.info("Handling webhook: event fired")
+    return handle_event_fired()

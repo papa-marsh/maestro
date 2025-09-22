@@ -1,8 +1,9 @@
 from structlog.stdlib import get_logger
 
-from maestro.integrations import StateChangeEvent
-from maestro.registry import switch
+from maestro.integrations import FiredEvent, StateChangeEvent
+from maestro.registry import person, switch
 from maestro.triggers import cron_trigger, state_change_trigger
+from maestro.triggers.event_fired import event_fired_trigger
 
 log = get_logger()
 
@@ -23,3 +24,25 @@ def toggle_butterfly_light(state_change: StateChangeEvent) -> None:
         switch.butterfly_night_light.turn_on()
     else:
         switch.butterfly_night_light.turn_off()
+
+
+@cron_trigger("* * * * *")
+def cron_test() -> None:
+    log.info("HEREEEEEEEE")
+
+
+@event_fired_trigger("test_event")
+def event_test_1() -> None:
+    log.info("EVENT TEST 1")
+
+
+@event_fired_trigger("test_event", user=person.marshall)
+def event_test_2(event: FiredEvent) -> None:
+    log.info("EVENT TEST 2")
+    log.info(str(event.data))
+
+
+@event_fired_trigger("test_event", user="hfjhs8293rjofwei")
+def event_test_3(event: FiredEvent) -> None:
+    log.info("EVENT TEST 3")
+    log.info(str(event.data))
