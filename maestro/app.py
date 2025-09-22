@@ -17,7 +17,7 @@ class MaestroFlask(Flask):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         load_script_modules()
 
-        self.scheduler = BackgroundScheduler(timezone=TIMEZONE)  # TODO: Migrate to AsyncIOScheduler
+        self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
         self.scheduler.start()
         CronTriggerManager.register_jobs(self.scheduler)
         atexit.register(lambda: self.scheduler.shutdown())
@@ -54,16 +54,22 @@ def make_shell_context() -> dict:
         event,
         fan,
         humidifier,
+        input_boolean,
+        input_select,
         light,
         lock,
+        maestro,
         media_player,
         number,
         person,
-        pyscript,
+        pyscript,  # TODO: Remove once pyscript is gone
+        select,
         sensor,
         sun,
         switch,
+        update,
         weather,
+        zone,
     )
     from maestro.triggers.trigger_manager import TriggerManager
     from maestro.utils import local_now, resolve_timestamp

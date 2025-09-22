@@ -95,7 +95,7 @@ class TestHomeAssistantClient:
         assert initial_state_value == final_state.state
 
     def test_delete_entity(self, home_assistant_client: HomeAssistantClient) -> None:
-        test_entity_id = "maestro.unit_test_delete"
+        test_entity_id = "maestro.unit_test"
         # Create an entity to delete
         home_assistant_client.set_entity(test_entity_id, "to_be_deleted", {"delete_me": True})
 

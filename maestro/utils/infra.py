@@ -51,13 +51,7 @@ def load_script_modules() -> None:
 def add_entity_to_registry(entity_id: EntityId) -> None:
     module_filepath = Path(f"/maestro/registry/{entity_id.domain}.py")
     new_entity_entry = f'{entity_id.entity} = {entity_id.domain_class_name}("{entity_id}")'
-    header = """
-    # THIS MODULE IS PROGRAMMATICALLY UPDATED - EDIT WITH CAUTION\n\n
-    # - Each entity must exist on exactly one line.\n
-    # - Base domain classes can be replaced by subclasses:\n
-    #       eg. `TeslaClimate(<car_entity>)` instead of `Climate(<car_entity>)`.\n
-    # - Protip: Comment out unused entities to remove them from IDE autocomplete.\n\n\n
-    """
+    header = "# THIS MODULE IS PROGRAMMATICALLY UPDATED - See `maestro/registry/README.md`\n\n"
 
     try:
         if not module_filepath.exists():
