@@ -1,19 +1,12 @@
 from datetime import datetime
 from typing import Any
 
-from maestro.domains.entity import Entity, EntityAttribute
+from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.types import Domain
 
 
 class Calendar(Entity):
     domain = Domain.CALENDAR
-
-    message = EntityAttribute(str)
-    all_day = EntityAttribute(bool)
-    start_time = EntityAttribute(datetime)
-    end_time = EntityAttribute(datetime)
-    location = EntityAttribute(str)
-    description = EntityAttribute(str)
 
     def create_event(self, **kwargs: Any) -> None:
         self.perform_action("create_event", **kwargs)

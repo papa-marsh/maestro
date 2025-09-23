@@ -96,8 +96,6 @@ class StateManager:
         old_encoded_value = self.redis_client.set(key=id.cache_key, value=encoded_value)
 
         if old_encoded_value is None:
-            if id.is_entity and AUTOPOPULATE_REGISTRY:
-                add_entity_to_registry(EntityId(id))
             return None
 
         old_data = json.loads(old_encoded_value)
@@ -169,6 +167,9 @@ class StateManager:
 
         if keys_to_delete:
             self.redis_client.delete(*keys_to_delete)
+
+        if AUTOPOPULATE_REGISTRY:
+            add_entity_to_registry(entity_data)
 
     def delete_cached_entity(self, entity_id: EntityId) -> int:
         """Remove an entity and its attributes from the cache. Returns the count deleted."""

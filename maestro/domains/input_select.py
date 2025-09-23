@@ -1,11 +1,9 @@
-from maestro.domains.entity import Entity, EntityAttribute
+from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.types import Domain
 
 
 class InputSelect(Entity):
     domain = Domain.INPUT_SELECT
-
-    options = EntityAttribute(list)
 
     def select_first(self) -> None:
         self.perform_action("select_first")

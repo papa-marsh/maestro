@@ -1,22 +1,9 @@
-from maestro.domains.entity import Entity, EntityAttribute
+from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.types import Domain
 
 
 class Light(Entity):
     domain = Domain.LIGHT
-
-    min_color_temp_kelvin = EntityAttribute(int)
-    max_color_temp_kelvin = EntityAttribute(int)
-    min_mireds = EntityAttribute(int)
-    max_mireds = EntityAttribute(int)
-    supported_color_modes = EntityAttribute(list)
-    color_mode = EntityAttribute(str)
-    brightness = EntityAttribute(int)
-    color_temp_kelvin = EntityAttribute(int)
-    color_temp = EntityAttribute(int)
-    hs_color = EntityAttribute(list)
-    rgb_color = EntityAttribute(list)
-    xy_color = EntityAttribute(list)
 
     def turn_on(
         self,

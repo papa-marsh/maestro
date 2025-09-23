@@ -1,16 +1,9 @@
-from maestro.domains.entity import Entity, EntityAttribute
+from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.types import Domain, EntityId
 
 
 class MediaPlayer(Entity):
     domain = Domain.MEDIA_PLAYER
-
-    source_list = EntityAttribute(list)
-    volume_level = EntityAttribute(float)
-    is_volume_muted = EntityAttribute(bool)
-    media_content_type = EntityAttribute(str)
-    shuffle = EntityAttribute(bool)
-    repeat = EntityAttribute(str)
 
     def turn_on(self) -> None:
         self.perform_action("turn_on")
@@ -73,10 +66,6 @@ class MediaPlayer(Entity):
 
 
 class SonosMediaPlayer(MediaPlayer):
-    group_members = EntityAttribute(list)
-    media_content_id = EntityAttribute(str)
-    source = EntityAttribute(str)
-
     def join(self, members: list[EntityId]) -> None:
         self.perform_action("join", group_members=members)
 

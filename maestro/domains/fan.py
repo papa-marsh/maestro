@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from maestro.domains.entity import Entity, EntityAttribute
+from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.types import Domain
 
 
@@ -11,8 +11,6 @@ class Fan(Entity):
         LOW = 33
         MEDIUM = 66
         HIGH = 100
-
-    percentage = EntityAttribute(int)
 
     def turn_on(self) -> None:
         self.perform_action("turn_on")

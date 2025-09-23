@@ -31,6 +31,7 @@ ignore = []
 "maestro/registry/**.py" = [
     "E501", # Line length
     "F401", # Unused imports
+    "I001", # Unsorted imports
 ]
 "**/tests/**.py" = [
     "S101", # Allow assert statements in test files

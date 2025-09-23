@@ -1,19 +1,11 @@
 from enum import StrEnum, auto
 
-from maestro.domains.entity import Entity, EntityAttribute
+from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.types import Domain
 
 
 class Climate(Entity):
     domain = Domain.CLIMATE
-
-    hvac_modes = EntityAttribute(list)
-    min_temp = EntityAttribute(int)
-    max_temp = EntityAttribute(int)
-    preset_modes = EntityAttribute(list)
-    current_temperature = EntityAttribute(int)
-    temperature = EntityAttribute(int)
-    preset_mode = EntityAttribute(str)
 
     def turn_on(self) -> None:
         self.perform_action("turn_on")
@@ -51,12 +43,6 @@ class ThermostatClimate(Climate):
         AWAY = auto()
         HOLD = auto()
 
-    current_humidity = EntityAttribute(float)
-    fan_modes = EntityAttribute(list)
-    fan_mode = EntityAttribute(str)
-    hvac_action = EntityAttribute(str)
-    permanent_hold = EntityAttribute(bool)
-
     def set_fan_mode(self, mode: FanMode) -> None:
         self.perform_action("set_fan_mode", mode=mode)
 
@@ -76,8 +62,6 @@ class HeatedFloorClimate(Climate):
         RUN_SCHEDULE = "Run Schedule"
         TEMPORARY_HOLD = "Temporary Hold"
         PERMANENT_HOLD = "Permanent Hold"
-
-    hvac_action = EntityAttribute(str)
 
     def set_hvac_mode(self, mode: HVACMode) -> None:
         self.perform_action("set_hvac_mode", mode=mode)
@@ -101,9 +85,6 @@ class TeslaClimate(Climate):
         KEEP = auto()
         DOG = auto()
         CAMP = auto()
-
-    fan_modes = EntityAttribute(list)
-    fan_mode = EntityAttribute(str)
 
     def set_fan_mode(self, mode: FanMode) -> None:
         self.perform_action("set_fan_mode", mode=mode)

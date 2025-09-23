@@ -1,22 +1,12 @@
 # Registry
 
-The registry contains auto-generated entity modules that provide strongly-typed access to Home Assistant entities. Each module corresponds to a specific entity domain (e.g., `light`, `switch`, `sensor`) and contains entity instances that can be used throughout the codebase.
+The registry contains auto-generated domain modules that provide strongly-typed access to Home Assistant entities and their attributes. Each module corresponds to a specific entity domain (e.g., `light`, `switch`, `sensor`) and contains entity instances that can be used throughout the codebase.
 
 ## How It Works
 
 - **Programmatic Updates**: Each module is automatically updated and should be edited with caution
-- **One Entity Per Line**: Each entity must exist on exactly one line for proper parsing
-- **Domain Subclassing**: Base domain classes can be replaced by subclasses (e.g., `TeslaClimate(<car_entity>)` instead of `Climate(<car_entity>)`)
-- **Selective Usage**: Comment out unused entities to remove them from IDE autocomplete
-
-## Example
-
-```python
-# maestro/registry/light.py
-from maestro.domains import Light
-
-multi_color_bulb = Light("light.multi_color_bulb")
-outside_light = HueLight("light.outside_light")
-```
+- **Module Parsing**: Line-by-line formatting is critical in parsing and editing registry modules; avoid altering the format
+- **Domain Subclassing**: Parent domain classes can be replaced by subclasses (e.g., `SomeCarClimate(TeslaClimate)` instead of `SomeCarClimate(Climate)`)
+- **Disaster Recovery**: Deleting a registry entity (or entire module) and allowing it to recreate should fix most problems
 
 These registry entities provide type-safe access to Home Assistant entities with full IDE support and autocomplete functionality.
