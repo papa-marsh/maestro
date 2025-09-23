@@ -9,11 +9,12 @@ from .event import Event
 from .fan import Fan
 from .humidifier import Humidifier
 from .input_boolean import InputBoolean
+from .input_number import InputNumber
 from .input_select import InputSelect
 from .light import Light
 from .lock import Lock
 from .maestro import Maestro
-from .media_player import MediaPlayer
+from .media_player import MediaPlayer, SonosMediaPlayer
 from .number import Number
 from .person import Person
 from .pyscript import Pyscript
@@ -40,6 +41,7 @@ __all__ = [
     Fan.__name__,
     Humidifier.__name__,
     InputBoolean.__name__,
+    InputNumber.__name__,
     InputSelect.__name__,
     Light.__name__,
     Lock.__name__,
@@ -50,6 +52,7 @@ __all__ = [
     Pyscript.__name__,
     Select.__name__,
     Sensor.__name__,
+    SonosMediaPlayer.__name__,
     Sun.__name__,
     Switch.__name__,
     Update.__name__,

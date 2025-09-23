@@ -14,8 +14,10 @@ class Domain(StrEnum):
     DEVICE_TRACKER = auto()
     EVENT = auto()
     FAN = auto()
+    HOME_ASSISTANT = auto()
     HUMIDIFIER = auto()
     INPUT_BOOLEAN = auto()
+    INPUT_NUMBER = auto()
     INPUT_SELECT = auto()
     LIGHT = auto()
     LOCK = auto()
@@ -26,6 +28,7 @@ class Domain(StrEnum):
     PYSCRIPT = auto()  # TODO: Remove once pyscript is gone
     SELECT = auto()
     SENSOR = auto()
+    SONOS = auto()
     SUN = auto()
     SWITCH = auto()
     UPDATE = auto()

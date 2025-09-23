@@ -1,7 +1,13 @@
-from typing import Any
+from enum import StrEnum, auto
 
 from maestro.domains.entity import Entity, EntityAttribute
 from maestro.integrations.home_assistant.types import Domain
+
+
+class ForecastType(StrEnum):
+    HOURLY = auto()
+    TWICE_DAILY = auto()
+    DAILY = auto()
 
 
 class Weather(Entity):
@@ -24,5 +30,5 @@ class Weather(Entity):
     visibility_unit = EntityAttribute(str)
     precipitation_unit = EntityAttribute(str)
 
-    def get_forecasts(self, type: Any) -> None:
+    def get_forecasts(self, type: ForecastType) -> None:
         self.perform_action("get_forecasts", type=type)

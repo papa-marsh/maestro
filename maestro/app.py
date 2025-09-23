@@ -55,6 +55,7 @@ def make_shell_context() -> dict:
         fan,
         humidifier,
         input_boolean,
+        input_number,
         input_select,
         light,
         lock,
