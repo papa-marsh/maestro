@@ -48,6 +48,8 @@ class RedisClient:
 
     def delete(self, *keys: str) -> int:
         """Delete one or more keys. Returns number of keys deleted"""
+        if not keys:
+            return 0
         keys_deleted = self.client.delete(*keys)
         if not isinstance(keys_deleted, int):
             raise TypeError(f"Expected `int` from redis delete but got {type(keys_deleted)}")

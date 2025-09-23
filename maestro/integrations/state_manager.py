@@ -17,7 +17,7 @@ from maestro.integrations.home_assistant.types import (
     StateId,
 )
 from maestro.integrations.redis import RedisClient
-from maestro.utils.dates import resolve_timestamp
+from maestro.utils.dates import local_now, resolve_timestamp
 from maestro.utils.infra import add_entity_to_registry
 
 STATE_CACHE_PREFIX = "STATE"
@@ -146,15 +146,6 @@ class StateManager:
 
         return decoder_function(cached_state.value)
 
-    def fetch_hass_entity(self, entity_id: EntityId) -> EntityData:
-        """Fetch and cache up-to-date data for a Home Assistant entity"""
-        entity_data = self.hass_client.get_entity(entity_id)
-        if not entity_data:
-            raise ValueError(f"Failed to retrieve an entity response for {entity_id}")
-        self.cache_entity(entity_data)
-
-        return entity_data
-
     def cache_entity(self, entity_data: EntityData) -> None:
         """Overwrite an entity's state and attributes, removing any stale attributes"""
         keys_to_delete = set(self.get_all_entity_keys(entity_data.entity_id))
@@ -185,3 +176,30 @@ class StateManager:
             return self.redis_client.delete(*keys_to_delete)
 
         return 0
+
+    def fetch_hass_entity(self, entity_id: EntityId) -> EntityData:
+        """Fetch and cache up-to-date data for a Home Assistant entity"""
+        entity_data = self.hass_client.get_entity(entity_id)
+        if not entity_data:
+            raise ValueError(f"Failed to retrieve an entity response for {entity_id}")
+        self.cache_entity(entity_data)
+
+        return entity_data
+
+    def fetch_all_hass_entities(self) -> int:
+        """Fetch and cache all hass entities, respecting the domain ignore list."""
+        start_time = local_now()
+        all_entities = self.hass_client.get_all_entities()
+        cached_count = 0
+
+        for entity_data in all_entities:
+            self.cache_entity(entity_data)
+            cached_count += 1
+
+        log.info(
+            "Fetched and cached all Home Assistant entities",
+            duration_seconds=(local_now() - start_time).total_seconds(),
+            entity_count=cached_count,
+        )
+
+        return cached_count

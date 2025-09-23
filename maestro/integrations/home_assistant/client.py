@@ -5,7 +5,7 @@ from typing import Any
 import requests
 from structlog.stdlib import get_logger
 
-from maestro.config import HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
+from maestro.config import DOMAIN_IGNORE_LIST, HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
 from maestro.integrations.home_assistant.types import Domain, EntityData, EntityId
 from maestro.utils.dates import resolve_timestamp
 
@@ -54,6 +54,12 @@ class HomeAssistantClient:
         for state_data in response_data:
             if not isinstance(state_data, dict):
                 raise TypeError("Unexpected non-dict in state response")
+            if "entity_id" not in state_data or not isinstance(state_data["entity_id"], str):
+                raise KeyError("Entity dictionary is missing entity_id")
+
+            domain = state_data["entity_id"].split(".")[0]
+            if domain in DOMAIN_IGNORE_LIST:
+                continue
 
             entity = self.resolve_entity_response(state_data)
             entities.append(entity)

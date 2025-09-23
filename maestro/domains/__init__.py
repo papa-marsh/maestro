@@ -11,6 +11,7 @@ from .humidifier import Humidifier
 from .input_boolean import InputBoolean
 from .input_number import InputNumber
 from .input_select import InputSelect
+from .input_text import InputText
 from .light import Light
 from .lock import Lock
 from .maestro import Maestro
@@ -43,6 +44,7 @@ __all__ = [
     InputBoolean.__name__,
     InputNumber.__name__,
     InputSelect.__name__,
+    InputText.__name__,
     Light.__name__,
     Lock.__name__,
     Maestro.__name__,

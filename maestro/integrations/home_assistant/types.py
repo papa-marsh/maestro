@@ -19,6 +19,7 @@ class Domain(StrEnum):
     INPUT_BOOLEAN = auto()
     INPUT_NUMBER = auto()
     INPUT_SELECT = auto()
+    INPUT_TEXT = auto()
     LIGHT = auto()
     LOCK = auto()
     MAESTRO = auto()
