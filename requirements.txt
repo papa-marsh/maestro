@@ -6,6 +6,7 @@ charset-normalizer==3.4.3
 click==8.2.1
 cryptography==45.0.6
 Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
 gunicorn==21.2.0
 idna==3.10
 iniconfig==2.1.0
@@ -17,6 +18,7 @@ mypy_extensions==1.1.0
 packaging==25.0
 pathspec==0.12.1
 pluggy==1.6.0
+psycopg==3.2.3
 pycparser==2.22
 Pygments==2.19.2
 pytest==8.3.4
@@ -26,6 +28,7 @@ ruff==0.12.9
 structlog==25.4.0
 types-cffi==1.17.0.20250822
 types-pyOpenSSL==24.1.0.20240722
+types-Flask-SQLAlchemy==2.5.9.4
 types-requests==2.32.4.20250809
 types-setuptools==80.9.0.20250822
 typing_extensions==4.14.1

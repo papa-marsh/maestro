@@ -36,8 +36,21 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
 
+  postgres:
+    container_name: postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: maestro
+      POSTGRES_USER: maestro
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - maestro-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 volumes:
   redis_data:
+  postgres_data:
 
 networks:
   maestro-network:

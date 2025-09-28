@@ -4,28 +4,37 @@ from typing import Any
 
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
 from flask import Flask, Response, request
+from flask_sqlalchemy import SQLAlchemy
 from structlog.stdlib import get_logger
 
-from maestro.config import TIMEZONE
+from maestro.config import DATABASE_URL, SQLALCHEMY_TRACK_MODIFICATIONS, TIMEZONE
 from maestro.routes.event_fired import handle_event_fired
 from maestro.routes.state_changed import handle_state_changed
 from maestro.triggers.cron import CronTriggerManager
 from maestro.utils.infra import load_script_modules
 
+db = SQLAlchemy()
+
 
 class MaestroFlask(Flask):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        db.init_app(self)  # type: ignore[no-untyped-call]
         load_script_modules()
+        self.initialize_scheduler()
 
+    def initialize_scheduler(self) -> None:
         self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
         self.scheduler.start()
         CronTriggerManager.register_jobs(self.scheduler)
         atexit.register(lambda: self.scheduler.shutdown())
 
-        super().__init__(*args, **kwargs)
-
 
 app = MaestroFlask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = SQLALCHEMY_TRACK_MODIFICATIONS
+
+
 log = get_logger()
 
 
