@@ -1,13 +1,10 @@
-import contextlib
 from collections.abc import Callable
 from functools import wraps
 from typing import Any, cast
 
 from structlog.stdlib import get_logger
 
-from maestro.domains.entity import Entity
-from maestro.domains.person import Person
-from maestro.integrations.home_assistant.types import EntityId, FiredEvent
+from maestro.integrations.home_assistant.types import FiredEvent
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import EventFiredParams, TriggerRegistryEntry, TriggerType
 
@@ -38,7 +35,7 @@ class EventFiredTriggerManager(TriggerManager):
 
 def event_fired_trigger(
     event_type: str,
-    user: Person | EntityId | str | None = None,
+    user_id: str | None = None,
 ) -> Callable:
     """
     Decorator to register a function as an event fired trigger for the specified entity.
@@ -50,13 +47,6 @@ def event_fired_trigger(
     def decorator(func: Callable) -> Callable:
         if event_type == "state_changed":
             raise ValueError("Use `state_change_trigger` to trigger from `state_changed` events")
-
-        user_id = user
-        if user is not None:
-            with contextlib.suppress(ValueError):
-                user_id = user.id if isinstance(user, Entity) else EntityId(user)
-        if not isinstance(user_id, str) and user_id is not None:
-            raise TypeError("Failed to resolve user_id to a valid type [mypy helper]")
 
         trigger_args = EventFiredParams.TriggerParams(
             {

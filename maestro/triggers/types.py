@@ -38,7 +38,7 @@ class CronParams:
 class EventFiredParams:
     class TriggerParams(TypedDict):
         event_type: str
-        user_id: EntityId | str | None
+        user_id: str | None
 
     class FuncParams(TypedDict):
         event: FiredEvent

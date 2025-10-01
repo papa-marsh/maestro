@@ -17,16 +17,16 @@ from maestro.utils.infra import load_script_modules
 class MaestroFlask(Flask):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.initialize_db()
+        self._initialize_db()
         load_script_modules()
-        self.initialize_scheduler()
+        self._initialize_scheduler()
 
-    def initialize_db(self) -> None:
+    def _initialize_db(self) -> None:
         self.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
         self.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = SQLALCHEMY_TRACK_MODIFICATIONS
         db.init_app(self)  # type: ignore[no-untyped-call]
 
-    def initialize_scheduler(self) -> None:
+    def _initialize_scheduler(self) -> None:
         self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
         self.scheduler.start()
         CronTriggerManager.register_jobs(self.scheduler)

@@ -134,4 +134,4 @@ class FiredEvent:
     time_fired: datetime
     type: str
     data: dict
-    user_id: EntityId | str | None
+    user_id: str | None

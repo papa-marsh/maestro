@@ -7,15 +7,8 @@ from datetime import datetime
 from structlog.stdlib import get_logger
 
 from maestro.config import AUTOPOPULATE_REGISTRY
-from maestro.integrations.home_assistant.client import (
-    HomeAssistantClient,
-)
-from maestro.integrations.home_assistant.types import (
-    AttributeId,
-    EntityData,
-    EntityId,
-    StateId,
-)
+from maestro.integrations.home_assistant.client import HomeAssistantClient
+from maestro.integrations.home_assistant.types import AttributeId, EntityData, EntityId, StateId
 from maestro.integrations.redis import RedisClient
 from maestro.utils.dates import local_now, resolve_timestamp
 from maestro.utils.infra import add_entity_to_registry
