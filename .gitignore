@@ -72,4 +72,6 @@ maestro/registry/*
 !maestro/registry/README.md
 !maestro/registry/__init__.py
 
-maestro/integrations/home_assistant/users.py
+# scripts/
+# !scripts/__init__.py
+# !scripts/examples.py
