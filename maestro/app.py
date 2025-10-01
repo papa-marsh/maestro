@@ -42,7 +42,6 @@ log = get_logger()
 @app.shell_context_processor
 def make_shell_context() -> dict:
     """Pre-load common imports for flask shell command"""
-    from maestro.domains import Calendar, Climate, Switch
     from maestro.integrations.home_assistant.client import HomeAssistantClient
     from maestro.integrations.home_assistant.types import (
         AttributeId,
@@ -67,6 +66,7 @@ def make_shell_context() -> dict:
         input_boolean,
         input_number,
         input_select,
+        input_text,
         light,
         lock,
         maestro,
@@ -82,8 +82,8 @@ def make_shell_context() -> dict:
         zone,
     )
     from maestro.triggers.trigger_manager import TriggerManager
-    from maestro.utils import local_now, resolve_timestamp
-    from maestro.utils.misc import validate_attributes
+    from maestro.utils import IntervalSeconds, local_now, resolve_timestamp
+    from maestro.utils.registry_manager import RegistryManager
 
     hass = HomeAssistantClient()
     redis = RedisClient()

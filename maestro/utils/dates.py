@@ -1,10 +1,7 @@
 from datetime import datetime
 from enum import IntEnum
-from zoneinfo import ZoneInfo
 
 from maestro.config import TIMEZONE
-
-LOCAL_TZ = ZoneInfo(TIMEZONE)
 
 SECONDS_PER_HOUR = 3600
 
@@ -17,12 +14,12 @@ class IntervalSeconds(IntEnum):
 
 
 def local_now() -> datetime:
-    return datetime.now().astimezone(LOCAL_TZ)
+    return datetime.now().astimezone(TIMEZONE)
 
 
 def resolve_timestamp(iso_string: str) -> datetime:
     dt = datetime.fromisoformat(iso_string)
     if dt.tzinfo is None:
-        return dt.replace(tzinfo=LOCAL_TZ)
+        return dt.replace(tzinfo=TIMEZONE)
     else:
-        return dt.astimezone(LOCAL_TZ)
+        return dt.astimezone(TIMEZONE)
