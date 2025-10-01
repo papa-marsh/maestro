@@ -50,8 +50,7 @@ class StateId(str):
         return str.__new__(cls, value)
 
     def __init__(self, _: str):
-        from maestro.integrations.redis import RedisClient
-        from maestro.integrations.state_manager import STATE_CACHE_PREFIX
+        from maestro.integrations.redis import CachePrefix, RedisClient
 
         super().__init__()
         parts = self.split(".")
@@ -64,7 +63,7 @@ class StateId(str):
         self.is_attribute = self.attribute is not None
 
         self.domain_class_name = "".join(word.capitalize() for word in self.domain.split("_"))
-        self.cache_key = RedisClient.build_key(STATE_CACHE_PREFIX, *parts)
+        self.cache_key = RedisClient.build_key(CachePrefix.STATE, *parts)
 
 
 class EntityId(StateId):

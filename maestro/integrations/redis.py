@@ -1,8 +1,48 @@
+import json
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime
+from enum import IntEnum, StrEnum
+
 import redis
 
 from maestro.config import REDIS_HOST, REDIS_PORT
+from maestro.utils.dates import IntervalSeconds, resolve_timestamp
 
-TWO_WEEKS_IN_SEC = 14 * 24 * 60 * 60
+
+class CachePrefix(StrEnum):
+    STATE = "STATE"
+    REGISTERED = "REGISTERED"
+
+
+@dataclass
+class CachedValue:
+    value: str
+    type: str
+
+
+CachedValueT = str | int | float | dict | list | bool | datetime | None
+
+state_encoder_map: dict[str, Callable[[CachedValueT], str]] = {
+    str.__name__: lambda x: str(x),
+    int.__name__: lambda x: str(x),
+    float.__name__: lambda x: str(x),
+    dict.__name__: lambda x: json.dumps(x),
+    list.__name__: lambda x: json.dumps(x),
+    bool.__name__: lambda x: str(x),
+    datetime.__name__: lambda x: x.isoformat() if isinstance(x, datetime) else "",
+    type(None).__name__: lambda _: "",
+}
+state_decoder_map: dict[str, Callable[[str], CachedValueT]] = {
+    str.__name__: lambda x: str(x),
+    int.__name__: lambda x: int(x),
+    float.__name__: lambda x: float(x),
+    dict.__name__: lambda x: json.loads(x) if isinstance(x, str) else dict(x),
+    list.__name__: lambda x: json.loads(x) if isinstance(x, str) else list(x),
+    bool.__name__: lambda x: x.lower() == "true",
+    datetime.__name__: lambda x: resolve_timestamp(x),
+    type(None).__name__: lambda _: None,
+}
 
 
 class RedisClient:
@@ -38,10 +78,13 @@ class RedisClient:
         self,
         key: str,
         value: str,
-        ttl_seconds: int | None = TWO_WEEKS_IN_SEC,
+        ttl_seconds: int | None = IntervalSeconds.ONE_HOUR,
     ) -> str | None:
         """Set a string value with optional expiration in seconds"""
-        old_value = self.client.set(name=key, value=value, ex=ttl_seconds, get=True)
+        ex = int(ttl_seconds) if isinstance(ttl_seconds, IntEnum) else ttl_seconds
+
+        old_value = self.client.set(name=key, value=value, ex=ex, get=True)
+
         if not isinstance(old_value, (str | type(None))):
             raise TypeError(f"Expected `str | None` from redis `set` but got {type(old_value)}")
         return old_value
@@ -82,3 +125,30 @@ class RedisClient:
     def build_key(cls, *parts: str) -> str:
         """Builds a redis key from provided args"""
         return ":".join(parts)
+
+    @classmethod
+    def encode_cached_state(cls, value: CachedValueT) -> str:
+        type_name = type(value).__name__
+        if type_name not in state_encoder_map:
+            raise TypeError(f"No state encoder exists for type {type_name}")
+
+        encoded_state = CachedValue(
+            value=state_encoder_map[type_name](value),
+            type=type_name,
+        )
+
+        return json.dumps(
+            {
+                "value": encoded_state.value,
+                "type": encoded_state.type,
+            }
+        )
+
+    @classmethod
+    def decode_cached_state(cls, cached_state: CachedValue) -> CachedValueT:
+        if cached_state.type not in state_decoder_map:
+            raise TypeError(f"No state decoder exists for type {cached_state.type}")
+
+        decoder_function = state_decoder_map[cached_state.type]
+
+        return decoder_function(cached_state.value)
