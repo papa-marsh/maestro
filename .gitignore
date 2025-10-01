@@ -72,6 +72,6 @@ maestro/registry/*
 !maestro/registry/README.md
 !maestro/registry/__init__.py
 
-# scripts/
-# !scripts/__init__.py
-# !scripts/examples.py
+scripts/
+!scripts/__init__.py
+!scripts/examples.py
