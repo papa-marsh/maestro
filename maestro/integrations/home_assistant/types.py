@@ -26,7 +26,7 @@ class Domain(StrEnum):
     MEDIA_PLAYER = auto()
     NUMBER = auto()
     PERSON = auto()
-    PYSCRIPT = auto()  # TODO: Remove once pyscript is gone
+    REMOTE = auto()
     SELECT = auto()
     SENSOR = auto()
     SONOS = auto()

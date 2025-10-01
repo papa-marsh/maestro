@@ -18,7 +18,6 @@ from .maestro import Maestro
 from .media_player import MediaPlayer, SonosMediaPlayer
 from .number import Number
 from .person import Person
-from .pyscript import Pyscript
 from .select import Select
 from .sensor import Sensor
 from .sun import Sun
@@ -51,7 +50,6 @@ __all__ = [
     MediaPlayer.__name__,
     Number.__name__,
     Person.__name__,
-    Pyscript.__name__,
     Select.__name__,
     Sensor.__name__,
     SonosMediaPlayer.__name__,

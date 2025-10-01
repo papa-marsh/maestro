@@ -51,6 +51,7 @@ def load_script_modules() -> None:
 
 def add_entity_to_registry(entity_data: EntityData) -> None:
     """This monster will add entities to maestro/registry/<domain>.py"""
+
     header = "# THIS MODULE IS PROGRAMMATICALLY UPDATED - See `maestro/registry/README.md`\n\n"
     attr_import_string = "from maestro.domains.entity import EntityAttribute"
     datetime_import_string = "from datetime import datetime"

@@ -4,6 +4,10 @@
 build:
 	docker compose build maestro
 
+# Rebuild and redeploy the app
+deploy:
+	docker compose down && docker compose up -d --build
+
 # Run all tests or include a path like `TEST=maestro/integrations/tests/test_home_assistant.py::TestHomeAssistantProvider`
 test: build
 	docker compose run --rm maestro pytest -v $(TEST)

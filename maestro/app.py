@@ -13,15 +13,18 @@ from maestro.routes.state_changed import handle_state_changed
 from maestro.triggers.cron import CronTriggerManager
 from maestro.utils.infra import load_script_modules
 
-db = SQLAlchemy()
-
 
 class MaestroFlask(Flask):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        db.init_app(self)  # type: ignore[no-untyped-call]
+        self.initialize_db()
         load_script_modules()
         self.initialize_scheduler()
+
+    def initialize_db(self) -> None:
+        self.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+        self.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = SQLALCHEMY_TRACK_MODIFICATIONS
+        db.init_app(self)  # type: ignore[no-untyped-call]
 
     def initialize_scheduler(self) -> None:
         self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
@@ -30,10 +33,8 @@ class MaestroFlask(Flask):
         atexit.register(lambda: self.scheduler.shutdown())
 
 
+db = SQLAlchemy()
 app = MaestroFlask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = SQLALCHEMY_TRACK_MODIFICATIONS
-
 
 log = get_logger()
 
@@ -72,7 +73,6 @@ def make_shell_context() -> dict:
         media_player,
         number,
         person,
-        pyscript,  # TODO: Remove once pyscript is gone
         select,
         sensor,
         sun,
