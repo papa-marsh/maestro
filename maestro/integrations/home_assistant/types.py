@@ -24,6 +24,7 @@ class Domain(StrEnum):
     LOCK = auto()
     MAESTRO = auto()
     MEDIA_PLAYER = auto()
+    NOTIFY = auto()
     NUMBER = auto()
     PERSON = auto()
     REMOTE = auto()

@@ -116,20 +116,18 @@ class HomeAssistantClient:
         self,
         domain: Domain,
         action: str,
-        entity_id: str | list[str],
-        **kwargs: Any,
+        entity_id: str | list[str] | None = None,
+        **body_params: Any,
     ) -> list[EntityData]:
         """Perform an action on one or more entities"""
         path = f"/api/services/{domain}/{action}"
-        body = {
-            "entity_id": entity_id,
-            **kwargs,
-        }
+        if entity_id is not None:
+            body_params["entity_id"] = entity_id
 
         response_data, status = self.execute_request(
             method=HTTPMethod.POST,
             path=path,
-            body=body,
+            body=body_params,
         )
 
         if status != HTTPStatus.OK:

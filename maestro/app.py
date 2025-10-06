@@ -82,7 +82,13 @@ def make_shell_context() -> dict:
         zone,
     )
     from maestro.triggers.trigger_manager import TriggerManager
-    from maestro.utils import IntervalSeconds, local_now, resolve_timestamp
+    from maestro.utils import (
+        IntervalSeconds,
+        Notif,
+        NotifPriority,
+        local_now,
+        resolve_timestamp,
+    )
     from maestro.utils.registry_manager import RegistryManager
 
     hass = HomeAssistantClient()

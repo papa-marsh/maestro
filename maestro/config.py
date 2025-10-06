@@ -13,7 +13,11 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 TIMEZONE = ZoneInfo(os.environ.get("TIMEZONE", "America/New_York"))
 AUTOPOPULATE_REGISTRY = os.environ.get("AUTOPOPULATE_REGISTRY") in [True, "True", "true", 1, "1"]
 DOMAIN_IGNORE_LIST = os.environ.get("DOMAIN_IGNORE_LIST", "").split(",")
-NOTIFY_ACTION_LIST = {
-    notify_mapping.split(":")[1]: notify_mapping.split(":")[0]
-    for notify_mapping in os.environ.get("NOTIFY_ACTION_LIST", "").split(",")
+
+NOTIFY_ACTION_MAPPINGS = {
+    notify_mapping.split(":")[0]: notify_mapping.split(":")[1]
+    for notify_mapping in os.environ.get("NOTIFY_ACTION_MAPPINGS", "").split(",")
 }
+DEFAULT_NOTIF_SOUND = os.environ.get("DEFAULT_NOTIF_SOUND", "3rdParty_Failure_Haptic.caf")
+CRITICAL_NOTIF_SOUND = os.environ.get("CRITICAL_NOTIF_SOUND", "3rd_party_critical.caf")
+DEFAULT_NOTIF_URL = os.environ.get("DEFAULT_NOTIF_URL", "overview")
