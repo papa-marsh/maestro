@@ -73,5 +73,3 @@ maestro/registry/*
 !maestro/registry/__init__.py
 
 scripts/
-!scripts/__init__.py
-!scripts/examples.py
