@@ -3,13 +3,19 @@ from collections.abc import Callable
 from enum import StrEnum, auto
 from typing import TypedDict
 
-from maestro.integrations.home_assistant.types import EntityId, FiredEvent, StateChangeEvent
+from maestro.integrations.home_assistant.types import (
+    EntityId,
+    FiredEvent,
+    NotifActionEvent,
+    StateChangeEvent,
+)
 
 
 class TriggerType(StrEnum):
     STATE_CHANGE = auto()
     CRON = auto()
     EVENT_FIRED = auto()
+    NOTIF_ACTION = auto()
 
 
 class StateChangeParams:
@@ -44,13 +50,28 @@ class EventFiredParams:
         event: FiredEvent
 
 
+class NotifActionParams:
+    class TriggerParams(TypedDict):
+        action: str
+        device_id: str | None
+
+    class FuncParams(TypedDict):
+        notif_action: NotifActionEvent
+
+
 class TriggerRegistryEntry(TypedDict):
     func: Callable
     trigger_args: (
-        StateChangeParams.TriggerParams | CronParams.TriggerParams | EventFiredParams.TriggerParams
+        StateChangeParams.TriggerParams
+        | CronParams.TriggerParams
+        | EventFiredParams.TriggerParams
+        | NotifActionParams.TriggerParams
     )
 
 
 TriggerFuncParamsT = (
-    StateChangeParams.FuncParams | CronParams.FuncParams | EventFiredParams.FuncParams
+    StateChangeParams.FuncParams
+    | CronParams.FuncParams
+    | EventFiredParams.FuncParams
+    | NotifActionParams.FuncParams
 )

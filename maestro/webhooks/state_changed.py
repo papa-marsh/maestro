@@ -1,4 +1,4 @@
-from flask import Response, jsonify, request
+from flask import Response, jsonify
 from structlog.stdlib import get_logger
 
 from maestro.config import DOMAIN_IGNORE_LIST
@@ -10,13 +10,12 @@ from maestro.utils.dates import resolve_timestamp
 log = get_logger()
 
 
-def handle_state_changed() -> tuple[Response, int]:
-    request_body = request.get_json() or {}
+def handle_state_changed(request_body: dict) -> tuple[Response, int]:
     state_manager = StateManager()
     entity_id_str = str(request_body["entity_id"])
 
     log.info(
-        "Handling state change",
+        "Processing state change",
         entity_id=entity_id_str,
         old_state=request_body.get("old_state"),
         new_state=request_body.get("new_state"),
@@ -76,7 +75,7 @@ def handle_state_changed() -> tuple[Response, int]:
         new_attr_data = state_change.new.attributes.get(attr)
         if old_attr_data != new_attr_data and attr not in custom_attributes:
             changes[attr] = (str(old_attr_data), str(new_attr_data))
-    log.info("State change cached", entity_id=state_change.entity_id, changes=changes)
+    log.info("Caching state change", entity_id=state_change.entity_id, changes=changes)
 
     state_manager.cache_entity(state_change.new)
 

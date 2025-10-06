@@ -45,8 +45,13 @@ def event_fired_trigger(
     """
 
     def decorator(func: Callable) -> Callable:
-        if event_type == "state_changed":
-            raise ValueError("Use `state_change_trigger` to trigger from `state_changed` events")
+        from maestro.app import EventType
+
+        if event_type in EventType:
+            raise ValueError(
+                "Avoid `event_fired_trigger` when an event-specific trigger exists. "
+                "eg. Use state_change_trigger, not event_fired_trigger(event_type='state_changed')"
+            )
 
         trigger_args = EventFiredParams.TriggerParams(
             {

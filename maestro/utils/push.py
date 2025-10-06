@@ -91,7 +91,7 @@ class Notif:
     @classmethod
     def build_action(
         cls,
-        id: str,
+        name: str,
         title: str,
         destructive: bool = False,
         uri: str | None = None,
@@ -100,7 +100,7 @@ class Notif:
     ) -> NotifAction:
         """Helper function to create a NotifAction with clean defaults"""
         action = NotifAction(
-            action=id,
+            action=name,
             title=title,
             authenticationRequired=require_auth,
             destructive=destructive,

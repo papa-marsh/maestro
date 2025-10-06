@@ -96,12 +96,35 @@ class EntityData:
     attributes: dict[str, Any]
 
     def __post_init__(self) -> None:
-        self.attributes = sanitize_attribute_keys(self.attributes)
+        """
+        Temporary (maybe) shim logic to handle spaces and uppercase chars in attribute names.
+        Otherwise, it breaks the EntityAttribute class, which relies on its own property name.
+        This logic should be safe unless we try to set a value for an attribute with
+        uppercase/spaces. But overwriting existing HASS attributes doesn't seem like a
+        realistic use case; nor should we ever be creating new attributes with uppercase/spaces.
+        """
+        sanitized_attributes = {}
+        for key in self.attributes:
+            new_key = key.replace(" ", "_").lower()
+            sanitized_attributes[new_key] = self.attributes[key]
+
+        self.attributes = sanitized_attributes
+
+
+@dataclass
+class FiredEvent:
+    """Generic event data payload for incoming webhooks"""
+
+    timestamp: datetime
+    time_fired: datetime
+    type: str
+    data: dict
+    user_id: str | None
 
 
 @dataclass
 class StateChangeEvent:
-    """A state change event as represented by the maestro_send_state_changed automation"""
+    """Specific event payload type for state changes"""
 
     timestamp: datetime
     time_fired: datetime
@@ -110,28 +133,11 @@ class StateChangeEvent:
     new: EntityData
 
 
-def sanitize_attribute_keys(attributes: dict[str, Any]) -> dict[str, Any]:
-    """
-    Temporary (maybe) shim logic to handle spaces and uppercase chars in attribute names.
-    Otherwise, it breaks the EntityAttribute class, which relies on its own property name.
-    Theoretically, this should only present a problem if we try to set a value for an attribute with
-    uppercase/spaces. But overwriting existing HASS attributes doesn't seem like a
-    realistic use case; nor should we ever be creating new attributes with uppercase/spaces.
-    """
-    sanitized = {}
-    for key in attributes:
-        new_key = key.replace(" ", "_").lower()
-        sanitized[new_key] = attributes[key]
-
-    return sanitized
-
-
 @dataclass
-class FiredEvent:
-    """Event data payload as captured by the maestro_event_fired_url automation"""
+class NotifActionEvent(FiredEvent):
+    """Specific event payload type for iOS notification actions"""
 
-    timestamp: datetime
-    time_fired: datetime
-    type: str
-    data: dict
-    user_id: str | None
+    name: str
+    action_data: Any
+    device_id: str
+    device_name: str

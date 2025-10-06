@@ -1,8 +1,8 @@
 from structlog.stdlib import get_logger
 
-from maestro.integrations import StateChangeEvent
+from maestro.integrations import NotifActionEvent, StateChangeEvent
 from maestro.registry import switch
-from maestro.triggers import cron_trigger, state_change_trigger
+from maestro.triggers import cron_trigger, notif_action_trigger, state_change_trigger
 
 log = get_logger()
 
@@ -23,3 +23,8 @@ def toggle_butterfly_light(state_change: StateChangeEvent) -> None:
         switch.butterfly_night_light.turn_on()
     else:
         switch.butterfly_night_light.turn_off()
+
+
+@notif_action_trigger("test_action_id")
+def notification_action_test(notif_action: NotifActionEvent) -> None:
+    log.info(str(notif_action.action_data))

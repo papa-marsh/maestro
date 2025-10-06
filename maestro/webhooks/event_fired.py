@@ -1,4 +1,4 @@
-from flask import Response, jsonify, request
+from flask import Response, jsonify
 from structlog.stdlib import get_logger
 
 from maestro.integrations.home_assistant.types import FiredEvent
@@ -8,9 +8,7 @@ from maestro.utils.dates import resolve_timestamp
 log = get_logger()
 
 
-def handle_event_fired() -> tuple[Response, int]:
-    request_body = request.get_json() or {}
-
+def handle_event_fired(request_body: dict) -> tuple[Response, int]:
     user_id = str(request_body["user_id"]) if request_body["user_id"] is not None else None
 
     fired_event = FiredEvent(
