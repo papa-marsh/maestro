@@ -8,6 +8,10 @@ build:
 deploy:
 	docker compose down && docker compose up -d --build
 
+# Get logs from the maestro container
+logs:
+	docker compose logs maestro
+
 # Run all tests or include a path like `TEST=maestro/integrations/tests/test_home_assistant.py::TestHomeAssistantProvider`
 test: build
 	docker compose run --rm maestro pytest -v $(TEST)
