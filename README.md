@@ -1,147 +1,548 @@
 # Maestro
 
-**Write your Home Assistant automations in type-safe Python.**
+**Strongly-typed Python automations for Home Assistant**
 
-Maestro bridges Home Assistant with Python automation scripts, giving you real-time state synchronization, typed entity interfaces, and decorator-based triggers - all while keeping your Home Assistant setup unchanged.
+Maestro is a framework that lets you write Home Assistant automations in Python with full type safety, IDE autocomplete, and a clean decorator-based API. Instead of YAML configurations, write real Python code with access to your entities as typed objects.
 
-## What is Maestro?
+## Why Maestro?
 
-Take full control of your automation logic with Python and all the advantages of developing with a modern IDE:
-
-```python
-from maestro.domains import Switch
-from maestro.integrations import StateChangeEvent
-from maestro.triggers import state_change_trigger
-
-
-@state_change_trigger("binary_sensor.front_door")
-def front_door_automation(state_change: StateChangeEvent):
-    if state_change.new_state == "on":
-        entryway_light = Switch("switch.entryway_light")
-        entryway_light.turn_on()
-
-```
+- **Type Safety**: Full type hints and IDE autocomplete for all entities and attributes
+- **Python Power**: Use the full Python ecosystem—logic, libraries, conditionals, loops
+- **Event-Driven**: Decorator-based triggers for state changes, schedules, and events
+- **Fast Development**: Entity registry with autocomplete for all your Home Assistant devices
+- **Easy Testing**: Write unit tests for your automations like any Python code
 
 ## Quick Start
 
-### 1. Deploy Maestro
+### Prerequisites
 
-```bash
-git clone https://github.com/your-repo/maestro.git
-cd maestro
-cp .env.example .env
-# Edit .env with your Home Assistant URL and access token
-make build
-docker-compose up -d
-```
+- Python 3.13+
+- Docker & Docker Compose
+- Home Assistant instance with REST API access
 
-### 2. Connect Home Assistant
+### Setup
 
-Add to your Home Assistant `configuration.yaml`:
+1. **Clone the repository**
 
-```yaml
-rest_command:
-  send_to_maestro:
-    url: "http://your-maestro-server/events/state-changed"
-    method: POST
-    headers:
-      Content-Type: "application/json"
-    payload: >
-      {
-        "timestamp": "{{ now().isoformat() }}",
-        "time_fired": "{{ time_fired }}",
-        "event_type": "{{ event_type }}",
-        "entity_id": "{{ entity_id }}",
-        "old_state": "{{ old_state }}",
-        "new_state": "{{ new_state }}",
-        "old_attributes": {{ old_attributes | tojson }},
-        "new_attributes": {{ new_attributes | tojson }}
-      }
-```
+   ```bash
+   git clone https://github.com/papa-marsh/maestro
+   cd maestro
+   ```
 
-Add to your `automations.yaml`:
+2. **Initialize version control for your scripts**
 
-```yaml
-- alias: "Send state changes to Maestro"
-  trigger:
-    - platform: event
-      event_type: state_changed
-  condition:
-    - condition: template
-      value_template: "{{ not trigger.event.data.entity_id.startswith('automation.') }}"
-  action:
-    - service: rest_command.send_to_maestro
-      data:
-        time_fired: "{{ trigger.event.time_fired }}"
-        event_type: "{{ trigger.event.event_type }}"
-        entity_id: "{{ trigger.event.data.entity_id }}"
-        old_state: "{{ trigger.event.data.old_state.state if trigger.event.data.old_state else none }}"
-        new_state: "{{ trigger.event.data.new_state.state if trigger.event.data.new_state else none }}"
-        old_attributes: "{{ trigger.event.data.old_state.attributes if trigger.event.data.old_state else {} }}"
-        new_attributes: "{{ trigger.event.data.new_state.attributes if trigger.event.data.new_state else {} }}"
-  mode: parallel
-```
+   ```bash
+   cd scripts
+   git init
+   ```
 
-### 3. Write Your Automations
+   The `scripts/` directory is gitignored by the main repo, so you should create your own repository here to version control your automation logic.
 
-Create your automation scripts in the `scripts/` directory (see [scripts/README.md](scripts/README.md) for details):
+3. **Configure environment**
+
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Home Assistant URL, long-lived access token, etc.
+   ```
+
+4. **Start services or deploy new changes**
+
+   ```bash
+   make deploy
+   ```
+
+   **Note:** Whenever you make changes to your automation scripts, run `make deploy` to rebuild and restart the services with your latest changes.
+
+5. **Configure Home Assistant REST commands**
+
+   Add to your `configuration.yaml`:
+
+   ```yaml
+   rest_command:
+     maestro_send_state_change:
+       url: !secret maestro_webhook_url
+       method: POST
+       headers:
+         Content-Type: "application/json"
+         X-Auth-Token: !secret maestro_token
+       payload: >
+         {
+           "timestamp": {{ now().isoformat()| tojson }},
+           "time_fired": {{ time_fired | tojson }},
+           "event_type": {{ event_type | tojson }},
+           "entity_id": {{ entity_id | tojson }},
+           "old_state": {{ old_state | tojson }},
+           "new_state": {{ new_state | tojson }},
+           "old_attributes": {{ old_attributes if old_attributes is not none else "null" }},
+           "new_attributes": {{ new_attributes if new_attributes is not none else "null" }}
+         }
+     maestro_send_event:
+       url: !secret maestro_webhook_url
+       method: POST
+       headers:
+         Content-Type: "application/json"
+         X-Auth-Token: !secret maestro_token
+       payload: >
+         {
+           "timestamp": {{ now().isoformat()| tojson }},
+           "time_fired": {{ time_fired | tojson }},
+           "event_type": {{ event_type | tojson }},
+           "user_id": {{ user_id | tojson }},
+           "data": {{ data }}
+         }
+   ```
+
+6. **Configure Home Assistant Automations**
+
+   Add to your `automations.yaml`:
+
+   ```yaml
+   - id: "1755384623909"
+     alias: Maestro Send State Changed
+     description: ""
+     triggers:
+       - trigger: event
+         event_type: state_changed
+         context: {}
+     conditions:
+       - condition: not
+         conditions:
+           - condition: template
+             value_template: "{{ trigger.event.data.entity_id.startswith('automation.') }}"
+     actions:
+       - action: rest_command.maestro_send_state_change
+         metadata: {}
+         data:
+           time_fired: "{{ trigger.event.time_fired }}"
+           event_type: "{{ trigger.event.event_type }}"
+           entity_id: "{{ trigger.event.data.entity_id }}"
+           old_state: "{{ trigger.event.data.old_state.state if trigger.event.data.old_state else none }}"
+           new_state: "{{ trigger.event.data.new_state.state if trigger.event.data.new_state else none }}"
+           old_attributes: "{{ trigger.event.data.old_state.attributes | tojson if trigger.event.data.old_state else none }}"
+           new_attributes: "{{ trigger.event.data.new_state.attributes | tojson if trigger.event.data.new_state else none }}"
+     mode: parallel
+   - id: "1758549424655"
+     alias: Maestro Send Event Fired
+     description: ""
+     triggers:
+       - trigger: event
+         event_type: "*"
+         context: {}
+     conditions:
+       - condition: not
+         conditions:
+           - condition: template
+             value_template: '{{ trigger.event.event_type in ["state_changed", "automation_triggered", "call_service"] }}'
+     actions:
+       - action: rest_command.maestro_send_event
+         metadata: {}
+         data:
+           time_fired: "{{ trigger.event.time_fired }}"
+           event_type: "{{ trigger.event.event_type }}"
+           user_id: "{{ trigger.event.context.user_id }}"
+           data: "{{ trigger.event.data | tojson }}"
+     mode: parallel
+   ```
+
+7. **Configure Home Assistant Webhook Secrets**
+
+   Add to your `secrets.yaml`:
+
+   ```yaml
+   maestro_webhook_url: http://<maestro_host_ip>:80/webhooks/hass_event
+   maestro_token: <your_super_secret_api_token>
+   ```
+
+## Writing Automations
+
+All your automation logic goes in the `scripts/` directory. Import from the `maestro` package to access triggers, entities, and utilities.
+
+### Basic Example
 
 ```python
-from maestro.domains import Climate, Switch
-from maestro.integrations import StateChangeEvent
+# scripts/bedroom_lights.py
 from maestro.triggers import state_change_trigger
+from maestro.integrations import StateChangeEvent
+from maestro.registry import switch, light
 
-@state_change_trigger("binary_sensor.front_door")
-def front_door_opened(state_change: StateChangeEvent) -> None:
-    if state_change.new_state == "on":
-        entryway_light = Switch("switch.entryway")
-        entryway_light.turn_on()
+@state_change_trigger(switch.bedroom_motion_sensor, to_state="on")
+def motion_detected(state_change: StateChangeEvent) -> None:
+    """Turn on bedroom lights when motion detected"""
+    light.bedroom_ceiling.turn_on()
 
-@state_change_trigger("sensor.outdoor_temperature")
-def adjust_thermostat(state_change: StateChangeEvent) -> None:
-    temp = float(state_change.new_state)
-    thermostat = Climate("climate.main")
+@state_change_trigger(switch.bedroom_motion_sensor, to_state="off")
+def motion_cleared(state_change: StateChangeEvent) -> None:
+    """Turn off bedroom lights when motion clears"""
+    light.bedroom_ceiling.turn_off()
+```
+
+### Schedule-Based Automation
+
+```python
+# scripts/morning_routine.py
+from maestro.triggers import cron_trigger
+from maestro.registry import switch, climate
+
+@cron_trigger(hour=7, minute=0)
+def morning_routine() -> None:
+    """Run every morning at 7:00 AM"""
+    switch.coffee_maker.turn_on()
+    climate.bedroom_thermostat.set_temperature(72)
+```
+
+### Working with Entity State
+
+```python
+from maestro.triggers import state_change_trigger
+from maestro.integrations import StateChangeEvent
+from maestro.registry import sensor, switch
+
+@state_change_trigger(sensor.outdoor_temperature)
+def temperature_monitor(state_change: StateChangeEvent) -> None:
+    """Control fan based on temperature"""
+    # Note: entity state is always returned as a string
+    temp = float(state_change.new.state)
 
     if temp > 75:
-        thermostat.set_temperature(72)
-    elif temp < 60:
-        thermostat.set_temperature(70)
+        switch.ceiling_fan.turn_on()
+    elif temp < 68:
+        switch.ceiling_fan.turn_off()
 ```
 
-## Key Features
+## Available Triggers
 
-- **🎯 Event-driven** - React to Home Assistant state changes in real-time
-- **🔒 Type-safe** - Full typing support with intelligent parameter injection
-- **⚡ High-performance** - Redis caching minimizes Home Assistant API calls
-- **🏗️ Object-oriented** - `switch.turn_on()` instead of service calls
-- **🧪 Testable** - Isolated test registry system for reliable testing
-- **📦 Extensible** - Clean architecture for adding new trigger types
+Trigger decorators automatically register your functions to respond to events. Decorated functions can optionally accept parameters that provide event context—these parameters are optional and the decorator works whether you include them or not.
 
-## Environment Setup
+### State Change Trigger
 
-Copy `.env.example` to `.env` and configure:
+Responds when an entity's state changes.
+
+```python
+# With optional state_change parameter
+@state_change_trigger(entity, from_state=None, to_state=None)
+def handler(state_change: StateChangeEvent) -> None:
+    log.info(f"Changed from {state_change.old.state} to {state_change.new.state}")
+
+# Without parameters - still works!
+@state_change_trigger(entity)
+def simple_handler() -> None:
+    log.info("Entity changed")
+```
+
+**Decorator Parameters:**
+
+- `entity`: Entity object, EntityId, or string
+- `from_state`: Optional - only trigger when transitioning from this state
+- `to_state`: Optional - only trigger when transitioning to this state
+
+**Optional Function Parameters:**
+
+- `state_change: StateChangeEvent` - Contains old and new state information
+
+### Cron Trigger
+
+Runs on a schedule using cron syntax.
+
+```python
+@cron_trigger(hour=7, minute=30)
+def morning_task() -> None:
+    pass
+
+# Or use cron pattern
+@cron_trigger(pattern="0 */6 * * *")  # Every 6 hours
+def periodic_task() -> None:
+    pass
+```
+
+**Decorator Parameters:**
+
+- `pattern`: Cron pattern string (e.g., "0 0 \* \* \*")
+- `minute`, `hour`, `day_of_month`, `month`, `day_of_week`: Individual cron fields
+
+**Optional Function Parameters:**
+
+- None - cron triggers don't provide runtime parameters
+
+### Event Fired Trigger
+
+Responds to custom Home Assistant events.
+
+```python
+# With optional event parameter
+@event_fired_trigger("my_custom_event")
+def handle_event(event: FiredEvent) -> None:
+    print(f"Event data: {event.data}")
+
+# Without parameters
+@event_fired_trigger("my_custom_event")
+def simple_handler() -> None:
+    print("Event fired")
+```
+
+**Decorator Parameters:**
+
+- `event_type`: String matching the Home Assistant event type
+- `user_id`: Optional - filter by user who triggered the event
+
+**Optional Function Parameters:**
+
+- `event: FiredEvent` - Contains event data and context
+
+### Notification Action Trigger
+
+Responds to notification actions (e.g., buttons pressed on push notifications).
+
+```python
+# With optional notif_action parameter
+@notif_action_trigger("ACTION_ID")
+def handle_action(notif_action: NotifActionEvent) -> None:
+    print(f"Action data: {notif_action.action_data}")
+
+# Without parameters
+@notif_action_trigger("ACTION_ID")
+def simple_handler() -> None:
+    print("Action pressed")
+```
+
+**Decorator Parameters:**
+
+- `action`: String matching the notification action ID
+- `device_id`: Optional - filter by specific device
+
+**Optional Function Parameters:**
+
+- `notif_action: NotifActionEvent` - Contains action data and device info
+
+## Entity Registry
+
+Maestro automatically populates a typed entity registry from your Home Assistant instance. Access entities with full autocomplete:
+
+```python
+from maestro.registry import switch, light, climate, sensor
+
+# All your entities are available as typed objects
+switch.living_room_lamp.turn_on()
+climate.bedroom_thermostat.set_temperature(72)
+temp = sensor.outdoor_temperature.state
+```
+
+## Entity Methods
+
+Common methods available on entity objects:
+
+### Light
+
+```python
+light.bedroom.turn_on(brightness=255, color_temp=300)
+light.bedroom.turn_off()
+light.bedroom.toggle()
+```
+
+### Climate
+
+```python
+climate.thermostat.set_temperature(72)
+climate.thermostat.set_hvac_mode("heat")
+climate.thermostat.turn_on()
+climate.thermostat.turn_off()
+```
+
+### Lock
+
+```python
+lock.front_door.lock()
+lock.front_door.unlock()
+```
+
+### Cover
+
+```python
+cover.garage_door.open_cover()
+cover.garage_door.close_cover()
+cover.garage_door.stop_cover()
+```
+
+## Accessing State & Attributes
+
+```python
+from maestro.registry import sensor
+
+# Get current state
+temp = sensor.outdoor_temperature.state
+
+# Access attributes as EntityAttribute properties
+battery = sensor.outdoor_temperature.battery_level
+```
+
+## Sending Push Notifications
+
+Maestro includes a comprehensive push notification system with support for priorities, actionable notifications, and more.
+
+### Basic Notification
+
+```python
+from maestro.utils import Notif, NotifPriority
+from maestro.registry import person
+
+# Create and send a notification
+notif = Notif(
+    message="Motion detected in living room",
+    title="Security Alert",
+    priority=NotifPriority.TIME_SENSITIVE
+)
+notif.send(person.john_doe)
+
+# Send to multiple people
+notif.send([person.john_doe, person.jane_doe])
+```
+
+### Notification Priorities
+
+```python
+from maestro.utils import NotifPriority
+
+# PASSIVE - Silent, no wake screen
+# ACTIVE - Standard notification (default)
+# TIME_SENSITIVE - Bypasses notification summary
+# CRITICAL - Plays sound even on silent mode
+
+notif = Notif(
+    message="Critical alert",
+    priority=NotifPriority.CRITICAL
+)
+```
+
+### Actionable Notifications
+
+```python
+from maestro.utils import Notif
+
+# Build actions with the helper method
+action1 = Notif.build_action(
+    name="UNLOCK_DOOR",
+    title="Unlock Door",
+    destructive=False,
+    require_auth=True
+)
+action2 = Notif.build_action(
+    name="IGNORE",
+    title="Ignore",
+    destructive=True
+)
+
+# Create notification with actions
+notif = Notif(
+    message="Someone is at the door",
+    title="Doorbell",
+    actions=[action1, action2],
+    action_data={"door_id": "front_door"}  # Passed to trigger handler
+)
+notif.send(person.john_doe)
+```
+
+### Handling Notification Actions
+
+```python
+from maestro.triggers import notif_action_trigger
+from maestro.integrations import NotifActionEvent
+from maestro.registry import lock
+
+@notif_action_trigger("UNLOCK_DOOR")
+def handle_unlock(notif_action: NotifActionEvent) -> None:
+    door_id = notif_action.action_data.get("door_id")
+    if door_id == "front_door":
+        lock.front_door.unlock()
+```
+
+### Advanced Options
+
+```python
+notif = Notif(
+    message="Message content",
+    title="Title",
+    priority=NotifPriority.ACTIVE,
+    group="alarm_system",  # Group related notifications
+    tag="front_door",      # Replace previous notification with same tag
+    sound="alarm.caf",     # Custom sound file
+    url="/lovelace-mobile/cameras"  # Open specific view when tapped
+)
+```
+
+## Development Workflow
+
+### Running Tests
 
 ```bash
-HOME_ASSISTANT_URL=http://your-hass-ip:8123
-HOME_ASSISTANT_TOKEN=your-long-lived-access-token
-REDIS_HOST=redis
-REDIS_PORT=6379
-NGINX_TOKEN=your-secure-token
+# Run all tests
+make test
+
+# Run specific test file
+make test TEST=maestro/tests/test_specific.py
+
+# Run specific test method
+make test TEST=maestro/tests/test_specific.py::TestClass::test_method
 ```
 
-## Project Structure
+### Interactive Shell
 
-- **`/`** - This README and deployment configuration
-- **`maestro/`** - Core middleware system ([README](maestro/README.md))
-- **`scripts/`** - Your automation scripts ([README](scripts/README.md))
+```bash
+# Flask shell with pre-loaded imports
+make shell
 
-## Requirements
+# Direct bash access
+make bash
+```
 
-- Home Assistant with REST API access
-- Docker & Docker Compose
+## Example: Complete Automation
+
+```python
+# scripts/bedtime_routine.py
+from maestro.triggers import state_change_trigger, cron_trigger
+from maestro.integrations import StateChangeEvent
+from maestro.registry import switch, light, climate, person
+from maestro.utils import Notif
+
+@cron_trigger(hour=22, minute=0)  # 10 PM daily
+def bedtime_warning() -> None:
+    """Notify 30 min before lights out"""
+    warning_notification = Notif(
+        person.john,
+        title="Bedtime Soon",
+        message="Lights will turn off in 30 minutes"
+    )
+    warning_notification.send(person.john)
+
+@cron_trigger(hour=22, minute=30)  # 10:30 PM daily
+def bedtime_routine() -> None:
+    """Execute bedtime routine"""
+    light.bedroom.turn_on(brightness=50)  # Dim lights
+    light.living_room.turn_off()
+    climate.bedroom.set_temperature(68)
+    switch.sound_machine.turn_on()
+
+@state_change_trigger(person.john, to_state="home")
+def welcome_home(state_change: StateChangeEvent) -> None:
+    """Cancel bedtime routine if arriving home late"""
+    hour = local_now().hour
+    if 22 <= hour <= 23:
+        light.living_room.turn_on()
+```
 
 ## Contributing
 
-Maestro provides the foundation for Python-based Home Assistant automation. The core system handles entity management, caching, webhooks, and triggers - ready for your custom automation logic.
+Maestro is actively developed but doesn't yet cover all Home Assistant domains, actions, and features. If you find something missing:
 
-See [maestro/README.md](maestro/README.md) for development and contribution guidelines.
+- **Entity domains**: Add new domain classes in `maestro/domains/`
+- **Entity methods**: Extend existing domain classes with additional actions
+- **Trigger types**: Implement new trigger decorators in `maestro/triggers/`
+- **Utilities**: Add helpful utilities in `maestro/utils/`
+
+Pull requests are welcome!
+
+## License
+
+MIT License - see [LICENSE](LICENSE)
+
+## Support
+
+For issues and questions, see the [GitHub Issues](https://github.com/papa-marsh/maestro/issues).
