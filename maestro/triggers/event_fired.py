@@ -47,32 +47,24 @@ def event_fired_trigger(
     def decorator(func: Callable) -> Callable:
         from maestro.app import EventType
 
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            return func(*args, **kwargs)
+
         if event_type in EventType:
             raise ValueError(
                 "Avoid `event_fired_trigger` when an event-specific trigger exists. "
                 "eg. Use state_change_trigger, not event_fired_trigger(event_type='state_changed')"
             )
 
-        trigger_args = EventFiredParams.TriggerParams(
-            {
-                "user_id": user_id,
-                "event_type": event_type,
-            }
-        )
-        registry_entry = TriggerRegistryEntry(
-            func=func,
-            trigger_args=trigger_args,
-        )
+        trigger_args = EventFiredParams.TriggerParams(user_id=user_id, event_type=event_type)
+        registry_entry = TriggerRegistryEntry(func=wrapper, trigger_args=trigger_args)
 
         EventFiredTriggerManager.register_function(
             trigger_type=TriggerType.EVENT_FIRED,
             registry_key=event_type,
             registry_entry=registry_entry,
         )
-
-        @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return func(*args, **kwargs)
 
         return wrapper
 

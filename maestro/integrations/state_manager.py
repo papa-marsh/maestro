@@ -113,20 +113,33 @@ class StateManager:
 
         return 0
 
-    def fetch_hass_entity(self, entity_id: EntityId) -> EntityData:
+    def fetch_hass_entity(
+        self,
+        entity_id: EntityId,
+        force_registry_update: bool = False,
+    ) -> EntityData:
         """Fetch and cache up-to-date data for a Home Assistant entity"""
         entity_data = self.hass_client.get_entity(entity_id)
         if not entity_data:
             raise ValueError(f"Failed to retrieve an entity response for {entity_id}")
+
+        if force_registry_update:
+            cache_key = RedisClient.build_key(CachePrefix.REGISTERED, entity_id)
+            self.redis_client.delete(cache_key)
+
         self.cache_entity(entity_data)
 
         return entity_data
 
-    def fetch_all_hass_entities(self) -> int:
+    def fetch_all_hass_entities(self, force_registry_update: bool = False) -> int:
         """Fetch and cache all hass entities, respecting the domain ignore list."""
         start_time = local_now()
         all_entities = self.hass_client.get_all_entities()
         cached_count = 0
+
+        if force_registry_update:
+            keys_to_delete = self.redis_client.get_keys(pattern=f"{CachePrefix.REGISTERED}*")
+            self.redis_client.delete(*keys_to_delete)
 
         for entity_data in all_entities:
             self.cache_entity(entity_data)

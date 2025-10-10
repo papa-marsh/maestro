@@ -155,6 +155,8 @@ Maestro is a framework that lets you write Home Assistant automations in Python 
    maestro_token: <your_super_secret_api_token>
    ```
 
+   The `maestro_token` secret in Home Assistant must match the `NGINX_TOKEN` Maestro environment variable.
+
 ## Writing Automations
 
 All your automation logic goes in the `scripts/` directory. Import from the `maestro` package to access triggers, entities, and utilities.
@@ -289,6 +291,34 @@ def simple_handler() -> None:
 **Optional Function Parameters:**
 
 - `event: FiredEvent` - Contains event data and context
+
+### Sun Trigger
+
+Runs based on solar events (sunrise, solar noon, dusk, etc.) with optional time offsets.
+
+```python
+from datetime import timedelta
+from maestro.triggers import sun_trigger, SolarEvent
+
+# At sunrise
+@sun_trigger(SolarEvent.SUNRISE)
+def sunrise_routine() -> None:
+    switch.outdoor_lights.turn_off()
+
+# 30 minutes before sunset
+@sun_trigger(SolarEvent.SOLAR_NOON, offset=timedelta(minutes=-30))
+def pre_sunset() -> None:
+    switch.sprinklers.turn_on()
+```
+
+**Decorator Parameters:**
+
+- `solar_event`: SolarEvent enum value
+- `offset`: Optional - timedelta offset (negative for before, positive for after)
+
+**Optional Function Parameters:**
+
+- None - sun triggers don't provide runtime parameters
 
 ### Notification Action Trigger
 

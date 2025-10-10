@@ -3,7 +3,8 @@ from datetime import datetime
 import pytest
 
 from maestro.integrations.home_assistant.client import HomeAssistantClient
-from maestro.integrations.home_assistant.types import Domain, EntityData
+from maestro.integrations.home_assistant.domain import Domain
+from maestro.integrations.home_assistant.types import EntityData
 
 
 class TestHomeAssistantClient:

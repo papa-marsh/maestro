@@ -1,6 +1,6 @@
 from maestro.config import NOTIFY_ACTION_MAPPINGS
 from maestro.domains.entity import Entity
-from maestro.integrations.home_assistant.types import Domain
+from maestro.integrations.home_assistant.domain import Domain
 from maestro.utils.push import Notif
 
 

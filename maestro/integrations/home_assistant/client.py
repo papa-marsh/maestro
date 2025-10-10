@@ -6,7 +6,8 @@ import requests
 from structlog.stdlib import get_logger
 
 from maestro.config import DOMAIN_IGNORE_LIST, HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
-from maestro.integrations.home_assistant.types import Domain, EntityData, EntityId
+from maestro.integrations.home_assistant.domain import Domain
+from maestro.integrations.home_assistant.types import EntityData, EntityId
 from maestro.utils.dates import resolve_timestamp
 
 log = get_logger()

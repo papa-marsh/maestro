@@ -1,7 +1,8 @@
 from calendar import Day, Month
 from collections.abc import Callable
+from datetime import timedelta
 from enum import StrEnum, auto
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 from maestro.integrations.home_assistant.types import (
     EntityId,
@@ -10,12 +11,16 @@ from maestro.integrations.home_assistant.types import (
     StateChangeEvent,
 )
 
+if TYPE_CHECKING:
+    from maestro.triggers.sun import SolarEvent
+
 
 class TriggerType(StrEnum):
     STATE_CHANGE = auto()
     CRON = auto()
     EVENT_FIRED = auto()
     NOTIF_ACTION = auto()
+    SUN = auto()
 
 
 class StateChangeParams:
@@ -59,6 +64,15 @@ class NotifActionParams:
         notif_action: NotifActionEvent
 
 
+class SunParams:
+    class TriggerParams(TypedDict):
+        solar_event: "SolarEvent"
+        offset: timedelta
+
+    class FuncParams(TypedDict):
+        pass
+
+
 class TriggerRegistryEntry(TypedDict):
     func: Callable
     trigger_args: (
@@ -66,6 +80,7 @@ class TriggerRegistryEntry(TypedDict):
         | CronParams.TriggerParams
         | EventFiredParams.TriggerParams
         | NotifActionParams.TriggerParams
+        | SunParams.TriggerParams
     )
 
 
@@ -74,4 +89,5 @@ TriggerFuncParamsT = (
     | CronParams.FuncParams
     | EventFiredParams.FuncParams
     | NotifActionParams.FuncParams
+    | SunParams.FuncParams
 )

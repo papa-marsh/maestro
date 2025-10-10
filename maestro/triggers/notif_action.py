@@ -45,26 +45,18 @@ def notif_action_trigger(
     """
 
     def decorator(func: Callable) -> Callable:
-        trigger_args = NotifActionParams.TriggerParams(
-            {
-                "action": action,
-                "device_id": device_id,
-            }
-        )
-        registry_entry = TriggerRegistryEntry(
-            func=func,
-            trigger_args=trigger_args,
-        )
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            return func(*args, **kwargs)
+
+        trigger_args = NotifActionParams.TriggerParams(action=action, device_id=device_id)
+        registry_entry = TriggerRegistryEntry(func=wrapper, trigger_args=trigger_args)
 
         NotifActionTriggerManager.register_function(
             trigger_type=TriggerType.NOTIF_ACTION,
             registry_key=action,
             registry_entry=registry_entry,
         )
-
-        @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return func(*args, **kwargs)
 
         return wrapper
 

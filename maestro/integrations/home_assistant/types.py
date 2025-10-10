@@ -1,41 +1,11 @@
 import re
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
-from enum import StrEnum, auto
 from typing import Any
 
-
-class Domain(StrEnum):
-    BINARY_SENSOR = auto()
-    BUTTON = auto()
-    CALENDAR = auto()
-    CLIMATE = auto()
-    COVER = auto()
-    DEVICE_TRACKER = auto()
-    EVENT = auto()
-    FAN = auto()
-    HOME_ASSISTANT = auto()
-    HUMIDIFIER = auto()
-    INPUT_BOOLEAN = auto()
-    INPUT_NUMBER = auto()
-    INPUT_SELECT = auto()
-    INPUT_TEXT = auto()
-    LIGHT = auto()
-    LOCK = auto()
-    MAESTRO = auto()
-    MEDIA_PLAYER = auto()
-    NOTIFY = auto()
-    NUMBER = auto()
-    PERSON = auto()
-    REMOTE = auto()
-    SELECT = auto()
-    SENSOR = auto()
-    SONOS = auto()
-    SUN = auto()
-    SWITCH = auto()
-    UPDATE = auto()
-    WEATHER = auto()
-    ZONE = auto()
+from maestro.integrations.home_assistant.domain import Domain
+from maestro.utils.dates import resolve_timestamp
 
 
 class StateId(str):
@@ -89,7 +59,7 @@ class AttributeId(StateId):
 
 @dataclass
 class EntityData:
-    """An entity's state and metadata as represented by the Home Assistant API"""
+    """An entity's (sanitized) state and metadata as represented by the Home Assistant API"""
 
     entity_id: EntityId
     state: str
@@ -97,16 +67,16 @@ class EntityData:
 
     def __post_init__(self) -> None:
         """
-        Temporary (maybe) shim logic to handle spaces and uppercase chars in attribute names.
-        Otherwise, it breaks the EntityAttribute class, which relies on its own property name.
-        This logic should be safe unless we try to set a value for an attribute with
-        uppercase/spaces. But overwriting existing HASS attributes doesn't seem like a
-        realistic use case; nor should we ever be creating new attributes with uppercase/spaces.
+        Sanitize attribute name to handle spaces/uppercase chars.
+        Resolve timestamps strings into datetime objects.
         """
         sanitized_attributes = {}
-        for key in self.attributes:
+        for key, value in self.attributes.items():
+            if isinstance(value, str):
+                with suppress(ValueError):
+                    value = resolve_timestamp(value)
             new_key = key.replace(" ", "_").lower()
-            sanitized_attributes[new_key] = self.attributes[key]
+            sanitized_attributes[new_key] = value
 
         self.attributes = sanitized_attributes
 

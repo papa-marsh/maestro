@@ -9,7 +9,9 @@ from flask_sqlalchemy import SQLAlchemy
 from structlog.stdlib import get_logger
 
 from maestro.config import DATABASE_URL, SQLALCHEMY_TRACK_MODIFICATIONS, TIMEZONE
+from maestro.integrations.home_assistant.domain import Domain
 from maestro.triggers.cron import CronTriggerManager
+from maestro.triggers.sun import SunTriggerManager
 from maestro.utils.infra import load_script_modules
 from maestro.webhooks.event_fired import handle_event_fired
 from maestro.webhooks.notif_action import handle_notif_action
@@ -32,6 +34,7 @@ class MaestroFlask(Flask):
         self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
         self.scheduler.start()
         CronTriggerManager.register_jobs(self.scheduler)
+        SunTriggerManager.register_jobs(self.scheduler)
         atexit.register(lambda: self.scheduler.shutdown())
 
 
@@ -58,7 +61,6 @@ def make_shell_context() -> dict:
     from maestro.integrations.home_assistant.client import HomeAssistantClient
     from maestro.integrations.home_assistant.types import (
         AttributeId,
-        Domain,
         EntityData,
         EntityId,
         StateChangeEvent,

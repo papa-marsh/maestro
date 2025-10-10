@@ -39,7 +39,7 @@ def load_script_modules() -> None:
             log.info("Successfully loaded scripts module", module=module_name)
             loaded_count += 1
         except Exception as e:
-            log.error("Failed to load scripts module", module=module_name, error=str(e))
+            log.exception("Failed to load scripts module", module=module_name, error=str(e))
             error_count += 1
 
     log.info("Script loading completed", loaded=loaded_count, errors=error_count)

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 
 from maestro.domains.entity import Entity
-from maestro.integrations.home_assistant.types import Domain
+from maestro.integrations.home_assistant.domain import Domain
 
 
 class Calendar(Entity):

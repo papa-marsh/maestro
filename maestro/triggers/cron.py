@@ -96,10 +96,7 @@ def cron_trigger(
             month=_month,
             day_of_week=_day_of_week,
         )
-        registry_entry = TriggerRegistryEntry(
-            func=wrapper,
-            trigger_args=trigger_args,
-        )
+        registry_entry = TriggerRegistryEntry(func=wrapper, trigger_args=trigger_args)
 
         CronTriggerManager.register_function(
             trigger_type=TriggerType.CRON,
