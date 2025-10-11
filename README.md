@@ -525,24 +525,90 @@ make shell
 make bash
 ```
 
+### Working with the Database
+
+Maestro includes PostgreSQL and Flask-SQLAlchemy for persistent storage.
+
+**Define models:**
+```python
+# scripts/my_automation/models.py
+from maestro.app import db
+
+class MyModel(db.Model):
+    __tablename__ = "my_table"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+```
+
+**Create tables:**
+```bash
+make shell
+>>> from maestro.app import db
+>>> db.create_all()  # Creates all tables from imported models
+```
+
+**Query data:**
+```python
+from maestro.app import db
+from scripts.my_automation.models import MyModel
+
+# Query
+items = db.session.query(MyModel).all()
+item = db.session.query(MyModel).filter_by(name="example").first()
+
+# Insert
+new_item = MyModel(name="test")
+db.session.add(new_item)
+db.session.commit()
+
+# Delete
+db.session.delete(item)
+db.session.commit()
+```
+
+**Note:** This project doesn't use migrations. Schema changes require manual SQL or `db.drop_all()` + `db.create_all()` (loses data).
+
 ## Example: Complete Automation
 
 ```python
-# scripts/bedtime_routine.py
-from maestro.triggers import state_change_trigger, cron_trigger
-from maestro.integrations import StateChangeEvent
+# scripts/bedtime_routine/models.py
+from maestro.app import db
+
+class SnoozeHistory(db.Model):
+    __tablename__ = "snooze_history"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    timestamp = db.Column(db.DateTime, nullable=False)
+    duration_minutes = db.Column(db.Integer, nullable=False)
+```
+
+```python
+# scripts/bedtime_routine/__init__.py
+from maestro.app import db
+from maestro.triggers import state_change_trigger, cron_trigger, notif_action_trigger
+from maestro.integrations import StateChangeEvent, NotifActionEvent
 from maestro.registry import switch, light, climate, person
-from maestro.utils import Notif
+from maestro.utils import Notif, local_now
+
+from .models import SnoozeHistory
 
 @cron_trigger(hour=22, minute=0)  # 10 PM daily
 def bedtime_warning() -> None:
     """Notify 30 min before lights out"""
-    warning_notification = Notif(
-        person.john,
-        title="Bedtime Soon",
-        message="Lights will turn off in 30 minutes"
+    snooze_action = Notif.build_action(
+        name="SNOOZE_BEDTIME",
+        title="Snooze 15 min"
     )
-    warning_notification.send(person.john)
+    dismiss_action = Notif.build_action(
+        name="DISMISS_BEDTIME",
+        title="Dismiss"
+    )
+
+    notif = Notif(
+        title="Bedtime Soon",
+        message="Lights will turn off in 30 minutes",
+        actions=[snooze_action, dismiss_action]
+    )
+    notif.send(person.john)
 
 @cron_trigger(hour=22, minute=30)  # 10:30 PM daily
 def bedtime_routine() -> None:
@@ -551,6 +617,21 @@ def bedtime_routine() -> None:
     light.living_room.turn_off()
     climate.bedroom.set_temperature(68)
     switch.sound_machine.turn_on()
+
+@notif_action_trigger("SNOOZE_BEDTIME")
+def snooze_bedtime_routine(notif_action: NotifActionEvent) -> None:
+    """Delay bedtime routine by 15 minutes and track snooze"""
+    # Log snooze to database
+    snooze = SnoozeHistory(timestamp=local_now(), duration_minutes=15)
+    db.session.add(snooze)
+    db.session.commit()
+
+    # Reschedule bedtime routine (implementation would schedule a one-time job)
+    notif = Notif(
+        title="Bedtime Snoozed",
+        message="Routine delayed by 15 minutes"
+    )
+    notif.send(person.john)
 
 @state_change_trigger(person.john, to_state="home")
 def welcome_home(state_change: StateChangeEvent) -> None:

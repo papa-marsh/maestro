@@ -77,7 +77,7 @@ def sun_trigger(solar_event: SolarEvent, offset: timedelta = timedelta()) -> Cal
     Decorator to register a function as a sun-based trigger for the specified cron pattern.
     Note sun triggers require that the `sun.sun` entity has been populated in maestro/registry.
     Eg. Open the blinds 1h before sunrise:
-        `@sun_trigger(event=SunEvent.SUNRISE, offset=timedelta(hours=-1))
+        `@sun_trigger(event=SunEvent.SUNRISE, offset=timedelta(hours=-1))`
 
     Available function params:
         `None`

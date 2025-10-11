@@ -10,7 +10,7 @@ log = get_logger()
 def load_script_modules() -> None:
     """
     Auto-discover and import all Python modules in the scripts directory.
-    This ensures that decorators like @state_change_trigger and @cron_trigger get registered.
+    This ensures that trigger decorators (eg. @state_change_trigger) and DB models get registered.
     """
     scripts_dir = Path("/code/scripts")
     if not scripts_dir.exists():
