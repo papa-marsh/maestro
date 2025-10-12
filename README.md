@@ -530,6 +530,7 @@ make bash
 Maestro includes PostgreSQL and Flask-SQLAlchemy for persistent storage.
 
 **Define models:**
+
 ```python
 # scripts/my_automation/models.py
 from maestro.app import db
@@ -541,6 +542,7 @@ class MyModel(db.Model):
 ```
 
 **Create tables:**
+
 ```bash
 make shell
 >>> from maestro.app import db
@@ -548,6 +550,7 @@ make shell
 ```
 
 **Query data:**
+
 ```python
 from maestro.app import db
 from scripts.my_automation.models import MyModel
@@ -574,7 +577,7 @@ db.session.commit()
 # scripts/bedtime_routine/models.py
 from maestro.app import db
 
-class SnoozeHistory(db.Model):
+class SnoozeHistory(db.Model):  # type:ignore [name-defined]
     __tablename__ = "snooze_history"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     timestamp = db.Column(db.DateTime, nullable=False)

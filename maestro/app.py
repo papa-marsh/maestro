@@ -96,6 +96,7 @@ def make_shell_context() -> dict:
         weather,
         zone,
     )
+    from maestro.triggers.sun import SolarEvent
     from maestro.triggers.trigger_manager import TriggerManager
     from maestro.utils import (
         IntervalSeconds,
