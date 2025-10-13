@@ -3,7 +3,9 @@ from enum import IntEnum
 
 from maestro.config import TIMEZONE
 
-SECONDS_PER_HOUR = 3600
+SECONDS_PER_MINUTE = 60
+SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
+SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR
 
 
 class IntervalSeconds(IntEnum):
@@ -23,3 +25,35 @@ def resolve_timestamp(iso_string: str) -> datetime:
         return dt.replace(tzinfo=TIMEZONE)
     else:
         return dt.astimezone(TIMEZONE)
+
+
+def format_duration(duration_seconds: int, verbose: bool = False) -> str:
+    """Format duration in a human-readable way."""
+    if duration_seconds < SECONDS_PER_MINUTE:
+        output = f"{duration_seconds}s"
+        if verbose:
+            return output.replace("s", " second" if duration_seconds == 1 else " seconds")
+
+    output = ""
+    total_seconds = duration_seconds
+
+    if total_seconds > SECONDS_PER_DAY:
+        days = duration_seconds // SECONDS_PER_DAY
+        duration_seconds %= SECONDS_PER_DAY
+        output += f"{days}d"
+        if verbose:
+            output = output.replace("d", " day " if days == 1 else " days ")
+
+    if total_seconds > SECONDS_PER_HOUR:
+        hours = duration_seconds // SECONDS_PER_HOUR
+        duration_seconds %= SECONDS_PER_HOUR
+        output += f"{hours}h"
+        if verbose:
+            output = output.replace("h", " hour " if hours == 1 else " hours ")
+
+    minutes = duration_seconds // SECONDS_PER_MINUTE
+    output += f"{minutes}m"
+    if verbose:
+        output = output.replace("m", " minute" if minutes == 1 else " minutes")
+
+    return output

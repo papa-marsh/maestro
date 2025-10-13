@@ -9,7 +9,6 @@ from flask_sqlalchemy import SQLAlchemy
 from structlog.stdlib import get_logger
 
 from maestro.config import DATABASE_URL, SQLALCHEMY_TRACK_MODIFICATIONS, TIMEZONE
-from maestro.integrations.home_assistant.domain import Domain
 from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.sun import SunTriggerManager
 from maestro.utils.infra import load_script_modules
