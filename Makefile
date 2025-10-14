@@ -8,6 +8,10 @@ build:
 deploy:
 	docker compose down && docker compose up -d --build
 
+# Deploy after pulling the maestro & scripts repos from their remotes
+pull-deploy:
+	git pull && cd scripts && git pull && cd .. && docker compose down && docker compose up -d --build && sleep 2 && make logs
+
 # Get logs from the maestro container
 logs:
 	docker compose logs maestro
