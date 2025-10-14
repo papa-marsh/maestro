@@ -1,4 +1,4 @@
-.PHONY: build test test-integration test-home-assistant test-specific test-specific-verbose shell bash
+.PHONY: build deploy pull-deploy logs test shell bash
 
 # Build the Docker image
 build:
@@ -6,11 +6,19 @@ build:
 
 # Rebuild and redeploy the app
 deploy:
-	docker compose down && docker compose up -d --build
+	docker compose down && \
+	docker compose up -d --build
 
 # Deploy after pulling the maestro & scripts repos from their remotes
 pull-deploy:
-	git pull && cd scripts && git pull && cd .. && docker compose down && docker compose up -d --build && sleep 1 && make logs
+	git pull && \
+	cd scripts && \
+	git pull && \
+	cd .. && \
+	docker compose down && \
+	docker compose up -d --build && \
+	sleep 1 && \
+	make logs
 
 # Get logs from the maestro container
 logs:
