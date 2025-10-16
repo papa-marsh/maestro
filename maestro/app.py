@@ -12,6 +12,7 @@ from maestro.config import DATABASE_URL, SQLALCHEMY_TRACK_MODIFICATIONS, TIMEZON
 from maestro.infra.misc import load_script_modules
 from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.sun import SunTriggerManager
+from maestro.utils.scheduler import JobScheduler
 from maestro.webhooks.event_fired import handle_event_fired
 from maestro.webhooks.notif_action import handle_notif_action
 from maestro.webhooks.state_changed import handle_state_changed
@@ -32,6 +33,7 @@ class MaestroFlask(Flask):
     def _initialize_scheduler(self) -> None:
         self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
         self.scheduler.start()
+        JobScheduler(self.scheduler).restore_cached_jobs()
         CronTriggerManager.register_jobs(self.scheduler)
         SunTriggerManager.register_jobs(self.scheduler)
         atexit.register(lambda: self.scheduler.shutdown())
@@ -100,6 +102,7 @@ def make_shell_context() -> dict:
     from maestro.triggers.trigger_manager import TriggerManager
     from maestro.utils import (
         IntervalSeconds,
+        JobScheduler,
         Notif,
         NotifPriority,
         local_now,
