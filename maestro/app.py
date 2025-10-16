@@ -9,6 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 from structlog.stdlib import get_logger
 
 from maestro.config import DATABASE_URL, SQLALCHEMY_TRACK_MODIFICATIONS, TIMEZONE
+from maestro.infra.logging import configure_logging
 from maestro.infra.misc import load_script_modules
 from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.sun import SunTriggerManager
@@ -39,10 +40,11 @@ class MaestroFlask(Flask):
         atexit.register(lambda: self.scheduler.shutdown())
 
 
+configure_logging()
+log = get_logger()
+
 db = SQLAlchemy()
 app = MaestroFlask(__name__)
-
-log = get_logger()
 
 
 class EventType(StrEnum):
