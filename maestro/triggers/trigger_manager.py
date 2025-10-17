@@ -103,7 +103,7 @@ class TriggerManager(ABC):
         cls,
         func: Callable,
         params_dict: dict[str, Any],
-        app: Flask,
+        app: "Flask",
     ) -> None:
         """
         Wrapper logic to handle a varied number of optional args passed to a decorated function.

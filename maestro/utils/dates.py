@@ -30,7 +30,7 @@ def resolve_timestamp(iso_string: str) -> datetime:
 
 def format_duration(duration: timedelta, verbose: bool = False) -> str:
     """Format duration in a human-readable way."""
-    duration_seconds = duration.total_seconds()
+    duration_seconds = int(duration.total_seconds())
     if duration_seconds < SECONDS_PER_MINUTE:
         output = f"{duration_seconds}s"
         if verbose:
