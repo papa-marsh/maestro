@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from inspect import signature
 from threading import Thread
-from typing import Any, ClassVar, final
+from typing import TYPE_CHECKING, Any, ClassVar, final
 
 from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 from structlog.stdlib import get_logger
@@ -13,6 +13,11 @@ from maestro.triggers.types import (
     TriggerRegistryEntry,
     TriggerType,
 )
+
+if TYPE_CHECKING:
+    from flask import Flask
+
+    from maestro.app import MaestroFlask
 
 log = get_logger()
 
@@ -73,12 +78,15 @@ class TriggerManager(ABC):
         trigger_params: TriggerFuncParamsT,
     ) -> None:
         """Execute a list of trigger functions in background threads."""
+        from flask import current_app
+
         params_dict = dict(trigger_params)
+        app: MaestroFlask = current_app._get_current_object()  # type:ignore[attr-defined]
 
         for func in funcs_to_execute:
             thread = Thread(
                 target=cls._invoke_func_with_param_handling,
-                args=(func, params_dict),
+                args=(func, params_dict, app),
                 daemon=True,
             )
             thread.start()
@@ -95,6 +103,7 @@ class TriggerManager(ABC):
         cls,
         func: Callable,
         params_dict: dict[str, Any],
+        app: Flask,
     ) -> None:
         """
         Wrapper logic to handle a varied number of optional args passed to a decorated function.
@@ -119,6 +128,7 @@ class TriggerManager(ABC):
                     continue
                 execution_args.append(params_dict[signature_param])
 
-            func(*execution_args)
+            with app.app_context():
+                func(*execution_args)
         except Exception:
             log.exception("Error executing triggered function", function_name=func.__name__)
