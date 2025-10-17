@@ -43,13 +43,14 @@ class MaestroFlask(Flask):
 configure_logging()
 log = get_logger()
 
-db = SQLAlchemy()
-app = MaestroFlask(__name__)
-
 
 class EventType(StrEnum):
     STATE_CHANGED = auto()
     IOS_NOTIF_ACTION = "ios.notification_action_fired"
+
+
+db = SQLAlchemy()
+app = MaestroFlask(__name__)
 
 
 WEBHOOK_HANDLERS = {

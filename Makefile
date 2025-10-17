@@ -7,7 +7,9 @@ build:
 # Rebuild and redeploy the app
 deploy:
 	docker compose down && \
-	docker compose up -d --build
+	docker compose up -d --build && \
+	sleep 1 && \
+	make logs
 
 # Deploy after pulling the maestro & scripts repos from their remotes
 pull-deploy:
