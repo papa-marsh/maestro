@@ -58,7 +58,11 @@ def event_fired_trigger(
             )
 
         trigger_args = EventFiredParams.TriggerParams(user_id=user_id, event_type=event_type)
-        registry_entry = TriggerRegistryEntry(func=wrapper, trigger_args=trigger_args)
+        registry_entry = TriggerRegistryEntry(
+            func=wrapper,
+            trigger_args=trigger_args,
+            qual_name=TriggerManager._get_qual_name(func),
+        )
 
         EventFiredTriggerManager.register_function(
             trigger_type=TriggerType.EVENT_FIRED,

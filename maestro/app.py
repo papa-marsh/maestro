@@ -29,7 +29,7 @@ class MaestroFlask(Flask):
     def _initialize_db(self) -> None:
         self.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
         self.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = SQLALCHEMY_TRACK_MODIFICATIONS
-        db.init_app(self)  # type: ignore[no-untyped-call]
+        db.init_app(self)
 
     def _initialize_scheduler(self) -> None:
         self.scheduler = BackgroundScheduler(timezone=TIMEZONE)

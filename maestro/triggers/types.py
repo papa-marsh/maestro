@@ -82,6 +82,7 @@ class TriggerRegistryEntry(TypedDict):
         | NotifActionParams.TriggerParams
         | SunParams.TriggerParams
     )
+    qual_name: str
 
 
 TriggerFuncParamsT = (

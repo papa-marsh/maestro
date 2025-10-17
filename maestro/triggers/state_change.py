@@ -60,7 +60,11 @@ def state_change_trigger(
             from_state=from_state,
             to_state=to_state,
         )
-        registry_entry = TriggerRegistryEntry(func=wrapper, trigger_args=trigger_args)
+        registry_entry = TriggerRegistryEntry(
+            func=wrapper,
+            trigger_args=trigger_args,
+            qual_name=TriggerManager._get_qual_name(func),
+        )
 
         StateChangeTriggerManager.register_function(
             trigger_type=TriggerType.STATE_CHANGE,

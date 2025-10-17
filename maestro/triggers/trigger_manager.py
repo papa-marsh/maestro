@@ -56,13 +56,32 @@ class TriggerManager(ABC):
         registry_entry: TriggerRegistryEntry,
     ) -> None:
         """Register a function to be called when the specified trigger fires."""
-        cls.get_registry()[trigger_type][registry_key].append(registry_entry)
+        registry_entries = cls.get_registry()[trigger_type][registry_key]
+        for existing_entry in registry_entries:
+            if registry_entry["qual_name"] == existing_entry["qual_name"]:
+                log.info(
+                    "Skipping duplicate trigger registration",
+                    function_name=registry_entry["func"].__name__,
+                    trigger_type=trigger_type,
+                    registry_key=registry_key,
+                )
+                return
+
+        registry_entries.append(registry_entry)
         log.info(
             "Successfully registered trigger function",
             function_name=registry_entry["func"].__name__,
             trigger_type=trigger_type,
             registry_key=registry_key,
         )
+
+    @staticmethod
+    @final
+    def _get_qual_name(func: Callable) -> str:
+        """Build the normalized, fully qualified name for a function"""
+        module = func.__module__
+        normalized_module = module.removeprefix("scripts.")
+        return f"{normalized_module}.{func.__qualname__}"
 
     @classmethod
     @abstractmethod

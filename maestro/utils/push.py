@@ -57,6 +57,8 @@ class Notif:
         actions: list[NotifAction] = [],
         action_data: Any = None,
     ) -> None:
+        if tag and not group:
+            group = tag
         self.payload = {
             "message": message,
             "title": title,

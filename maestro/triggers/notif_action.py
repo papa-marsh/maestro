@@ -50,7 +50,11 @@ def notif_action_trigger(
             return func(*args, **kwargs)
 
         trigger_args = NotifActionParams.TriggerParams(action=action, device_id=device_id)
-        registry_entry = TriggerRegistryEntry(func=wrapper, trigger_args=trigger_args)
+        registry_entry = TriggerRegistryEntry(
+            func=wrapper,
+            trigger_args=trigger_args,
+            qual_name=TriggerManager._get_qual_name(func),
+        )
 
         NotifActionTriggerManager.register_function(
             trigger_type=TriggerType.NOTIF_ACTION,

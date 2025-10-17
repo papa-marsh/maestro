@@ -110,7 +110,11 @@ def sun_trigger(solar_event: SolarEvent, offset: timedelta = timedelta()) -> Cal
         )
 
         trigger_args = SunParams.TriggerParams(solar_event=solar_event, offset=offset)
-        registry_entry = TriggerRegistryEntry(func=wrapper, trigger_args=trigger_args)
+        registry_entry = TriggerRegistryEntry(
+            func=wrapper,
+            trigger_args=trigger_args,
+            qual_name=TriggerManager._get_qual_name(func),
+        )
 
         SunTriggerManager.register_function(
             trigger_type=TriggerType.SUN,
