@@ -500,6 +500,41 @@ notif = Notif(
 )
 ```
 
+## Scheduling Jobs
+
+Schedule one-off functions to run at a specific time. Jobs persist across restarts via Redis.
+
+```python
+from datetime import timedelta
+from maestro.utils import JobScheduler, local_now
+from maestro.registry import light
+
+def delayed_light_off():
+    """Turn off lights after delay"""
+    light.bedroom_ceiling.turn_off()
+
+# Schedule job to run 30 minutes from now
+scheduler = JobScheduler()
+run_time = local_now() + timedelta(minutes=30)
+job_id = scheduler.schedule_job(run_time=run_time, func=delayed_light_off)
+
+# Cancel if needed
+scheduler.cancel_job(job_id)
+```
+
+Jobs can accept keyword arguments:
+
+```python
+def set_temperature(temp: int):
+    climate.thermostat.set_temperature(temp)
+
+scheduler.schedule_job(
+    run_time=local_now() + timedelta(hours=1),
+    func=set_temperature,
+    func_params={"temp": 72}
+)
+```
+
 ## Development Workflow
 
 ### Running Tests
