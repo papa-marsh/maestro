@@ -11,6 +11,7 @@ from structlog.stdlib import get_logger
 from maestro.config import DATABASE_URL, SQLALCHEMY_TRACK_MODIFICATIONS, TIMEZONE
 from maestro.infra.misc import configure_logging, load_script_modules
 from maestro.triggers.cron import CronTriggerManager
+from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.sun import SunTriggerManager
 from maestro.utils.scheduler import JobScheduler
 from maestro.webhooks.event_fired import handle_event_fired
@@ -24,6 +25,8 @@ class MaestroFlask(Flask):
         self._initialize_db()
         load_script_modules()
         self._initialize_scheduler()
+        MaestroTriggerManager.fire_triggers(MaestroEvent.STARTUP)
+        atexit.register(MaestroTriggerManager.fire_triggers, MaestroEvent.SHUTDOWN)
 
     def _initialize_db(self) -> None:
         self.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
@@ -36,7 +39,7 @@ class MaestroFlask(Flask):
         JobScheduler(self.scheduler).restore_cached_jobs()
         CronTriggerManager.register_jobs(self.scheduler)
         SunTriggerManager.register_jobs(self.scheduler)
-        atexit.register(lambda: self.scheduler.shutdown())
+        atexit.register(self.scheduler.shutdown)
 
 
 configure_logging()

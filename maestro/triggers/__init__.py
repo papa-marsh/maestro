@@ -1,5 +1,6 @@
 from .cron import cron_trigger
 from .event_fired import event_fired_trigger
+from .maestro import MaestroEvent, maestro_trigger
 from .notif_action import notif_action_trigger
 from .state_change import state_change_trigger
 from .sun import SolarEvent, sun_trigger
@@ -11,4 +12,6 @@ __all__ = [
     notif_action_trigger.__name__,
     SolarEvent.__name__,
     sun_trigger.__name__,
+    maestro_trigger.__name__,
+    MaestroEvent.__name__,
 ]

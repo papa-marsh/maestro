@@ -12,6 +12,7 @@ from maestro.integrations.home_assistant.types import (
 )
 
 if TYPE_CHECKING:
+    from maestro.triggers.maestro import MaestroEvent
     from maestro.triggers.sun import SolarEvent
 
 
@@ -21,6 +22,7 @@ class TriggerType(StrEnum):
     EVENT_FIRED = auto()
     NOTIF_ACTION = auto()
     SUN = auto()
+    MAESTRO = auto()
 
 
 class StateChangeParams:
@@ -73,6 +75,14 @@ class SunParams:
         pass
 
 
+class MaestroParams:
+    class TriggerParams(TypedDict):
+        event: "MaestroEvent"
+
+    class FuncParams(TypedDict):
+        pass
+
+
 class TriggerRegistryEntry(TypedDict):
     func: Callable
     trigger_args: (
@@ -81,6 +91,7 @@ class TriggerRegistryEntry(TypedDict):
         | EventFiredParams.TriggerParams
         | NotifActionParams.TriggerParams
         | SunParams.TriggerParams
+        | MaestroParams.TriggerParams
     )
     qual_name: str
 
@@ -91,4 +102,5 @@ TriggerFuncParamsT = (
     | EventFiredParams.FuncParams
     | NotifActionParams.FuncParams
     | SunParams.FuncParams
+    | MaestroParams.FuncParams
 )

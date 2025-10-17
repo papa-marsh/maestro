@@ -356,6 +356,32 @@ def simple_handler() -> None:
 
 - `notif_action: NotifActionEvent` - Contains action data and device info
 
+### Maestro Trigger
+
+Runs on Maestro service lifecycle events.
+
+```python
+from maestro.triggers import maestro_trigger, MaestroEvent
+
+@maestro_trigger(MaestroEvent.STARTUP)
+def on_startup() -> None:
+    """Runs when Maestro service starts"""
+    log.info("Maestro started!")
+
+@maestro_trigger(MaestroEvent.SHUTDOWN)
+def on_shutdown() -> None:
+    """Runs when Maestro service shuts down"""
+    log.info("Maestro shutting down")
+```
+
+**Decorator Parameters:**
+
+- `event`: `MaestroEvent.STARTUP` or `MaestroEvent.SHUTDOWN`
+
+**Optional Function Parameters:**
+
+- None - maestro triggers don't provide runtime parameters
+
 ## Entity Registry
 
 Maestro automatically populates a typed entity registry from your Home Assistant instance. Access entities with full autocomplete:
