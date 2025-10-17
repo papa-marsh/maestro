@@ -95,6 +95,7 @@ class TriggerManager(ABC):
         cls,
         funcs_to_execute: list[Callable],
         trigger_params: TriggerFuncParamsT,
+        daemon_threads: bool = True,
     ) -> None:
         """Execute a list of trigger functions in background threads."""
         from flask import current_app
@@ -106,7 +107,7 @@ class TriggerManager(ABC):
             thread = Thread(
                 target=cls._invoke_func_with_param_handling,
                 args=(func, params_dict, app),
-                daemon=True,
+                daemon=daemon_threads,
             )
             thread.start()
             log.info(

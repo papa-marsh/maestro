@@ -25,7 +25,8 @@ class MaestroFlask(Flask):
         self._initialize_db()
         load_script_modules()
         self._initialize_scheduler()
-        MaestroTriggerManager.fire_triggers(MaestroEvent.STARTUP)
+        with self.app_context():
+            MaestroTriggerManager.fire_triggers(MaestroEvent.STARTUP)
         atexit.register(MaestroTriggerManager.fire_triggers, MaestroEvent.SHUTDOWN)
 
     def _initialize_db(self) -> None:

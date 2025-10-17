@@ -33,7 +33,8 @@ class MaestroTriggerManager(TriggerManager):
         for registry_entry in registry[cls.trigger_type].get(event, []):
             funcs_to_execute.append(registry_entry["func"])
 
-        cls.invoke_threaded_funcs(funcs_to_execute, func_params)
+        daemon_threads = event != MaestroEvent.SHUTDOWN
+        cls.invoke_threaded_funcs(funcs_to_execute, func_params, daemon_threads=daemon_threads)
 
 
 def maestro_trigger(event: MaestroEvent) -> Callable:
