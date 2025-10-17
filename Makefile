@@ -11,8 +11,14 @@ deploy:
 
 # Deploy after pulling the maestro & scripts repos from their remotes
 pull-deploy:
+	git checkout main && \
+	git fetch origin && \
+	git reset --hard origin/main && \
 	git pull && \
 	cd scripts && \
+	git checkout main && \
+	git fetch origin && \
+	git reset --hard origin/main && \
 	git pull && \
 	cd .. && \
 	docker compose down && \
