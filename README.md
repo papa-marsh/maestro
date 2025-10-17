@@ -4,6 +4,8 @@
 
 Maestro is a framework that lets you write Home Assistant automations in Python with full type safety, IDE autocomplete, and a clean decorator-based API. Instead of YAML configurations, write real Python code with access to your entities as typed objects.
 
+**Note:** A ~~picture~~ _repo_ is worth a thousand words. Check out some real world examples here: https://github.com/papa-marsh/maestro-scripts
+
 ## Why Maestro?
 
 - **Type Safety**: Full type hints and IDE autocomplete for all entities and attributes
