@@ -1,4 +1,4 @@
-.PHONY: build deploy pull-deploy logs test shell bash
+.PHONY: build deploy pull pull-deploy logs test shell bash
 
 # Build the Docker image
 build:
@@ -10,6 +10,16 @@ deploy:
 	docker compose up -d --build && \
 	sleep 1 && \
 	make logs
+
+# Pull both repos
+pull:
+	git checkout main && \
+	git pull && \
+	cd scripts && \
+	git checkout main && \
+	git pull && \
+	cd ..
+
 
 # Deploy after pulling the maestro & scripts repos from their remotes
 pull-deploy:
