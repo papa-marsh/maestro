@@ -30,7 +30,7 @@ class EventFiredTriggerManager(TriggerManager):
 
             funcs_to_execute.append(registry_entry["func"])
 
-        cls.invoke_threaded_funcs(funcs_to_execute, func_params)
+        cls.invoke_funcs_threaded(funcs_to_execute, func_params)
 
 
 def event_fired_trigger(

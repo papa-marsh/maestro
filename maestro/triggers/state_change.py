@@ -34,7 +34,7 @@ class StateChangeTriggerManager(TriggerManager):
 
             funcs_to_execute.append(registry_entry["func"])
 
-        cls.invoke_threaded_funcs(funcs_to_execute, trigger_params)
+        cls.invoke_funcs_threaded(funcs_to_execute, trigger_params)
 
 
 def state_change_trigger(

@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from enum import StrEnum, auto
 from functools import wraps
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from structlog.stdlib import get_logger
 
@@ -11,6 +11,9 @@ from maestro.triggers.types import (
     TriggerRegistryEntry,
     TriggerType,
 )
+
+if TYPE_CHECKING:
+    from maestro.app import MaestroFlask
 
 log = get_logger()
 
@@ -24,7 +27,7 @@ class MaestroTriggerManager(TriggerManager):
     trigger_type = TriggerType.MAESTRO
 
     @classmethod
-    def fire_triggers(cls, event: MaestroEvent) -> None:
+    def fire_triggers(cls, event: MaestroEvent, app: "MaestroFlask | None" = None) -> None:
         """Execute registered meastro event (eg. startup or shutdown) functions."""
         func_params = MaestroParams.FuncParams()
         registry = cls.get_registry(registry_union=True)
@@ -33,8 +36,10 @@ class MaestroTriggerManager(TriggerManager):
         for registry_entry in registry[cls.trigger_type].get(event, []):
             funcs_to_execute.append(registry_entry["func"])
 
-        daemon_threads = event != MaestroEvent.SHUTDOWN
-        cls.invoke_threaded_funcs(funcs_to_execute, func_params, daemon_threads=daemon_threads)
+        if event == MaestroEvent.SHUTDOWN and app is not None:
+            cls.invoke_funcs_sync(funcs_to_execute, func_params, app)
+        else:
+            cls.invoke_funcs_threaded(funcs_to_execute, func_params)
 
 
 def maestro_trigger(event: MaestroEvent) -> Callable:

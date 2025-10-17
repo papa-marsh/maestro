@@ -27,7 +27,7 @@ class MaestroFlask(Flask):
         self._initialize_scheduler()
         with self.app_context():
             MaestroTriggerManager.fire_triggers(MaestroEvent.STARTUP)
-        atexit.register(MaestroTriggerManager.fire_triggers, MaestroEvent.SHUTDOWN)
+        atexit.register(self._shutdown_handler)
 
     def _initialize_db(self) -> None:
         self.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
@@ -41,6 +41,10 @@ class MaestroFlask(Flask):
         CronTriggerManager.register_jobs(self.scheduler)
         SunTriggerManager.register_jobs(self.scheduler)
         atexit.register(self.scheduler.shutdown)
+
+    def _shutdown_handler(self) -> None:
+        self.app_context().push()
+        MaestroTriggerManager.fire_triggers(MaestroEvent.SHUTDOWN, self)
 
 
 configure_logging()

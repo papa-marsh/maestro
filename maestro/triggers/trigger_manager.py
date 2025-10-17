@@ -15,8 +15,6 @@ from maestro.triggers.types import (
 )
 
 if TYPE_CHECKING:
-    from flask import Flask
-
     from maestro.app import MaestroFlask
 
 log = get_logger()
@@ -91,11 +89,10 @@ class TriggerManager(ABC):
 
     @classmethod
     @final
-    def invoke_threaded_funcs(
+    def invoke_funcs_threaded(
         cls,
         funcs_to_execute: list[Callable],
         trigger_params: TriggerFuncParamsT,
-        daemon_threads: bool = True,
     ) -> None:
         """Execute a list of trigger functions in background threads."""
         from flask import current_app
@@ -107,7 +104,7 @@ class TriggerManager(ABC):
             thread = Thread(
                 target=cls._invoke_func_with_param_handling,
                 args=(func, params_dict, app),
-                daemon=daemon_threads,
+                daemon=True,
             )
             thread.start()
             log.info(
@@ -119,11 +116,30 @@ class TriggerManager(ABC):
 
     @classmethod
     @final
+    def invoke_funcs_sync(
+        cls,
+        funcs_to_execute: list[Callable],
+        trigger_params: TriggerFuncParamsT,
+        app: "MaestroFlask",
+    ) -> None:
+        """Execute a list of trigger functions synchronously (blocking)."""
+        params_dict = dict(trigger_params)
+
+        for func in funcs_to_execute:
+            cls._invoke_func_with_param_handling(func, params_dict, app)
+            log.info(
+                "Executed triggered script synchronously",
+                function_name=func.__name__,
+                trigger_type=cls.trigger_type,
+            )
+
+    @classmethod
+    @final
     def _invoke_func_with_param_handling(
         cls,
         func: Callable,
         params_dict: dict[str, Any],
-        app: "Flask",
+        app: "MaestroFlask",
     ) -> None:
         """
         Wrapper logic to handle a varied number of optional args passed to a decorated function.
