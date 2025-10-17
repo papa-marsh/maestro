@@ -38,12 +38,12 @@ class StateChangeTriggerManager(TriggerManager):
 
 
 def state_change_trigger(
-    entity: Entity | EntityId | str,
+    *entities: Entity | str,
     from_state: str | None = None,
     to_state: str | None = None,
 ) -> Callable:
     """
-    Decorator to register a function as a state change trigger for the specified entity.
+    Decorator to register a function as a state change trigger for the specified entity or entities.
 
     Available function params:
         `state_change: StateChangeEvent`
@@ -54,23 +54,24 @@ def state_change_trigger(
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
-        entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
-        trigger_args = StateChangeParams.TriggerParams(
-            entity_id=entity_id,
-            from_state=from_state,
-            to_state=to_state,
-        )
-        registry_entry = TriggerRegistryEntry(
-            func=wrapper,
-            trigger_args=trigger_args,
-            qual_name=TriggerManager._get_qual_name(func),
-        )
+        for entity in entities:
+            entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
+            trigger_args = StateChangeParams.TriggerParams(
+                entity_id=entity_id,
+                from_state=from_state,
+                to_state=to_state,
+            )
+            registry_entry = TriggerRegistryEntry(
+                func=wrapper,
+                trigger_args=trigger_args,
+                qual_name=TriggerManager._get_qual_name(func),
+            )
 
-        StateChangeTriggerManager.register_function(
-            trigger_type=TriggerType.STATE_CHANGE,
-            registry_key=entity_id,
-            registry_entry=registry_entry,
-        )
+            StateChangeTriggerManager.register_function(
+                trigger_type=TriggerType.STATE_CHANGE,
+                registry_key=entity_id,
+                registry_entry=registry_entry,
+            )
 
         return wrapper
 

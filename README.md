@@ -219,13 +219,22 @@ Trigger decorators automatically register your functions to respond to events. D
 
 ### State Change Trigger
 
-Responds when an entity's state changes.
+Responds when an entity's state changes. Can trigger on one or multiple entities.
 
 ```python
-# With optional state_change parameter
-@state_change_trigger(entity, from_state=None, to_state=None)
-def handler(state_change: StateChangeEvent) -> None:
+# Single entity
+@state_change_trigger(switch.bedroom_motion_sensor, to_state="on")
+def motion_detected(state_change: StateChangeEvent) -> None:
     log.info(f"Changed from {state_change.old.state} to {state_change.new.state}")
+
+# Multiple entities - same handler for all
+@state_change_trigger(
+    sensor.living_room_temperature,
+    sensor.bedroom_temperature,
+    sensor.kitchen_temperature
+)
+def temperature_changed(state_change: StateChangeEvent) -> None:
+    log.info(f"{state_change.entity_id} changed to {state_change.new.state}")
 
 # Without parameters - still works!
 @state_change_trigger(entity)
@@ -235,7 +244,7 @@ def simple_handler() -> None:
 
 **Decorator Parameters:**
 
-- `entity`: Entity object, EntityId, or string
+- `*entities`: One or more Entity objects or entity ID strings
 - `from_state`: Optional - only trigger when transitioning from this state
 - `to_state`: Optional - only trigger when transitioning to this state
 
