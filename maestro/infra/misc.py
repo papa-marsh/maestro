@@ -1,10 +1,28 @@
 import importlib
+import logging
 import sys
 from pathlib import Path
 
+import structlog
 from structlog.stdlib import get_logger
 
 log = get_logger()
+
+
+def configure_logging() -> None:
+    """Configure structlog with colored output for all environments."""
+    structlog.configure(
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.processors.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.dev.ConsoleRenderer(colors=True),
+        ],
+        wrapper_class=structlog.make_filtering_bound_logger(min_level=logging.DEBUG),
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(),
+        cache_logger_on_first_use=True,
+    )
 
 
 def load_script_modules() -> None:
@@ -35,8 +53,8 @@ def load_script_modules() -> None:
         module_name = str(relative_path.with_suffix("")).replace("/", ".").replace("\\", ".")
 
         try:
+            log.info("Loading scripts module", module=module_name)
             importlib.import_module(module_name)
-            log.info("Successfully loaded scripts module", module=module_name)
             loaded_count += 1
         except Exception as e:
             log.exception("Failed to load scripts module", module=module_name, error=str(e))

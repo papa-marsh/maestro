@@ -9,8 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 from structlog.stdlib import get_logger
 
 from maestro.config import DATABASE_URL, SQLALCHEMY_TRACK_MODIFICATIONS, TIMEZONE
-from maestro.infra.logging import configure_logging
-from maestro.infra.misc import load_script_modules
+from maestro.infra.misc import configure_logging, load_script_modules
 from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.sun import SunTriggerManager
 from maestro.utils.scheduler import JobScheduler

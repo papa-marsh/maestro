@@ -69,7 +69,7 @@ class TriggerManager(ABC):
 
         registry_entries.append(registry_entry)
         log.info(
-            "Successfully registered trigger function",
+            "Registered trigger function",
             function_name=registry_entry["func"].__name__,
             trigger_type=trigger_type,
             registry_key=registry_key,
