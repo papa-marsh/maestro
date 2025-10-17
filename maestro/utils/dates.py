@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import IntEnum
 
 from maestro.config import TIMEZONE
@@ -9,10 +9,11 @@ SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR
 
 
 class IntervalSeconds(IntEnum):
+    FIFTEEN_MINUTES = 15 * SECONDS_PER_MINUTE
     ONE_HOUR = SECONDS_PER_HOUR
-    ONE_DAY = 24 * SECONDS_PER_HOUR
-    ONE_WEEK = 7 * 24 * SECONDS_PER_HOUR
-    THIRTY_DAYS = 30 * 24 * SECONDS_PER_HOUR
+    ONE_DAY = SECONDS_PER_DAY
+    ONE_WEEK = 7 * SECONDS_PER_DAY
+    THIRTY_DAYS = 30 * SECONDS_PER_DAY
 
 
 def local_now() -> datetime:
@@ -27,8 +28,9 @@ def resolve_timestamp(iso_string: str) -> datetime:
         return dt.astimezone(TIMEZONE)
 
 
-def format_duration(duration_seconds: int, verbose: bool = False) -> str:
+def format_duration(duration: timedelta, verbose: bool = False) -> str:
     """Format duration in a human-readable way."""
+    duration_seconds = duration.total_seconds()
     if duration_seconds < SECONDS_PER_MINUTE:
         output = f"{duration_seconds}s"
         if verbose:
