@@ -132,7 +132,10 @@ class HomeAssistantClient:
         )
 
         if status != HTTPStatus.OK:
-            raise ConnectionError(f"Failed to perform action {domain}.{action}")
+            raise ConnectionError(
+                f"Failed to perform action {domain}.{action}: "
+                f"status={status}, response={response_data}"
+            )
 
         if not isinstance(response_data, list):
             raise ConnectionError(f"Expected list response for action {domain}.{action}")
@@ -161,7 +164,7 @@ class HomeAssistantClient:
         }
 
         try:
-            log.info("Sending request to Home Assistant", method=method, path=path)
+            log.info("Sending request to Home Assistant", method=method, path=path, body=body)
             response = requests.request(
                 method=method,
                 url=url,
@@ -171,10 +174,10 @@ class HomeAssistantClient:
             )
             data = response.json() if response.content else {}
 
-        except requests.exceptions.RequestException as e:
-            raise ConnectionError(f"Network error: {e}") from e
         except requests.exceptions.JSONDecodeError:
             data = {}
+        except requests.exceptions.RequestException as e:
+            raise ConnectionError(f"Network error: {e}") from e
 
         return data, response.status_code
 
