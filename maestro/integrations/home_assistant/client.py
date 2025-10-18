@@ -171,10 +171,10 @@ class HomeAssistantClient:
             )
             data = response.json() if response.content else {}
 
-        except requests.exceptions.RequestException as e:
-            raise ConnectionError(f"Network error: {e}") from e
         except requests.exceptions.JSONDecodeError:
             data = {}
+        except requests.exceptions.RequestException as e:
+            raise ConnectionError(f"Network error: {e}") from e
 
         return data, response.status_code
 
