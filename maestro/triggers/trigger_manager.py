@@ -92,18 +92,18 @@ class TriggerManager(ABC):
     def invoke_funcs_threaded(
         cls,
         funcs_to_execute: list[Callable],
-        trigger_params: TriggerFuncParamsT,
+        func_params: TriggerFuncParamsT,
     ) -> None:
         """Execute a list of trigger functions in background threads."""
         from flask import current_app
 
-        params_dict = dict(trigger_params)
+        func_params_dict = dict(func_params)
         app: MaestroFlask = current_app._get_current_object()  # type:ignore[attr-defined]
 
         for func in funcs_to_execute:
             thread = Thread(
                 target=cls._invoke_func_with_param_handling,
-                args=(func, params_dict, app),
+                args=(func, func_params_dict, app),
                 daemon=True,
             )
             thread.start()
@@ -119,14 +119,14 @@ class TriggerManager(ABC):
     def invoke_funcs_sync(
         cls,
         funcs_to_execute: list[Callable],
-        trigger_params: TriggerFuncParamsT,
+        func_params: TriggerFuncParamsT,
         app: "MaestroFlask",
     ) -> None:
         """Execute a list of trigger functions synchronously (blocking)."""
-        params_dict = dict(trigger_params)
+        func_params_dict = dict(func_params)
 
         for func in funcs_to_execute:
-            cls._invoke_func_with_param_handling(func, params_dict, app)
+            cls._invoke_func_with_param_handling(func, func_params_dict, app)
             log.info(
                 "Executed triggered script synchronously",
                 function_name=func.__name__,
@@ -138,7 +138,7 @@ class TriggerManager(ABC):
     def _invoke_func_with_param_handling(
         cls,
         func: Callable,
-        params_dict: dict[str, Any],
+        func_params_dict: dict[str, Any],
         app: "MaestroFlask",
     ) -> None:
         """
@@ -154,7 +154,7 @@ class TriggerManager(ABC):
         try:
             execution_args = []
             for signature_param in signature(func).parameters:
-                if signature_param not in params_dict:
+                if signature_param not in func_params_dict:
                     log.error(
                         "Invalid argument for trigger decorated function",
                         trigger_type=cls.trigger_type,
@@ -162,7 +162,7 @@ class TriggerManager(ABC):
                         arg=signature_param,
                     )
                     continue
-                execution_args.append(params_dict[signature_param])
+                execution_args.append(func_params_dict[signature_param])
 
             with app.app_context():
                 func(*execution_args)

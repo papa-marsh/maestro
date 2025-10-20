@@ -18,7 +18,7 @@ class StateChangeTriggerManager(TriggerManager):
     @classmethod
     def fire_triggers(cls, state_change: StateChangeEvent) -> None:
         """Execute all registered state change functions for the given entity."""
-        trigger_params = StateChangeParams.FuncParams(state_change=state_change)
+        func_params = StateChangeParams.FuncParams(state_change=state_change)
         registry = cls.get_registry(registry_union=True)
         funcs_to_execute = []
 
@@ -34,7 +34,7 @@ class StateChangeTriggerManager(TriggerManager):
 
             funcs_to_execute.append(registry_entry["func"])
 
-        cls.invoke_funcs_threaded(funcs_to_execute, trigger_params)
+        cls.invoke_funcs_threaded(funcs_to_execute, func_params)
 
 
 def state_change_trigger(
