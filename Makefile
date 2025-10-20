@@ -1,4 +1,4 @@
-.PHONY: build deploy pull pull-deploy logs test shell bash
+.PHONY: build deploy pull pull-deploy pull-deploy-f logs test shell bash
 
 # Build the Docker image
 build:
@@ -23,6 +23,20 @@ pull:
 
 # Deploy after pulling the maestro & scripts repos from their remotes
 pull-deploy:
+	git checkout main && \
+	git pull && \
+	cd scripts && \
+	git checkout main && \
+	git pull && \
+	cd .. && \
+	docker compose down && \
+	docker compose up -d --build && \
+	sleep 1 && \
+	make logs
+
+
+# Deploy after "force pulling" the maestro & scripts repos from their remotes
+pull-deploy-f:
 	git checkout main && \
 	git fetch origin && \
 	git reset --hard origin/main && \
