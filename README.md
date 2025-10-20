@@ -219,6 +219,8 @@ def temperature_monitor(state_change: StateChangeEvent) -> None:
 
 Trigger decorators automatically register your functions to respond to events. Decorated functions can optionally accept parameters that provide event context—these parameters are optional and the decorator works whether you include them or not.
 
+**Note:** To add a trigger decorator to a function that belongs to a class, it must be a `@staticmethod`.
+
 ### State Change Trigger
 
 Responds when an entity's state changes. Can trigger on one or multiple entities.
