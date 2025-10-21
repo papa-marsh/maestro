@@ -1,7 +1,9 @@
+from scripts.custom_domains import *  # noqa: F403 (see maestro.registry.README)
+
 from .binary_sensor import BinarySensor
 from .button import Button
 from .calendar import Calendar
-from .climate import Climate, HeatedFloorClimate, TeslaClimate, ThermostatClimate
+from .climate import Climate
 from .cover import Cover
 from .device_tracker import DeviceTracker
 from .entity import Entity
@@ -15,7 +17,7 @@ from .input_text import InputText
 from .light import Light
 from .lock import Lock
 from .maestro import Maestro
-from .media_player import MediaPlayer, SonosMediaPlayer
+from .media_player import MediaPlayer
 from .number import Number
 from .person import Person
 from .select import Select
@@ -31,9 +33,6 @@ __all__ = [
     Button.__name__,
     Calendar.__name__,
     Climate.__name__,
-    HeatedFloorClimate.__name__,
-    TeslaClimate.__name__,
-    ThermostatClimate.__name__,
     Cover.__name__,
     DeviceTracker.__name__,
     Entity.__name__,
@@ -52,7 +51,6 @@ __all__ = [
     Person.__name__,
     Select.__name__,
     Sensor.__name__,
-    SonosMediaPlayer.__name__,
     Sun.__name__,
     Switch.__name__,
     Update.__name__,

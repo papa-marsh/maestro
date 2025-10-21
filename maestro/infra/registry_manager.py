@@ -121,7 +121,8 @@ class RegistryManager:
         entries.sort()
 
         imports.add(current_entry["parent_class"])
-        import_string = "from maestro.domains import " + ", ".join(sorted(imports))
+        mypy_ignore = "  # type:ignore[attr-defined, unused-ignore]"
+        import_string = "from maestro.domains import " + ", ".join(sorted(imports)) + mypy_ignore
 
         new_lines = [
             cls.header,
