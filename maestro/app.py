@@ -9,10 +9,10 @@ from flask_sqlalchemy import SQLAlchemy
 from structlog.stdlib import get_logger
 
 from maestro.config import DATABASE_URL, SQLALCHEMY_TRACK_MODIFICATIONS, TIMEZONE
-from maestro.infra.misc import configure_logging, load_script_modules
 from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.sun import SunTriggerManager
+from maestro.utils.internal import configure_logging, load_script_modules
 from maestro.utils.scheduler import JobScheduler
 from maestro.webhooks.event_fired import handle_event_fired
 from maestro.webhooks.notif_action import handle_notif_action
@@ -69,7 +69,6 @@ WEBHOOK_HANDLERS = {
 @app.shell_context_processor
 def make_shell_context() -> dict:
     """Pre-load common imports for flask shell command"""
-    from maestro.infra.registry_manager import RegistryManager
     from maestro.integrations.home_assistant.client import HomeAssistantClient
     from maestro.integrations.home_assistant.types import (
         AttributeId,
@@ -108,6 +107,7 @@ def make_shell_context() -> dict:
         weather,
         zone,
     )
+    from maestro.registry.registry_manager import RegistryManager
     from maestro.triggers.sun import SolarEvent
     from maestro.triggers.trigger_manager import TriggerManager
     from maestro.utils import (

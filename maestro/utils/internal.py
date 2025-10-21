@@ -1,3 +1,8 @@
+"""
+Internal utility logic & helpers.
+Not intended to be used by script modules
+"""
+
 import importlib
 import logging
 import sys
