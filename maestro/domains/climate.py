@@ -14,6 +14,15 @@ class Climate(Entity):
     def toggle(self) -> None:
         self.perform_action("toggle")
 
+    def set_fan_mode(self, mode: str) -> None:
+        self.perform_action("set_fan_mode", mode=mode)
+
+    def set_hvac_mode(self, mode: str) -> None:
+        self.perform_action("set_hvac_mode", mode=mode)
+
+    def set_preset_mode(self, mode: str) -> None:
+        self.perform_action("set_preset_mode", mode=mode)
+
     def set_temp_target(self, target_temp: int) -> None:
         self.perform_action("set_temperature", target_temp=target_temp)
 
