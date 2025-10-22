@@ -114,7 +114,6 @@ def make_shell_context() -> dict:
         IntervalSeconds,
         JobScheduler,
         Notif,
-        NotifPriority,
         local_now,
         resolve_timestamp,
     )

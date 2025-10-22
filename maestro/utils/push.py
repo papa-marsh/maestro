@@ -13,29 +13,6 @@ if TYPE_CHECKING:
 log = get_logger()
 
 
-class NotifPriority(StrEnum):
-    PASSIVE = auto()
-    ACTIVE = auto()
-    TIME_SENSITIVE = "time-sensitive"
-    CRITICAL = auto()
-
-
-class NotifAction(TypedDict):
-    """
-    Represents a single Action of an actionable notifiction.
-    `action` is the action's unique identifier. `title` is what's shown on the button itself.
-    Set behavior="textInput" to allow a text input response after pressing the button.
-    `uri` can be used to bring user to a specific tab in the HA app (eg. /lovelace-mobile/view_name)
-    """
-
-    action: str
-    title: str
-    authenticationRequired: bool
-    destructive: bool
-    uri: NotRequired[str]
-    behavior: NotRequired[str]
-
-
 class Notif:
     """
     Comprehensive push notification class.
@@ -45,16 +22,37 @@ class Notif:
     receives an actionable notification's response.
     """
 
+    class Priority(StrEnum):
+        PASSIVE = auto()
+        ACTIVE = auto()
+        TIME_SENSITIVE = "time-sensitive"
+        CRITICAL = auto()
+
+    class Action(TypedDict):
+        """
+        Represents a single Action of an actionable notifiction.
+        `action` is the action's unique identifier. `title` is what's shown on the button itself.
+        Set behavior="textInput" to allow a text input response after pressing the button.
+        `uri` can be used to bring user to a specific url or HA tab.
+        """
+
+        action: str
+        title: str
+        authenticationRequired: bool
+        destructive: bool
+        uri: NotRequired[str]
+        behavior: NotRequired[str]
+
     def __init__(
         self,
         message: str,
         title: str = "",
-        priority: NotifPriority = NotifPriority.ACTIVE,
+        priority: Priority = Priority.ACTIVE,
         group: str | None = None,
         tag: str | None = None,
         sound: str | None = DEFAULT_NOTIF_SOUND,
         url: str = DEFAULT_NOTIF_URL,
-        actions: list[NotifAction] = [],
+        actions: list[Action] = [],
         action_data: Any = None,
     ) -> None:
         if tag and not group:
@@ -99,9 +97,9 @@ class Notif:
         uri: str | None = None,
         input: bool = False,
         require_auth: bool = False,
-    ) -> NotifAction:
+    ) -> Action:
         """Helper function to create a NotifAction with clean defaults"""
-        action = NotifAction(
+        action = cls.Action(
             action=name,
             title=title,
             authenticationRequired=require_auth,
