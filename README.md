@@ -163,6 +163,15 @@ Maestro is a framework that lets you write Home Assistant automations in Python 
 
 All your automation logic goes in the `scripts/` directory. Import from the `maestro` package to access triggers, entities, and utilities.
 
+### A Quick Note On Imports
+
+Anything intended to be used in automation logic is exported by a top-level package in the `maestro` directory. Importing from deeper in the package structure is never necessary.
+
+**Examples**
+
+- `from maestro.triggers import state_change_trigger`
+- `from maestro.integrations import EntityId`
+
 ### Basic Example
 
 ```python
