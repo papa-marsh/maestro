@@ -1,5 +1,3 @@
-from scripts.custom_domains import *  # noqa: F403 (see maestro.registry.README)
-
 from .binary_sensor import BinarySensor
 from .button import Button
 from .calendar import Calendar
@@ -27,6 +25,9 @@ from .switch import Switch
 from .update import Update
 from .weather import Weather
 from .zone import Zone
+
+...  # Custom domains must be imported last to avoid circular imports
+from scripts.custom_domains import *  # noqa: F403, E402 (see maestro.registry.README)
 
 __all__ = [
     BinarySensor.__name__,
