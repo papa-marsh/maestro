@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from enum import IntEnum
+from typing import Any
 
 from maestro.config import TIMEZONE
 
@@ -59,3 +60,15 @@ def format_duration(duration: timedelta, verbose: bool = False) -> str:
         output = output.replace("m", " minute" if minutes == 1 else " minutes")
 
     return output
+
+
+def serialize_datetimes(obj: Any) -> Any:
+    """Recursively convert datetime objects to ISO format strings for JSON serialization"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {key: serialize_datetimes(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [serialize_datetimes(item) for item in obj]
+    else:
+        return obj

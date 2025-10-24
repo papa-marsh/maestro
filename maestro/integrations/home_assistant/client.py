@@ -8,7 +8,7 @@ from structlog.stdlib import get_logger
 from maestro.config import DOMAIN_IGNORE_LIST, HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.integrations.home_assistant.types import EntityData, EntityId
-from maestro.utils.dates import resolve_timestamp
+from maestro.utils.dates import resolve_timestamp, serialize_datetimes
 
 log = get_logger()
 
@@ -77,7 +77,7 @@ class HomeAssistantClient:
         path = f"/api/states/{entity_id}"
         body = {
             "state": state,
-            "attributes": attributes,
+            "attributes": serialize_datetimes(attributes),
         }
 
         response_data, status = self.execute_request(
