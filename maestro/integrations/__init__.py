@@ -1,5 +1,6 @@
 from .home_assistant.types import (
     AttributeId,
+    Domain,
     EntityId,
     FiredEvent,
     NotifActionEvent,
@@ -11,6 +12,7 @@ from .state_manager import StateManager
 
 __all__ = [
     AttributeId.__name__,
+    Domain.__name__,
     EntityId.__name__,
     FiredEvent.__name__,
     StateChangeEvent.__name__,

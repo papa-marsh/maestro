@@ -121,6 +121,7 @@ def make_shell_context() -> dict:
     hass = HomeAssistantClient()
     redis = RedisClient()
     sm = StateManager(hass_client=hass, redis_client=redis)
+    registry = TriggerManager.get_registry()
 
     return locals()
 

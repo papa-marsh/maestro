@@ -1,5 +1,6 @@
 import contextlib
 import json
+from typing import Any
 
 from structlog.stdlib import get_logger
 
@@ -64,6 +65,23 @@ class StateManager:
         old_cached_state = CachedValue(value=old_data["value"], type=old_data["type"])
 
         return self.redis_client.decode_cached_state(old_cached_state)
+
+    def create_hass_entity(
+        self,
+        entity_id: EntityId,
+        state: str,
+        attributes: dict[str, Any],
+        error_if_exists: bool = False,
+    ) -> EntityData:
+        """Create an entity in Home Assistant and cache locally to Redis"""
+        entity_data, created = self.hass_client.set_entity(entity_id, state, attributes)
+
+        if error_if_exists and not created:
+            raise ValueError(f"Entity {entity_id} already exists in Home Assistant")
+
+        self.cache_entity(entity_data)
+
+        return entity_data
 
     def get_all_entity_keys(self, entity_id: EntityId) -> list[str]:
         """Returns a list of all cached state and attribute keys for a given entity ID"""
