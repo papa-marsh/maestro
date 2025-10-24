@@ -61,7 +61,7 @@ class RegistryManager:
         new_entry = cls._build_entry(
             entity_id=entity_id,
             attributes=entity_data.attributes,
-            subclass=entity_id.domain_class_name,
+            parent_class=entity_id.domain_class_name,
             type_as_value=False,
         )
         content = (
@@ -79,15 +79,10 @@ class RegistryManager:
         content = module_filepath.read_text()
         lines = content.strip().split("\n")
 
-        new_entry = cls._build_entry(
-            entity_id=entity_id,
-            attributes=entity_data.attributes,
-            subclass=entity_id.domain_class_name,
-            type_as_value=False,
-        )
+        new_entry_parent_class = entity_id.domain_class_name
 
         imports = set()
-        entries = [new_entry]
+        entries = []
         current_entry: dict[str, Any] = {}
         for line in lines:
             if line.startswith("class "):
@@ -96,7 +91,7 @@ class RegistryManager:
                     entry_string = cls._build_entry(
                         entity_id=EntityId(current_entry["entity_id"]),
                         attributes=current_entry["attributes"],
-                        subclass=current_entry["parent_class"],
+                        parent_class=current_entry["parent_class"],
                         type_as_value=True,
                     )
                     entries.append(entry_string)
@@ -109,15 +104,25 @@ class RegistryManager:
             elif f" = {entity_id.domain_class_name}" in line:
                 if match := re.match(r'\w+\s*=\s*\w+\("([^"]+)"\)', line):
                     current_entry["entity_id"] = match.group(1)
+                    if current_entry["entity_id"] == entity_id:
+                        new_entry_parent_class = current_entry["parent_class"]
 
         if current_entry["entity_id"] != entity_id:
             entry_string = cls._build_entry(
                 entity_id=EntityId(current_entry["entity_id"]),
                 attributes=current_entry["attributes"],
-                subclass=current_entry["parent_class"],
+                parent_class=current_entry["parent_class"],
                 type_as_value=True,
             )
             entries.append(entry_string)
+
+        new_entry = cls._build_entry(
+            entity_id=entity_id,
+            attributes=entity_data.attributes,
+            parent_class=new_entry_parent_class,
+            type_as_value=False,
+        )
+        entries.append(new_entry)
         entries.sort()
 
         imports.add(current_entry["parent_class"])
@@ -140,12 +145,12 @@ class RegistryManager:
         cls,
         entity_id: EntityId,
         attributes: dict,
-        subclass: str | None,
+        parent_class: str | None,
         type_as_value: bool,
     ) -> str:
         pascalcase_id = "".join(word.capitalize() for word in entity_id.entity.split("_"))
         entry_class_name = entity_id.domain_class_name + pascalcase_id
-        parent_class = subclass or entity_id.domain_class_name
+        parent_class = parent_class or entity_id.domain_class_name
         new_entry = f"\nclass {entry_class_name}({parent_class}):"
         attribute_added = False
         for attribute, value in attributes.items():
