@@ -1,5 +1,5 @@
-import contextlib
 import json
+from contextlib import suppress
 from typing import Any
 
 from structlog.stdlib import get_logger
@@ -48,7 +48,7 @@ class StateManager:
             raise TypeError("State value must be a string")
 
         if id.is_attribute and isinstance(value, str):
-            with contextlib.suppress(ValueError):
+            with suppress(ValueError):
                 value = resolve_timestamp(value)
 
         encoded_value = self.redis_client.encode_cached_state(value)
@@ -66,19 +66,19 @@ class StateManager:
 
         return self.redis_client.decode_cached_state(old_cached_state)
 
-    def create_hass_entity(
+    def upsert_hass_entity(
         self,
         entity_id: EntityId,
         state: str,
         attributes: dict[str, Any],
-        error_if_exists: bool = False,
+        create_only: bool = False,
     ) -> EntityData:
-        """Create an entity in Home Assistant and cache locally to Redis"""
-        entity_data, created = self.hass_client.set_entity(entity_id, state, attributes)
+        """Create or update an entity in Home Assistant and cache locally to Redis"""
+        with suppress(ValueError):
+            if create_only and self.fetch_hass_entity(entity_id):
+                raise FileExistsError(f"Entity {entity_id} already exists in Home Assistant")
 
-        if error_if_exists and not created:
-            raise ValueError(f"Entity {entity_id} already exists in Home Assistant")
-
+        entity_data, _ = self.hass_client.set_entity(entity_id, state, attributes)
         self.cache_entity(entity_data)
 
         return entity_data

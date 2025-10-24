@@ -1,4 +1,4 @@
-import contextlib
+from contextlib import suppress
 from http import HTTPMethod, HTTPStatus
 from typing import Any
 
@@ -110,7 +110,7 @@ class HomeAssistantClient:
 
     def delete_entity_if_exists(self, entity_id: str) -> None:
         """Delete an entity if it exists, ignoring errors if it doesn't exist"""
-        with contextlib.suppress(ValueError):
+        with suppress(ValueError):
             self.delete_entity(entity_id)
 
     def perform_action(
