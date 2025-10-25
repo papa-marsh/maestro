@@ -68,8 +68,8 @@ class JobScheduler:
             "kwargs": func_params or {},
         }
 
-        self.cache_job_to_redis(job_metadata)
-        self.schedule_job_in_apscheduler(job_metadata, func)
+        self._cache_job_to_redis(job_metadata)
+        self._schedule_job_in_apscheduler(job_metadata, func)
 
         log.info("Scheduled future job", **job_metadata)
 
@@ -106,10 +106,10 @@ class JobScheduler:
             except Exception:
                 log.exception("Failed to restore cached job", **job)
 
-            self.schedule_job_in_apscheduler(job, func)
+            self._schedule_job_in_apscheduler(job, func)
             log.info("Restored job from cache", job_id=job["id"])
 
-    def cache_job_to_redis(self, job: JobMetadata) -> None:
+    def _cache_job_to_redis(self, job: JobMetadata) -> None:
         """Persist job metadata to Redis so that we don't lose jobs between restarts"""
         redis_key = self.redis_client.build_key(CachePrefix.SCHEDULED, job["id"])
         job_json = json.dumps(job)
@@ -117,7 +117,7 @@ class JobScheduler:
         self.redis_client.set(redis_key, job_json, ttl_seconds=self.run_time_limit)
         log.debug("Cached job to Redis", job_id=job["id"], redis_key=redis_key)
 
-    def schedule_job_in_apscheduler(self, job: JobMetadata, func: Callable) -> None:
+    def _schedule_job_in_apscheduler(self, job: JobMetadata, func: Callable) -> None:
         """Schedule a job in APScheduler with a wrapper that cleans up Redis after execution"""
         run_time = datetime.fromisoformat(job["run_time"])
         func_name = f"{job['module_path']}.{job['func_name']}"
