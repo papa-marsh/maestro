@@ -2,10 +2,13 @@ import re
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.utils.dates import resolve_timestamp
+
+if TYPE_CHECKING:
+    from maestro.domains import Entity
 
 
 class StateId(str):
@@ -46,12 +49,19 @@ class EntityId(StateId):
 
         return str.__new__(cls, value)
 
-    def resolve_entity(self) -> Any:
+    def resolve_entity(self) -> "Entity":
         """Resolve this EntityId to its actual registered Entity subclass instance."""
         import importlib
 
+        from maestro.domains import Entity
+
         registry_module = importlib.import_module(f"maestro.registry.{self.domain}")
-        return getattr(registry_module, self.entity)
+        entity = getattr(registry_module, self.entity)
+
+        if not isinstance(entity, Entity):
+            raise TypeError
+
+        return entity
 
 
 class AttributeId(StateId):
