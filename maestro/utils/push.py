@@ -73,9 +73,8 @@ class Notif:
             },
         }
 
-    def send(self, target: "Person | list[Person]") -> None:
-        target_list = [target] if not isinstance(target, list) else target
-        for target in target_list:
+    def send(self, *targets: "Person") -> None:
+        for target in targets:
             log.info("Sending notification", title=self.payload["title"], target=target.id)
             action_name = NOTIFY_ACTION_MAPPINGS.get(target.id)
             if action_name is None:

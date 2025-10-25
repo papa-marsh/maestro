@@ -46,6 +46,13 @@ class EntityId(StateId):
 
         return str.__new__(cls, value)
 
+    def resolve_entity(self) -> Any:
+        """Resolve this EntityId to its actual registered Entity subclass instance."""
+        import importlib
+
+        registry_module = importlib.import_module(f"maestro.registry.{self.domain}")
+        return getattr(registry_module, self.entity)
+
 
 class AttributeId(StateId):
     """A validated Home Assistant attribute ID (domain.entity.attribute)"""
