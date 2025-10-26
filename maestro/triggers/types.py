@@ -12,6 +12,7 @@ from maestro.integrations.home_assistant.types import (
 )
 
 if TYPE_CHECKING:
+    from maestro.triggers.hass import HassEvent
     from maestro.triggers.maestro import MaestroEvent
     from maestro.triggers.sun import SolarEvent
 
@@ -23,6 +24,7 @@ class TriggerType(StrEnum):
     NOTIF_ACTION = auto()
     SUN = auto()
     MAESTRO = auto()
+    HASS = auto()
 
 
 class StateChangeParams:
@@ -83,6 +85,14 @@ class MaestroParams:
         pass
 
 
+class HassParams:
+    class TriggerParams(TypedDict):
+        event: "HassEvent"
+
+    class FuncParams(TypedDict):
+        pass
+
+
 class TriggerRegistryEntry(TypedDict):
     func: Callable
     trigger_args: (
@@ -92,6 +102,7 @@ class TriggerRegistryEntry(TypedDict):
         | NotifActionParams.TriggerParams
         | SunParams.TriggerParams
         | MaestroParams.TriggerParams
+        | HassParams.TriggerParams
     )
     qual_name: str
 
@@ -103,4 +114,5 @@ TriggerFuncParamsT = (
     | NotifActionParams.FuncParams
     | SunParams.FuncParams
     | MaestroParams.FuncParams
+    | HassParams.FuncParams
 )

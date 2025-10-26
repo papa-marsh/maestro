@@ -15,6 +15,8 @@ from maestro.triggers.sun import SunTriggerManager
 from maestro.utils.internal import configure_logging, load_script_modules
 from maestro.utils.scheduler import JobScheduler
 from maestro.webhooks.event_fired import handle_event_fired
+from maestro.webhooks.hass_shutdown import handle_hass_shutdown
+from maestro.webhooks.hass_startup import handle_hass_startup
 from maestro.webhooks.notif_action import handle_notif_action
 from maestro.webhooks.state_changed import handle_state_changed
 
@@ -54,16 +56,19 @@ log = get_logger()
 class EventType(StrEnum):
     STATE_CHANGED = auto()
     IOS_NOTIF_ACTION = "ios.notification_action_fired"
-
-
-db = SQLAlchemy()
-app = MaestroFlask(__name__)
+    HASS_STARTED = "homeassistant_started"  # TODO: Verify
+    HASS_STOPPED = "homeassistant_final_write"  # TODO: Verify
 
 
 WEBHOOK_HANDLERS = {
     EventType.STATE_CHANGED: handle_state_changed,
     EventType.IOS_NOTIF_ACTION: handle_notif_action,
+    EventType.HASS_STARTED: handle_hass_startup,
+    EventType.HASS_STOPPED: handle_hass_shutdown,
 }
+
+db = SQLAlchemy()
+app = MaestroFlask(__name__)
 
 
 @app.shell_context_processor
