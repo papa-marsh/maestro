@@ -16,7 +16,7 @@ log = get_logger()
 
 
 class HassEvent(StrEnum):
-    STARTUP = auto()
+    STARTUP_NOT_WORKING_YET = auto()
     SHUTDOWN = auto()
 
 

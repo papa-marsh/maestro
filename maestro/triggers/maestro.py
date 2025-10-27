@@ -19,7 +19,7 @@ log = get_logger()
 
 
 class MaestroEvent(StrEnum):
-    STARTUP_NOT_WORKING_YET = auto()
+    STARTUP = auto()
     SHUTDOWN = auto()
 
 
