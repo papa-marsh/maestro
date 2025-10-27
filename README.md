@@ -228,7 +228,9 @@ def temperature_monitor(state_change: StateChangeEvent) -> None:
 
 Trigger decorators automatically register your functions to respond to events. Decorated functions can optionally accept parameters that provide event context—these parameters are optional and the decorator works whether you include them or not.
 
-**Note:** To add a trigger decorator to a function that belongs to a class, it must be a `@staticmethod`.
+**Note:** The script discovery logic ignores any module that starts with either `test` or an underscore `_` (including `__init__.py` modules)
+
+**Note:** If a function belongs to a class, then it must be a `@staticmethod` in order to be decorated.
 
 ### State Change Trigger
 
