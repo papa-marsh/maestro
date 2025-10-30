@@ -57,7 +57,7 @@ class EventType(StrEnum):
     STATE_CHANGED = auto()
     IOS_NOTIF_ACTION = "ios.notification_action_fired"
     HASS_STARTED = "homeassistant_started"  # TODO: Verify
-    HASS_STOPPED = "homeassistant_final_write"  # TODO: Verify
+    HASS_STOPPED = "homeassistant_final_write"
 
 
 WEBHOOK_HANDLERS = {

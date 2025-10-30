@@ -75,7 +75,12 @@ class Notif:
 
     def send(self, *targets: "Person") -> None:
         for target in targets:
-            log.info("Sending notification", title=self.payload["title"], target=target.id)
+            log.info(
+                "Sending notification",
+                title=self.payload["title"],
+                message=self.payload["message"],
+                target=target.id,
+            )
             action_name = NOTIFY_ACTION_MAPPINGS.get(target.id)
             if action_name is None:
                 raise KeyError(f"Couldn't map {target.id} to a notify action. Check .env file")
