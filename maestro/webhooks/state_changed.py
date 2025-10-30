@@ -80,7 +80,7 @@ def handle_state_changed(request_body: dict) -> tuple[Response, int]:
     state_manager.cache_entity(state_change.new)
 
     if new_state == old_state:
-        log.info("State hasn't changed - skipping triggers", entity_id=entity_id, state=new_state)
+        log.info("Skipping triggers for unchanged state", entity_id=entity_id, state=new_state)
     else:
         StateChangeTriggerManager.fire_triggers(state_change)
 
