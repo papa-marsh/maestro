@@ -6,12 +6,12 @@ from typing import Any
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
 from flask import Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
-from structlog.stdlib import get_logger
 
 from maestro.config import DATABASE_URL, SQLALCHEMY_TRACK_MODIFICATIONS, TIMEZONE
 from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.sun import SunTriggerManager
+from maestro.utils import log
 from maestro.utils.internal import configure_logging, load_script_modules
 from maestro.utils.scheduler import JobScheduler
 from maestro.webhooks.event_fired import handle_event_fired
@@ -50,7 +50,6 @@ class MaestroFlask(Flask):
 
 
 configure_logging()
-log = get_logger()
 
 
 class EventType(StrEnum):
@@ -69,6 +68,7 @@ WEBHOOK_HANDLERS = {
 
 db = SQLAlchemy()
 app = MaestroFlask(__name__)
+log.info("something")
 
 
 @app.shell_context_processor
