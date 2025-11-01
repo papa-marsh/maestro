@@ -68,7 +68,6 @@ WEBHOOK_HANDLERS = {
 
 db = SQLAlchemy()
 app = MaestroFlask(__name__)
-log.info("something")
 
 
 @app.shell_context_processor
