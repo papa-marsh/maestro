@@ -3,13 +3,12 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any, ClassVar
 
-from structlog.stdlib import get_logger
 
 from maestro.integrations.home_assistant.types import EntityData, EntityId
 from maestro.integrations.redis import CachePrefix, RedisClient
 from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
 
-log = get_logger()
+from maestro.utils.logger import log
 
 
 class RegistryManager:

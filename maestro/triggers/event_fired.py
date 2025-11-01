@@ -2,13 +2,9 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, cast
 
-from structlog.stdlib import get_logger
-
 from maestro.integrations.home_assistant.types import FiredEvent
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import EventFiredParams, TriggerRegistryEntry, TriggerType
-
-log = get_logger()
 
 
 class EventFiredTriggerManager(TriggerManager):

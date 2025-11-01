@@ -2,14 +2,10 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, cast
 
-from structlog.stdlib import get_logger
-
 from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.types import EntityId, StateChangeEvent
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import StateChangeParams, TriggerRegistryEntry, TriggerType
-
-log = get_logger()
 
 
 class StateChangeTriggerManager(TriggerManager):

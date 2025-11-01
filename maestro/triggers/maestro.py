@@ -3,8 +3,6 @@ from enum import StrEnum, auto
 from functools import wraps
 from typing import TYPE_CHECKING, Any
 
-from structlog.stdlib import get_logger
-
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import (
     MaestroParams,
@@ -14,8 +12,6 @@ from maestro.triggers.types import (
 
 if TYPE_CHECKING:
     from maestro.app import MaestroFlask
-
-log = get_logger()
 
 
 class MaestroEvent(StrEnum):

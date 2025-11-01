@@ -6,15 +6,13 @@ from typing import Any
 
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
 from apscheduler.triggers.date import DateTrigger  # type:ignore[import-untyped]
-from structlog.stdlib import get_logger
 
 from maestro.config import TIMEZONE
 from maestro.registry import sun
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import SunParams, TriggerRegistryEntry, TriggerType
 from maestro.utils.dates import local_now
-
-log = get_logger()
+from maestro.utils.logger import log
 
 
 class SolarEvent(StrEnum):

@@ -2,16 +2,13 @@ import json
 from contextlib import suppress
 from typing import Any
 
-from structlog.stdlib import get_logger
-
 from maestro.config import AUTOPOPULATE_REGISTRY
 from maestro.integrations.home_assistant.client import HomeAssistantClient
 from maestro.integrations.home_assistant.types import AttributeId, EntityData, EntityId, StateId
 from maestro.integrations.redis import CachedValue, CachedValueT, CachePrefix, RedisClient
 from maestro.registry.registry_manager import RegistryManager
 from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
-
-log = get_logger()
+from maestro.utils.logger import log
 
 
 class StateManager:

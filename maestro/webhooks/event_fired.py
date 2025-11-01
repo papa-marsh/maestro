@@ -1,11 +1,8 @@
 from flask import Response, jsonify
-from structlog.stdlib import get_logger
 
 from maestro.integrations.home_assistant.types import FiredEvent
 from maestro.triggers.event_fired import EventFiredTriggerManager
 from maestro.utils.dates import resolve_timestamp
-
-log = get_logger()
 
 
 def handle_event_fired(request_body: dict) -> tuple[Response, int]:

@@ -2,15 +2,13 @@ from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 from uuid import uuid4
 
-from structlog.stdlib import get_logger
-
 from maestro.config import DEFAULT_NOTIF_SOUND, DEFAULT_NOTIF_URL, NOTIFY_ACTION_MAPPINGS
 from maestro.integrations.home_assistant.domain import Domain
 
 if TYPE_CHECKING:
     from maestro.domains.person import Person
 
-log = get_logger()
+from maestro.utils.logger import log
 
 
 class Notif:

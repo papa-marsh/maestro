@@ -6,7 +6,6 @@ from threading import Thread
 from typing import TYPE_CHECKING, Any, ClassVar, final
 
 from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
-from structlog.stdlib import get_logger
 
 from maestro.triggers.types import (
     TriggerFuncParamsT,
@@ -17,8 +16,7 @@ from maestro.triggers.types import (
 if TYPE_CHECKING:
     from maestro.app import MaestroFlask
 
-log = get_logger()
-
+from maestro.utils.logger import log
 
 RegistryT = dict[TriggerType, defaultdict[str, list[TriggerRegistryEntry]]]
 

@@ -1,13 +1,11 @@
 from flask import Response, jsonify
-from structlog.stdlib import get_logger
 
 from maestro.config import DOMAIN_IGNORE_LIST
 from maestro.integrations.home_assistant.types import EntityData, EntityId, StateChangeEvent
 from maestro.integrations.state_manager import StateManager
 from maestro.triggers.state_change import StateChangeTriggerManager
 from maestro.utils.dates import resolve_timestamp
-
-log = get_logger()
+from maestro.utils.logger import log
 
 
 def handle_state_changed(request_body: dict) -> tuple[Response, int]:

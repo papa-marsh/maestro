@@ -1,9 +1,7 @@
 from flask import Response, jsonify
-from structlog.stdlib import get_logger
 
 from maestro.triggers.hass import HassEvent, HassTriggerManager
-
-log = get_logger()
+from maestro.utils.logger import log
 
 
 def handle_hass_shutdown(_: dict) -> tuple[Response, int]:

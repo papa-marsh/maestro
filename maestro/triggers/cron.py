@@ -5,13 +5,11 @@ from typing import Any
 
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
 from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
-from structlog.stdlib import get_logger
 
 from maestro.config import TIMEZONE
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import CronParams, TriggerRegistryEntry, TriggerType
-
-log = get_logger()
+from maestro.utils.logger import log
 
 
 class CronTriggerManager(TriggerManager):

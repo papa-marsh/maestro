@@ -9,12 +9,10 @@ from uuid import uuid4
 from apscheduler.jobstores.base import JobLookupError  # type:ignore[import-untyped]
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
 from flask import current_app
-from structlog.stdlib import get_logger
 
 from maestro.integrations.redis import CachePrefix, RedisClient
 from maestro.utils.dates import IntervalSeconds, local_now
-
-log = get_logger()
+from maestro.utils.logger import log
 
 
 class JobMetadata(TypedDict):

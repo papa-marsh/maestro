@@ -9,9 +9,8 @@ import sys
 from pathlib import Path
 
 import structlog
-from structlog.stdlib import get_logger
 
-log = get_logger()
+from maestro.utils.logger import log
 
 
 def configure_logging() -> None:

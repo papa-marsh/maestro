@@ -3,16 +3,12 @@ from enum import StrEnum, auto
 from functools import wraps
 from typing import Any
 
-from structlog.stdlib import get_logger
-
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import (
     HassParams,
     TriggerRegistryEntry,
     TriggerType,
 )
-
-log = get_logger()
 
 
 class HassEvent(StrEnum):
