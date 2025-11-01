@@ -25,4 +25,4 @@ def _get_maestro_logger() -> BoundLogger:
         return request.logger  # type:ignore[attr-defined, no-any-return]
 
     except RuntimeError:
-        return get_logger()
+        return get_logger().bind(request_id=None)
