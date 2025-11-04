@@ -3,16 +3,23 @@ from enum import StrEnum, auto
 from http import HTTPMethod
 from typing import Any
 
+from apscheduler.jobstores.redis import RedisJobStore  # type:ignore[import-untyped]
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
 from flask import Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
 
-from maestro.config import DATABASE_URL, SQLALCHEMY_TRACK_MODIFICATIONS, TIMEZONE
+from maestro.config import (
+    DATABASE_URL,
+    REDIS_HOST,
+    REDIS_PORT,
+    SQLALCHEMY_TRACK_MODIFICATIONS,
+    TIMEZONE,
+)
 from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.sun import SunTriggerManager
-from maestro.utils import log
 from maestro.utils.internal import configure_logging, load_script_modules
+from maestro.utils.logger import log
 from maestro.utils.scheduler import JobScheduler
 from maestro.webhooks.event_fired import handle_event_fired
 from maestro.webhooks.hass_shutdown import handle_hass_shutdown
@@ -37,9 +44,9 @@ class MaestroFlask(Flask):
         db.init_app(self)
 
     def _initialize_scheduler(self) -> None:
-        self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
+        jobstores = {"default": RedisJobStore(host=REDIS_HOST, port=REDIS_PORT)}
+        self.scheduler = BackgroundScheduler(jobstores=jobstores, timezone=TIMEZONE)
         self.scheduler.start()
-        JobScheduler(self.scheduler).restore_cached_jobs()
         CronTriggerManager.register_jobs(self.scheduler)
         SunTriggerManager.register_jobs(self.scheduler)
         atexit.register(self.scheduler.shutdown)
@@ -91,6 +98,7 @@ def make_shell_context() -> dict:
         JobScheduler,
         Notif,
         local_now,
+        log,
         resolve_timestamp,
     )
 
