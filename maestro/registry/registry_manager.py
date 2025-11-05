@@ -105,6 +105,7 @@ class RegistryManager:
                     current_entry["entity_id"] = match.group(1)
                     if current_entry["entity_id"] == entity_id:
                         new_entry_parent_class = current_entry["parent_class"]
+                        imports.add(new_entry_parent_class)
 
         if current_entry["entity_id"] != entity_id:
             entry_string = cls._build_entry(
