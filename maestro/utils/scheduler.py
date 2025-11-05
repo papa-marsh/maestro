@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import datetime
 from uuid import uuid4
 
 from apscheduler.job import Job  # type:ignore[import-untyped]
@@ -32,8 +32,6 @@ class JobScheduler:
         """Schedule a function to run in the future. Returns the job ID"""
         if run_time < local_now():
             raise ValueError("Cannot schedule job in the past")
-        if run_time > local_now() + timedelta(seconds=self.run_time_limit):
-            raise ValueError("Cannot schedule job beyond run_time_limit")
 
         job_id = job_id or str(uuid4())
         func_name = f"{func.__module__}.{func.__name__}"
