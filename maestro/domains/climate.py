@@ -23,7 +23,7 @@ class Climate(Entity):
     def set_preset_mode(self, mode: str) -> None:
         self.perform_action("set_preset_mode", mode=mode)
 
-    def set_temp_target(self, target_temp: int) -> None:
+    def set_temperature(self, target_temp: int) -> None:
         self.perform_action("set_temperature", target_temp=target_temp)
 
     def set_temp_range(self, target_low: int, target_high: int) -> None:

@@ -3,6 +3,7 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 from uuid import uuid4
 
+from apscheduler.job import Job  # type:ignore[import-untyped]
 from apscheduler.jobstores.base import JobLookupError  # type:ignore[import-untyped]
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
 from flask import current_app
@@ -56,7 +57,15 @@ class JobScheduler:
 
         return job_id
 
+    def get_job(self, job_id: str) -> Job | None:
+        """Get a scheduled job by ID. Returns None if job doesn't exist."""
+        try:
+            return self.apscheduler.get_job(job_id)
+        except JobLookupError:
+            return None
+
     def cancel_job(self, job_id: str) -> None:
+        """Cancel a scheduled job by ID if it exists."""
         with suppress(JobLookupError):
             self.apscheduler.remove_job(job_id)
             log.info("Removed job from APScheduler", job_id=job_id)
