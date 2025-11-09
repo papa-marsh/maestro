@@ -4,6 +4,7 @@ from typing import Any
 
 from maestro.integrations.home_assistant.types import AttributeId, EntityId
 from maestro.integrations.state_manager import StateManager
+from maestro.utils.logger import log
 
 
 class EntityAttribute[T]:
@@ -75,7 +76,13 @@ class Entity(ABC):
         """Get the current state of the entity (always a string)"""
         state = self.state_manager.get_cached_state(self.id)
         if not isinstance(state, str):
-            raise TypeError("Entity state must be a string")
+            log.warning(
+                "Casting cached state to string",
+                entity_id=self.id,
+                state=state,
+                type=type(state),
+            )
+            state = str(state)
 
         return state
 
