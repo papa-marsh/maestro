@@ -16,6 +16,11 @@ class EntityAttribute[T]:
     def __get__(self, obj: "Entity", objtype: type["Entity"] | None = None) -> T:
         id = AttributeId(f"{obj.id}.{self.name}")
         value = obj.state_manager.get_cached_state(id)
+
+        if value is None:
+            entity_data = obj.state_manager.fetch_hass_entity(obj.id)
+            value = entity_data.attributes.get(self.name)
+
         if not isinstance(value, self.attribute_type):
             raise TypeError(
                 f"Type mismatch for cached attribute {id}. "
