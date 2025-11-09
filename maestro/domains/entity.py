@@ -22,6 +22,8 @@ class EntityAttribute[T]:
             value = entity_data.attributes.get(self.name)
 
         if not isinstance(value, self.attribute_type):
+            if value is None:
+                raise AttributeError(f"Attribute {self.name} not found for entity {obj.id}")
             raise TypeError(
                 f"Type mismatch for cached attribute {id}. "
                 f"Expected {self.attribute_type.__name__} but got {type(value).__name__}"
