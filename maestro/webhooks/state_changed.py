@@ -57,6 +57,22 @@ def handle_state_changed(request_body: dict) -> tuple[Response, int]:
         log.info("State deletion cached", entity_id=entity_id, old_state=old_data.state)
         return jsonify({"status": "success"}), 200
 
+    if new_state == "unavailable":
+        log.warning(
+            "Entity state changed to unavailable. Skipping cache.",
+            entity_id=entity_id,
+            old_state=old_data.state,
+        )
+        return jsonify({"status": "success"}), 200
+
+    if old_state == "unavailable":
+        log.warning(
+            "Entity state is no longer unavailable",
+            entity_id=entity_id,
+            new_state=new_data.state,
+        )
+        return jsonify({"status": "success"}), 200
+
     state_change = StateChangeEvent(
         timestamp=last_updated,
         time_fired=last_changed,
