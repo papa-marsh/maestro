@@ -2,6 +2,7 @@ from calendar import Day, Month
 from collections.abc import Callable
 from functools import wraps
 from typing import Any
+from uuid import uuid4
 
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
 from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
@@ -11,18 +12,24 @@ from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import CronParams, TriggerRegistryEntry, TriggerType
 from maestro.utils.logger import log
 
+SCHEDULER_JOB_PREFIX = "CRON_TRIGGER_JOB_"
+
 
 class CronTriggerManager(TriggerManager):
     trigger_type = TriggerType.CRON
 
     @classmethod
     def register_jobs(cls, scheduler: BackgroundScheduler) -> None:
+        for existing_job in scheduler.get_jobs():
+            if SCHEDULER_JOB_PREFIX in existing_job.id:
+                scheduler.remove_job(existing_job.id)
+
         for trigger_obj, trigger_entries in cls.get_registry()[cls.trigger_type].items():
             for trigger_entry in trigger_entries:
                 scheduler.add_job(
                     func=trigger_entry["func"],
                     trigger=trigger_obj,
-                    id=trigger_entry["qual_name"],
+                    id=SCHEDULER_JOB_PREFIX + str(uuid4())[:8],
                 )
 
     @classmethod
