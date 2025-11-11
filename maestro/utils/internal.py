@@ -15,6 +15,7 @@ from maestro.utils.logger import log
 
 def configure_logging() -> None:
     """Configure structlog with colored output for all environments."""
+    # Configure structlog
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
@@ -27,6 +28,19 @@ def configure_logging() -> None:
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
+
+    # Configure standard logging to use structlog's output
+    # This captures logs from libraries like APScheduler
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(
+        structlog.stdlib.ProcessorFormatter(
+            processor=structlog.dev.ConsoleRenderer(colors=True),
+        )
+    )
+
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.INFO)
 
 
 def load_script_modules() -> None:
