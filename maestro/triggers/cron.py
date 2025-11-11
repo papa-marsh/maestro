@@ -22,6 +22,7 @@ class CronTriggerManager(TriggerManager):
                 scheduler.add_job(
                     func=trigger_entry["func"],
                     trigger=trigger_obj,
+                    id=trigger_entry["qual_name"],
                 )
 
     @classmethod
