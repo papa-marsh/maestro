@@ -12,7 +12,7 @@ from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import CronParams, TriggerRegistryEntry, TriggerType
 from maestro.utils.logger import log
 
-SCHEDULER_JOB_PREFIX = "CRON_TRIGGER_JOB_"
+SCHEDULER_JOB_PREFIX = "cron_trigger_job_"
 
 
 class CronTriggerManager(TriggerManager):
