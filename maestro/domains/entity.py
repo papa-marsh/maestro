@@ -71,6 +71,16 @@ class Entity(ABC):
         self._state_manager = self._state_manager or StateManager()
         return self._state_manager
 
+    def __getstate__(self) -> dict[str, Any]:
+        """Exclude _state_manager from pickling to avoid serializing locks"""
+        state = self.__dict__.copy()
+        state["_state_manager"] = None
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        """Restore instance from pickled state, allowing lazy re-init of state_manager"""
+        self.__dict__.update(state)
+
     @property
     def state(self) -> str:
         """Get the current state of the entity (always a string)"""
