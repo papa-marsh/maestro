@@ -49,6 +49,8 @@ Maestro is a framework that lets you write Home Assistant automations in Python 
 
    To create a new long-lived access token, navigate to the `<hass_url>/profile/security` page in Home Assistant.
 
+   Pro tip: Create the access token using a separate account named "Maestro" to make it easy to see which actions were triggered by Maestro in an entity's state history.
+
 4. **Start services or deploy new changes**
 
    ```bash
