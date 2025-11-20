@@ -12,7 +12,7 @@ from maestro.triggers.types import (
 
 
 class HassEvent(StrEnum):
-    STARTUP_NOT_WORKING_YET = auto()
+    STARTUP = auto()
     SHUTDOWN = auto()
 
 

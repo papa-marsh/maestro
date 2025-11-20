@@ -127,6 +127,7 @@ Maestro is a framework that lets you write Home Assistant automations in Python 
            old_attributes: "{{ trigger.event.data.old_state.attributes | tojson if trigger.event.data.old_state else none }}"
            new_attributes: "{{ trigger.event.data.new_state.attributes | tojson if trigger.event.data.new_state else none }}"
      mode: parallel
+     max: 100
    - id: "1758549424655"
      alias: Maestro Send Event Fired
      description: ""
@@ -148,6 +149,18 @@ Maestro is a framework that lets you write Home Assistant automations in Python 
            user_id: "{{ trigger.event.context.user_id }}"
            data: "{{ trigger.event.data | tojson }}"
      mode: parallel
+     max: 100
+   - id: "1763596274572"
+     alias: Maestro HASS Started
+     description: ""
+     triggers:
+       - trigger: homeassistant
+         event_type: start
+     conditions: []
+     actions:
+       - event: maestro_hass_started
+         event_data: {}
+     mode: single
    ```
 
 7. **Configure Home Assistant Webhook Secrets**

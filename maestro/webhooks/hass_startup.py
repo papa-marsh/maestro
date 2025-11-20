@@ -6,6 +6,6 @@ from maestro.utils.logger import log
 
 def handle_hass_startup(_: dict) -> tuple[Response, int]:
     log.info("Event handled for Home Assistant startup")
-    HassTriggerManager.fire_triggers(HassEvent.STARTUP_NOT_WORKING_YET)
+    HassTriggerManager.fire_triggers(HassEvent.STARTUP)
 
     return jsonify({"status": "success"}), 200

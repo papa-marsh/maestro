@@ -11,5 +11,9 @@ class Person(Entity):
     def notify_action_name(self) -> str | None:
         return NOTIFY_ACTION_MAPPINGS.get(self.id)
 
+    @property
+    def is_home(self) -> bool:
+        return self.state == "home"
+
     def notify(self, notif: Notif) -> None:
         notif.send(self)
