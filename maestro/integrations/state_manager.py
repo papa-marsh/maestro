@@ -138,6 +138,14 @@ class StateManager:
         self.set_cached_state(id=entity_data.entity_id, value=entity_data.state)
 
         for attribute, value in entity_data.attributes.items():
+            if value is None:
+                log.warning(
+                    "Cache skipped for attribute with value of None",
+                    entity_id=entity_data.entity_id,
+                    attribute=attribute,
+                )
+                continue
+
             try:
                 attribute_id = AttributeId(f"{entity_data.entity_id}.{attribute}")
             except ValueError:
