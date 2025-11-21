@@ -12,7 +12,7 @@ def handle_state_changed(request_body: dict) -> tuple[Response, int]:
     state_manager = StateManager()
     entity_id_str = str(request_body["entity_id"])
 
-    log.info(
+    log.debug(
         "Processing state change",
         entity_id=entity_id_str,
         old_state=request_body.get("old_state"),
@@ -20,7 +20,7 @@ def handle_state_changed(request_body: dict) -> tuple[Response, int]:
     )
 
     if entity_id_str.split(".")[0] in DOMAIN_IGNORE_LIST:
-        log.info("Skipping entity for domain in ignore list", entity_id=entity_id_str)
+        log.debug("Skipping entity for domain in ignore list", entity_id=entity_id_str)
         return jsonify({"status": "success"}), 200
 
     entity_id = EntityId(entity_id_str)
@@ -58,7 +58,7 @@ def handle_state_changed(request_body: dict) -> tuple[Response, int]:
         return jsonify({"status": "success"}), 200
 
     if new_state == "unavailable":
-        log.warning(
+        log.info(
             "Entity state changed to unavailable. Skipping cache.",
             entity_id=entity_id,
             old_state=old_state,
@@ -67,7 +67,7 @@ def handle_state_changed(request_body: dict) -> tuple[Response, int]:
         return jsonify({"status": "success"}), 200
 
     if old_state == "unavailable":
-        log.warning(
+        log.info(
             "Entity state is no longer unavailable",
             entity_id=entity_id,
             old_state=old_state,
@@ -90,12 +90,12 @@ def handle_state_changed(request_body: dict) -> tuple[Response, int]:
         new_attr_data = state_change.new.attributes.get(attr)
         if old_attr_data != new_attr_data and attr not in custom_attributes:
             changes[attr] = (str(old_attr_data), str(new_attr_data))
-    log.info("Caching state change", entity_id=state_change.entity_id, changes=changes)
+    log.debug("Caching state change", entity_id=state_change.entity_id, changes=changes)
 
     state_manager.cache_entity(state_change.new)
 
     if new_state == old_state:
-        log.info("Skipping triggers for unchanged state", entity_id=entity_id, state=new_state)
+        log.debug("Skipping triggers for unchanged state", entity_id=entity_id, state=new_state)
     else:
         StateChangeTriggerManager.fire_triggers(state_change)
 

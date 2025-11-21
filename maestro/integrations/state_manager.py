@@ -139,7 +139,7 @@ class StateManager:
 
         for attribute, value in entity_data.attributes.items():
             if value is None:
-                log.warning(
+                log.info(
                     "Cache skipped for attribute with value of None",
                     entity_id=entity_data.entity_id,
                     attribute=attribute,
@@ -149,7 +149,7 @@ class StateManager:
             try:
                 attribute_id = AttributeId(f"{entity_data.entity_id}.{attribute}")
             except ValueError:
-                log.warning(
+                log.info(
                     "Attribute name failed validation while caching entity. Skipping attribute.",
                     entity_id=entity_data.entity_id,
                     attribute_name=attribute,

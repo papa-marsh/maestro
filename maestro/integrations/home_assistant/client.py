@@ -197,7 +197,7 @@ class HomeAssistantClient:
         entity_id = EntityId(raw_dict["entity_id"])
 
         if not isinstance(state, str):
-            log.warning(
+            log.info(
                 "Casting fetched entity state to string",
                 entity_id=entity_id,
                 state=state,

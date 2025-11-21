@@ -113,7 +113,7 @@ def make_shell_context() -> dict:
 def event_fired() -> tuple[Response, int]:
     request_body = request.get_json() or {}
     event_type = request_body["event_type"]
-    log.info("HASS event webhook received", event_type=event_type)
+    log.debug("HASS event webhook received", event_type=event_type)
 
     webhook_handler = WEBHOOK_HANDLERS.get(event_type, handle_event_fired)
 
