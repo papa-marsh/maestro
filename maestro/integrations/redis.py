@@ -22,7 +22,7 @@ class CachedValue:
     type: str
 
 
-CachedValueT = str | int | float | dict | list | bool | datetime | None
+CachedValueT = str | int | float | dict | list | bool | datetime
 
 state_encoder_map: dict[str, Callable[[CachedValueT], str]] = {
     str.__name__: lambda x: str(x),
@@ -32,7 +32,6 @@ state_encoder_map: dict[str, Callable[[CachedValueT], str]] = {
     list.__name__: lambda x: json.dumps(x),
     bool.__name__: lambda x: str(x),
     datetime.__name__: lambda x: x.isoformat() if isinstance(x, datetime) else "",
-    type(None).__name__: lambda _: "",
 }
 state_decoder_map: dict[str, Callable[[str], CachedValueT]] = {
     str.__name__: lambda x: str(x),
@@ -42,7 +41,6 @@ state_decoder_map: dict[str, Callable[[str], CachedValueT]] = {
     list.__name__: lambda x: json.loads(x) if isinstance(x, str) else list(x),
     bool.__name__: lambda x: x.lower() == "true",
     datetime.__name__: lambda x: resolve_timestamp(x),
-    type(None).__name__: lambda _: None,
 }
 
 

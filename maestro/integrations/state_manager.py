@@ -28,7 +28,43 @@ class StateManager:
         self.hass_client = hass_client or HomeAssistantClient()
         self.redis_client = redis_client or RedisClient()
 
-    def get_cached_state(self, id: StateId) -> CachedValueT:
+    def get_entity_state(self, entity_id: EntityId) -> str:
+        """Retrieve an entity's cached state or fetch from HASS on cache miss"""
+        state = self.get_cached_state(entity_id)
+
+        if state is None:
+            entity_data = self.fetch_hass_entity(entity_id)
+            state = entity_data.state
+
+        if not isinstance(state, str):
+            raise TypeError(f"Cached state for {entity_id} is {type(state).__name__}, not string")
+
+        return state
+
+    def get_attribute_state(
+        self,
+        attribute_id: AttributeId,
+        expected_type: type[CachedValueT],
+    ) -> CachedValueT:
+        """Retrieve an attribute's cached state or fetch from HASS on cache miss"""
+        attribute_state = self.get_cached_state(attribute_id)
+
+        if attribute_state is None:
+            entity_data = self.fetch_hass_entity(entity_id=attribute_id.entity_id)
+            attribute_state = entity_data.attributes.get(attribute_id.attribute)
+
+        if attribute_state is None:
+            raise AttributeError(f"Attribute {attribute_id} not found")
+
+        if not isinstance(attribute_state, expected_type):
+            raise TypeError(
+                f"Type mismatch for attribute {attribute_id}. "
+                f"Expected {expected_type.__name__} but got {type(attribute_state).__name__}"
+            )
+
+        return attribute_state
+
+    def get_cached_state(self, id: StateId) -> CachedValueT | None:
         """Retrieve an entity's state or attribute value from Redis"""
         encoded_value = self.redis_client.get(key=id.cache_key)
         if encoded_value is None:
@@ -39,7 +75,7 @@ class StateManager:
 
         return self.redis_client.decode_cached_state(cached_state)
 
-    def set_cached_state(self, id: StateId, value: CachedValueT) -> CachedValueT:
+    def set_cached_state(self, id: StateId, value: CachedValueT) -> CachedValueT | None:
         """Caches an entity's type-encoded state or attribute value. Returns the previous value"""
         if id.is_entity and not isinstance(value, str):
             raise TypeError("State value must be a string")
@@ -135,8 +171,6 @@ class StateManager:
     ) -> EntityData:
         """Fetch and cache up-to-date data for a Home Assistant entity"""
         entity_data = self.hass_client.get_entity(entity_id)
-        if not entity_data:
-            raise ValueError(f"Failed to retrieve an entity response for {entity_id}")
 
         if force_registry_update:
             cache_key = RedisClient.build_key(CachePrefix.REGISTERED, entity_id)

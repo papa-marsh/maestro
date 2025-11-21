@@ -193,9 +193,21 @@ class HomeAssistantClient:
         if not all(key in raw_dict for key in keys):
             raise KeyError("Couldn't resolve EntityData. Missing required keys.")
 
+        state = raw_dict["state"]
+        entity_id = EntityId(raw_dict["entity_id"])
+
+        if not isinstance(state, str):
+            log.warning(
+                "Casting fetched entity state to string",
+                entity_id=entity_id,
+                state=state,
+                type=type(state),
+            )
+            state = str(state)
+
         entity = EntityData(
-            entity_id=EntityId(raw_dict["entity_id"]),
-            state=str(raw_dict["state"]),
+            entity_id=entity_id,
+            state=state,
             attributes=raw_dict["attributes"] or {},
         )
         entity.attributes["last_changed"] = resolve_timestamp(raw_dict["last_changed"])

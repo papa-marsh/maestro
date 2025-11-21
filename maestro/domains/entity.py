@@ -1,36 +1,26 @@
 from abc import ABC
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from maestro.integrations.home_assistant.types import AttributeId, EntityId
 from maestro.integrations.state_manager import StateManager
-from maestro.utils.logger import log
 
 
-class EntityAttribute[T]:
+class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
     def __init__(self, attribute_type: type[T]) -> None:
-        self.attribute_type = attribute_type
+        self.attribute_type: type[T] = attribute_type
 
     def __set_name__(self, owner: type["Entity"], name: str) -> None:
         self.name = name
 
     def __get__(self, obj: "Entity", objtype: type["Entity"] | None = None) -> T:
-        id = AttributeId(f"{obj.id}.{self.name}")
-        value = obj.state_manager.get_cached_state(id)
+        attribute_id = AttributeId(f"{obj.id}.{self.name}")
+        value = obj.state_manager.get_attribute_state(
+            attribute_id=attribute_id,
+            expected_type=self.attribute_type,
+        )
 
-        if value is None:
-            entity_data = obj.state_manager.fetch_hass_entity(obj.id)
-            value = entity_data.attributes.get(self.name)
-
-        if not isinstance(value, self.attribute_type):
-            if value is None:
-                raise AttributeError(f"Attribute {self.name} not found for entity {obj.id}")
-            raise TypeError(
-                f"Type mismatch for cached attribute {id}. "
-                f"Expected {self.attribute_type.__name__} but got {type(value).__name__}"
-            )
-
-        return value
+        return cast(T, value)
 
     def __set__(self, obj: "Entity", value: T) -> None:
         entity_response = obj.state_manager.fetch_hass_entity(obj.id)
@@ -84,17 +74,7 @@ class Entity(ABC):
     @property
     def state(self) -> str:
         """Get the current state of the entity (always a string)"""
-        state = self.state_manager.get_cached_state(self.id)
-        if not isinstance(state, str):
-            log.warning(
-                "Casting cached state to string",
-                entity_id=self.id,
-                state=state,
-                type=type(state),
-            )
-            state = str(state)
-
-        return state
+        return self.state_manager.get_entity_state(self.id)
 
     @state.setter
     def state(self, value: str) -> None:

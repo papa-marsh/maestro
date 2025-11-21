@@ -32,6 +32,7 @@ class StateId(str):
         self.domain = Domain(parts[0])
         self.entity = parts[1]
         self.attribute = parts[2] if len(parts) > 2 else None
+        self.entity_id = EntityId(f"{self.domain}.{self.entity}")
 
         self.is_entity = self.attribute is None
         self.is_attribute = self.attribute is not None
@@ -42,6 +43,8 @@ class StateId(str):
 
 class EntityId(StateId):
     """A validated Home Assistant entity ID (domain.entity)"""
+
+    attribute: None
 
     def __new__(cls, value: str) -> "EntityId":
         if not re.match(cls.entity_pattern, value):
@@ -66,6 +69,8 @@ class EntityId(StateId):
 
 class AttributeId(StateId):
     """A validated Home Assistant attribute ID (domain.entity.attribute)"""
+
+    attribute: str
 
     def __new__(cls, value: str) -> "AttributeId":
         if not re.match(cls.attribute_pattern, value):
