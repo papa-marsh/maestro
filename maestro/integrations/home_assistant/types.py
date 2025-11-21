@@ -32,7 +32,6 @@ class StateId(str):
         self.domain = Domain(parts[0])
         self.entity = parts[1]
         self.attribute = parts[2] if len(parts) > 2 else None
-        self.entity_id = EntityId(f"{self.domain}.{self.entity}")
 
         self.is_entity = self.attribute is None
         self.is_attribute = self.attribute is not None
@@ -77,6 +76,10 @@ class AttributeId(StateId):
             raise ValueError(f"Invalid attribute format: {value}")
 
         return str.__new__(cls, value)
+
+    def __init__(self, value: str):
+        super().__init__(value)
+        self.entity_id = EntityId(f"{self.domain}.{self.entity}")
 
 
 @dataclass
