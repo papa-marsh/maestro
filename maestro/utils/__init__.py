@@ -11,4 +11,5 @@ __all__ = [
     "log",
     Notif.__name__,
     JobScheduler.__name__,
+    "testing",  # Testing module available as maestro.utils.testing
 ]
