@@ -40,7 +40,7 @@ class SunTriggerManager(TriggerManager):
 
     @classmethod
     def fire_triggers(cls) -> None:
-        """Not used for cron triggers"""
+        """Not used for sun triggers"""
         raise NotImplementedError
 
     @classmethod
