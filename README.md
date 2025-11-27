@@ -604,22 +604,29 @@ scheduler.schedule_job(
 
 Maestro includes a comprehensive testing framework that lets you unit test your automations without affecting your production Home Assistant instance. Tests use in-memory mocks and require no Redis or Home Assistant connection.
 
+**Key Features:**
+
+- **Automatic mocking** - All entities automatically use test mocks, no manual setup required
+- **In-memory state** - State and actions are tracked in memory, no external dependencies
+- **Trigger simulation** - Test state changes, events, and cron triggers
+- **Action assertions** - Verify that your automations call the correct Home Assistant actions
+
 ### Quick Example
 
 ```python
 # scripts/test_bedroom_lights.py
 from maestro.registry import light, switch
-from maestro.testing import maestro_test, MaestroTest
+from maestro.testing import MaestroTest
 
 def test_motion_turns_on_light(maestro_test: MaestroTest):
-    # Setup initial state
+    # Setup: Set initial entity states
     maestro_test.set_state(switch.motion_sensor, "off")
     maestro_test.set_state(light.bedroom, "off")
 
-    # Trigger the automation
+    # Act: Trigger your automation by simulating a state change
     maestro_test.trigger_state_change(switch.motion_sensor, old="off", new="on")
 
-    # Assert expected behavior
+    # Assert: Verify the light was turned on
     maestro_test.assert_action_called("light", "turn_on", entity_id="light.bedroom")
 ```
 
@@ -642,16 +649,15 @@ def test_custom_event(maestro_test: MaestroTest):
     maestro_test.assert_action_called("notify", "mobile_app", message="Something happened!")
 ```
 
-**Test with entity objects:**
+**Test with entity objects (automatically mocked):**
 
 ```python
 def test_with_entities(maestro_test: MaestroTest):
-    from maestro.registry import light
-
     maestro_test.set_state(light.bedroom, "off")
 
-    light.bedroom.turn_on(brightness=255)
-    maestro_test.assert_action_called("light", "turn_on", brightness=255)
+    # Entities automatically use the test's mock state manager - no setup needed!
+    light.bedroom.turn_on(rgb_color=(255, 255, 255), temperature=4000)
+    maestro_test.assert_action_called("light", "turn_on")
 ```
 
 **Test multiple scenarios:**
