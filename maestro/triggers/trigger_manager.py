@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, final
 
 from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 
+from maestro.testing.context import is_test_context
 from maestro.triggers.types import (
     TriggerFuncParamsT,
     TriggerRegistryEntry,
@@ -95,8 +96,12 @@ class TriggerManager(ABC):
         """Execute a list of trigger functions in background threads."""
         from flask import current_app
 
-        func_params_dict = dict(func_params)
         app: MaestroFlask = current_app._get_current_object()  # type:ignore[attr-defined]
+
+        if is_test_context():
+            cls.invoke_funcs_sync(funcs_to_execute, func_params, app)
+
+        func_params_dict = dict(func_params)
 
         for func in funcs_to_execute:
             thread = Thread(

@@ -7,6 +7,7 @@ from maestro.integrations.home_assistant.client import HomeAssistantClient
 from maestro.integrations.home_assistant.types import AttributeId, EntityData, EntityId, StateId
 from maestro.integrations.redis import CachedValue, CachedValueT, CachePrefix, RedisClient
 from maestro.registry.registry_manager import RegistryManager
+from maestro.testing.context import is_test_context
 from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
 from maestro.utils.logger import log
 
@@ -162,7 +163,7 @@ class StateManager:
         if keys_to_delete:
             self.redis_client.delete(*keys_to_delete)
 
-        if AUTOPOPULATE_REGISTRY:
+        if AUTOPOPULATE_REGISTRY and not is_test_context():
             RegistryManager.upsert_entity(entity_data)
 
     def delete_cached_entity(self, entity_id: EntityId) -> int:
