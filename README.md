@@ -600,20 +600,84 @@ scheduler.schedule_job(
 )
 ```
 
-## Development Workflow
+## Testing Your Automations
+
+Maestro includes a comprehensive testing framework that lets you unit test your automations without affecting your production Home Assistant instance. Tests use in-memory mocks and require no Redis or Home Assistant connection.
+
+### Quick Example
+
+```python
+# scripts/test_bedroom_lights.py
+from maestro.registry import light, switch
+from maestro.testing import maestro_test, MaestroTest
+
+def test_motion_turns_on_light(maestro_test: MaestroTest):
+    # Setup initial state
+    maestro_test.set_state(switch.motion_sensor, "off")
+    maestro_test.set_state(light.bedroom, "off")
+
+    # Trigger the automation
+    maestro_test.trigger_state_change(switch.motion_sensor, old="off", new="on")
+
+    # Assert expected behavior
+    maestro_test.assert_action_called("light", "turn_on", entity_id="light.bedroom")
+```
+
+### Common Testing Patterns
+
+**Test state changes:**
+
+```python
+def test_temperature_control(maestro_test: MaestroTest):
+    maestro_test.set_state(sensor.temperature, "70")
+    maestro_test.trigger_state_change(sensor.temperature, old="70", new="76")
+    maestro_test.assert_action_called("switch", "turn_on", entity_id="switch.fan")
+```
+
+**Test custom events:**
+
+```python
+def test_custom_event(maestro_test: MaestroTest):
+    maestro_test.trigger_event("something_happened", data={"duration": 30})
+    maestro_test.assert_action_called("notify", "mobile_app", message="Something happened!")
+```
+
+**Test with entity objects:**
+
+```python
+def test_with_entities(maestro_test: MaestroTest):
+    from maestro.registry import light
+
+    maestro_test.set_state(light.bedroom, "off")
+    maestro_test.mock_entity(light.bedroom)
+
+    light.bedroom.turn_on(brightness=255)
+    maestro_test.assert_action_called("light", "turn_on", brightness=255)
+```
+
+**Test multiple scenarios:**
+
+```python
+def test_motion_sequence(maestro_test: MaestroTest):
+    maestro_test.set_state("light.bedroom", "off")
+
+    maestro_test.trigger_state_change("switch.motion", "off", "on")
+    maestro_test.assert_action_called("light", "turn_on")
+
+    maestro_test.clear_action_calls()
+
+    maestro_test.trigger_state_change("switch.motion", "on", "off")
+    maestro_test.assert_action_called("light", "turn_off")
+```
 
 ### Running Tests
 
 ```bash
-# Run all tests
-make test
-
-# Run specific test file
-make test TEST=maestro/tests/test_specific.py
-
-# Run specific test method
-make test TEST=maestro/tests/test_specific.py::TestClass::test_method
+# Run tests (with venv activated)
+pytest scripts
 ```
+
+## Development Workflow
 
 ### Interactive Shell
 

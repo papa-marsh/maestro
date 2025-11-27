@@ -1,4 +1,4 @@
-.PHONY: build deploy pull pull-deploy pull-deploy-f logs test shell bash
+.PHONY: build deploy pull pull-deploy pull-deploy-f logs shell bash
 
 # Build the Docker image
 build:
@@ -55,10 +55,6 @@ pull-deploy-f:
 # Get logs from the maestro container
 logs:
 	docker compose logs maestro
-
-# Run all tests or include a path like `TEST=maestro/integrations/tests/test_home_assistant.py::TestHomeAssistantProvider`
-test: build
-	docker compose run --rm maestro pytest -v $(TEST)
 
 # Open a Flask shell in the container with pre-loaded imports
 shell: build

@@ -13,7 +13,6 @@ from maestro.utils.dates import IntervalSeconds, resolve_timestamp
 class CachePrefix(StrEnum):
     STATE = "STATE"
     REGISTERED = "REGISTERED"
-    SCHEDULED = "SCHEDULED"
 
 
 @dataclass

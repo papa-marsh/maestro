@@ -1,0 +1,294 @@
+from datetime import datetime
+from typing import Any
+
+from maestro.domains.entity import Entity
+from maestro.integrations.home_assistant.domain import Domain
+from maestro.integrations.home_assistant.types import (
+    AttributeId,
+    EntityData,
+    EntityId,
+    FiredEvent,
+    NotifActionEvent,
+    StateChangeEvent,
+)
+from maestro.integrations.redis import CachedValueT
+from maestro.integrations.state_manager import StateManager
+from maestro.testing.mocks import ActionCall, MockHomeAssistantClient, MockRedisClient
+from maestro.triggers.event_fired import EventFiredTriggerManager
+from maestro.triggers.hass import HassEvent, HassTriggerManager
+from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
+from maestro.triggers.notif_action import NotifActionTriggerManager
+from maestro.triggers.state_change import StateChangeTriggerManager
+from maestro.utils.dates import local_now
+
+
+class MaestroTest:
+    def __init__(self) -> None:
+        self.hass_client = MockHomeAssistantClient()
+        self.redis_client = MockRedisClient()
+        self.state_manager = StateManager(
+            hass_client=self.hass_client,
+            redis_client=self.redis_client,
+        )
+
+    def reset(self) -> None:
+        """Reset mock state and action call history"""
+        self.hass_client.reset()
+        self.redis_client.reset()
+
+    # MARK: Entity State Setup
+
+    def set_state(
+        self,
+        entity: Entity | str,
+        state: str,
+        attributes: dict[str, Any] | None = None,
+    ) -> EntityData:
+        """Set the state of an entity for testing. Accepts an entity or entity ID string."""
+        entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
+
+        entity_data = self.state_manager.upsert_hass_entity(
+            entity_id=EntityId(entity_id),
+            state=state,
+            attributes=attributes or {},
+        )
+        return entity_data
+
+    def get_state(self, entity: Entity | str) -> str:
+        """Get the current state of an entity. Accepts an entity or entity ID string."""
+        entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
+
+        return self.state_manager.get_entity_state(entity_id)
+
+    def get_attribute(self, entity: Entity | str, attribute: str, expected_type: type) -> Any:
+        """Get an attribute value from an entity. Accepts an entity or entity ID string."""
+        entity_id = entity.id if hasattr(entity, "id") else entity
+        attribute_id = AttributeId(f"{entity_id}.{attribute}")
+        return self.state_manager.get_attribute_state(attribute_id, expected_type)
+
+    def set_attribute(self, entity: Entity | str, attribute: str, value: Any) -> None:
+        """Set an attribute value on an entity."""
+        entity_id = EntityId(entity.id if hasattr(entity, "id") else entity)
+        entity_data = self.state_manager.fetch_hass_entity(entity_id)
+        entity_data.attributes[attribute] = value
+
+        self.state_manager.cache_entity(entity_data)
+
+    # MARK: Trigger Simulation
+
+    def trigger_state_change(
+        self,
+        entity: Entity | str,
+        old: str,
+        new: str,
+        old_attributes: dict[str, Any] | None = None,
+        new_attributes: dict[str, Any] | None = None,
+        time_fired: datetime | None = None,
+    ) -> None:
+        """Simulate a state change event, triggering any registered state_change_triggers."""
+        entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
+        timestamp = time_fired or local_now()
+
+        old_data = EntityData(
+            entity_id=entity_id,
+            state=old,
+            attributes=old_attributes or {},
+        )
+
+        new_data = EntityData(
+            entity_id=entity_id,
+            state=new,
+            attributes=new_attributes or {},
+        )
+
+        self.set_state(entity_id, new, new_attributes)
+
+        state_change = StateChangeEvent(
+            timestamp=timestamp,
+            time_fired=timestamp,
+            entity_id=entity_id,
+            old=old_data,
+            new=new_data,
+        )
+
+        StateChangeTriggerManager.fire_triggers(state_change)
+
+    def trigger_event(
+        self,
+        event_type: str,
+        data: dict[str, Any] | None = None,
+        user_id: str | None = None,
+        time_fired: datetime | None = None,
+    ) -> None:
+        """Simulate a Home Assistant event, triggering any registered event_fired_triggers."""
+        timestamp = time_fired or local_now()
+
+        event = FiredEvent(
+            timestamp=timestamp,
+            time_fired=timestamp,
+            type=event_type,
+            data=data or {},
+            user_id=user_id,
+        )
+
+        EventFiredTriggerManager.fire_triggers(event)
+
+    def trigger_notif_action(
+        self,
+        action: str,
+        action_data: Any = None,
+        device_id: str = "test_device",
+        device_name: str = "Test Device",
+        time_fired: datetime | None = None,
+    ) -> None:
+        """Simulate a notification action event, triggering registered notif_action_triggers."""
+        timestamp = time_fired or local_now()
+
+        notif_action = NotifActionEvent(
+            timestamp=timestamp,
+            time_fired=timestamp,
+            type="ios.notification_action_fired",
+            data={},
+            user_id=None,
+            name=action,
+            action_data=action_data,
+            device_id=device_id,
+            device_name=device_name,
+        )
+
+        NotifActionTriggerManager.fire_triggers(notif_action)
+
+    def trigger_maestro_event(self, event: MaestroEvent) -> None:
+        """Simulate a Maestro lifecycle event (e.g. startup or shutdown)."""
+        MaestroTriggerManager.fire_triggers(event)
+
+    def trigger_hass_event(self, event: HassEvent) -> None:
+        """Simulate a Home Assistant lifecycle event (e.g. startup or shutdown)."""
+        HassTriggerManager.fire_triggers(event)
+
+    # MARK: Action Call Assertions
+
+    def get_action_calls(
+        self,
+        domain: Domain | None = None,
+        action: str | None = None,
+        entity_id: str | None = None,
+    ) -> list[ActionCall]:
+        """Get all recorded action calls, optionally filtered.
+
+        Args:
+            domain: Filter by domain (e.g., "light", Domain.LIGHT)
+            action: Filter by action name (e.g., "turn_on")
+            entity_id: Filter by entity_id
+        """
+        return self.hass_client.get_action_calls(domain, action, entity_id)
+
+    def assert_action_called(
+        self,
+        domain: Domain,
+        action: str,
+        entity_id: str | None = None,
+        call_count: int | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Assert that an action was called with the specified parameters.
+
+        Args:
+            domain: The domain (e.g., "light", Domain.LIGHT)
+            action: The action name (e.g., "turn_on")
+            entity_id: Optional entity_id to filter by
+            call_count: Optional expected number of times called (if None, asserts at least once)
+            **kwargs: Optional action parameters to match
+        """
+        calls = self.get_action_calls(domain, action, entity_id)
+
+        if kwargs:
+            calls = [
+                call for call in calls if all(call.kwargs.get(k) == v for k, v in kwargs.items())
+            ]
+
+        if call_count is not None:
+            assert len(calls) == call_count, (
+                f"Expected {domain}.{action} to be called {call_count} times, "
+                f"but it was called {len(calls)} times. Calls: {calls}"
+            )
+        else:
+            assert len(calls) > 0, (
+                f"Expected {domain}.{action} to be called at least once, "
+                f"but it was never called. All calls: {self.hass_client._action_calls}"
+            )
+
+    def assert_action_not_called(
+        self,
+        domain: Domain,
+        action: str,
+        entity_id: str | None = None,
+    ) -> None:
+        """
+        Assert that an action was NOT called.
+
+        Args:
+            domain: The domain (e.g., "light", Domain.LIGHT)
+            action: The action name (e.g., "turn_on")
+            entity_id: Optional entity_id to filter by
+        """
+        calls = self.get_action_calls(domain, action, entity_id)
+        assert len(calls) == 0, (
+            f"Expected {domain}.{action} to NOT be called, "
+            f"but it was called {len(calls)} times. Calls: {calls}"
+        )
+
+    def clear_action_calls(self) -> None:
+        """
+        Clear all recorded action calls.
+        Useful for testing multiple scenarios in the same test.
+        """
+        self.hass_client.clear_action_calls()
+
+    # MARK: State Assertions
+
+    def assert_state(self, entity: Entity | str, expected_state: str) -> None:
+        """Assert that an entity has a specific state."""
+        if (
+            isinstance(entity, Entity)
+            and entity._state_manager is not None
+            and entity._state_manager.redis_client is not self.redis_client
+        ):
+            raise TypeError("State assertion called on live entity. Use `mock_entity` first.")
+
+        actual_state = self.get_state(entity)
+        assert actual_state == expected_state, (
+            f"Expected state '{expected_state}' but got '{actual_state}'"
+        )
+
+    def assert_attribute(
+        self,
+        entity: Entity | str,
+        attribute: str,
+        expected_value: CachedValueT,
+    ) -> None:
+        """Assert that an entity attribute has a specific value."""
+        if (
+            isinstance(entity, Entity)
+            and entity._state_manager is not None
+            and entity._state_manager.redis_client is not self.redis_client
+        ):
+            raise TypeError("State assertion called on live entity. Use `mock_entity` first.")
+
+        expected_type = type(expected_value)
+        actual_value = self.get_attribute(entity, attribute, expected_type)
+        assert actual_value == expected_value, (
+            f"Expected attribute '{attribute}' to be '{expected_value}' but got '{actual_value}'"
+        )
+
+    # MARK: Entity Management
+
+    def mock_entity(self, entity: Entity) -> None:
+        """
+        Inject a real Entity object into the test context, allowing it to use mock clients.
+
+        This patches the entity's state_manager to use the test's StateManager (with mocks),
+        so when entity methods are called, they interact with the test environment.
+        """
+        entity._state_manager = self.state_manager
