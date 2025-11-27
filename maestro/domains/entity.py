@@ -57,7 +57,12 @@ class Entity(ABC):
 
     @property
     def state_manager(self) -> StateManager:
-        """Lazy load the state manager only once it's needed"""
+        """Lazy load the state manager for this entity (or a mock when testing)"""
+        from maestro.testing.context import get_test_state_manager
+
+        if test_state_manager := get_test_state_manager():
+            return test_state_manager
+
         self._state_manager = self._state_manager or StateManager()
         return self._state_manager
 

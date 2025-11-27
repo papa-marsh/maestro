@@ -1,11 +1,16 @@
 from contextlib import suppress
 
+from maestro.domains import BinarySensor, Switch
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.testing import MaestroTest
 from maestro.utils import local_now
 
 
 def test_set_and_get_state(maestro_test: MaestroTest) -> None:
+    maestro_test.set_state("light.bedroom", "on")
+    state = maestro_test.get_state("light.bedroom")
+    assert state == "on"
+
     maestro_test.set_state("light.bedroom", "off")
     state = maestro_test.get_state("light.bedroom")
     assert state == "off"
@@ -40,6 +45,11 @@ def test_action_call_filtering(maestro_test: MaestroTest) -> None:
     """Test filtering action calls by various criteria"""
     maestro_test.hass_client.perform_action(
         domain=Domain.LIGHT,
+        action="turn_off",
+        entity_id="light.kitchen",
+    )
+    maestro_test.hass_client.perform_action(
+        domain=Domain.LIGHT,
         action="turn_on",
         entity_id="light.bedroom",
     )
@@ -54,15 +64,12 @@ def test_action_call_filtering(maestro_test: MaestroTest) -> None:
         entity_id="switch.fan",
     )
 
-    # Filter by domain
     light_calls = maestro_test.get_action_calls(domain=Domain.LIGHT)
-    assert len(light_calls) == 2
+    assert len(light_calls) == 3
 
-    # Filter by action
     turn_on_calls = maestro_test.get_action_calls(action="turn_on")
     assert len(turn_on_calls) == 2
 
-    # Filter by entity_id
     bedroom_calls = maestro_test.get_action_calls(entity_id="light.bedroom")
     assert len(bedroom_calls) == 1
 
@@ -172,3 +179,56 @@ def test_entity_with_complex_attributes(maestro_test: MaestroTest) -> None:
 
     sensors = maestro_test.get_attribute("sensor.temperature", "sensors", list)
     assert sensors == ["indoor", "outdoor"]
+
+
+def test_entity_auto_uses_mock_state_manager(maestro_test: MaestroTest) -> None:
+    """Test that entities automatically use the mock state manager"""
+
+    switch = Switch("switch.test_switch")
+
+    maestro_test.set_state("switch.test_switch", "off")
+
+    assert switch.state == "off"
+    assert switch.state_manager.redis_client is maestro_test.redis_client
+
+
+def test_entity_methods_are_tracked_automatically(maestro_test: MaestroTest) -> None:
+    """Test that entity action methods are automatically tracked"""
+
+    switch = Switch("switch.test_switch")
+    maestro_test.set_state("switch.test_switch", "off")
+
+    switch.turn_on()
+
+    maestro_test.assert_action_called(Domain.SWITCH, "turn_on")
+
+
+def test_entity_state_access_without_manual_mocking(maestro_test: MaestroTest) -> None:
+    """Test that entity state/attribute access works without manual setup"""
+
+    switch = Switch("switch.bedroom")
+    maestro_test.set_state("switch.bedroom", "on", {"power_usage": 50})
+
+    assert switch.state == "on"
+
+    power = maestro_test.get_attribute(switch, "power_usage", int)
+    assert power == 50
+
+
+def test_multiple_entities_use_same_mock(maestro_test: MaestroTest) -> None:
+    """Test that multiple entities all use the same mock state manager"""
+
+    sensor = BinarySensor("binary_sensor.motion")
+    switch = Switch("switch.fan")
+
+    maestro_test.set_state("binary_sensor.motion", "off")
+    maestro_test.set_state("switch.fan", "off")
+
+    assert sensor.state_manager is switch.state_manager
+    assert sensor.state_manager.redis_client is maestro_test.redis_client
+
+    switch.turn_on()
+    switch.turn_off()
+
+    switch_calls = maestro_test.get_action_calls(domain=Domain.SWITCH)
+    assert len(switch_calls) == 2

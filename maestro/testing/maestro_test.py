@@ -250,13 +250,6 @@ class MaestroTest:
 
     def assert_state(self, entity: Entity | str, expected_state: str) -> None:
         """Assert that an entity has a specific state."""
-        if (
-            isinstance(entity, Entity)
-            and entity._state_manager is not None
-            and entity._state_manager.redis_client is not self.redis_client
-        ):
-            raise TypeError("State assertion called on live entity. Use `mock_entity` first.")
-
         actual_state = self.get_state(entity)
         assert actual_state == expected_state, (
             f"Expected state '{expected_state}' but got '{actual_state}'"
@@ -269,26 +262,8 @@ class MaestroTest:
         expected_value: CachedValueT,
     ) -> None:
         """Assert that an entity attribute has a specific value."""
-        if (
-            isinstance(entity, Entity)
-            and entity._state_manager is not None
-            and entity._state_manager.redis_client is not self.redis_client
-        ):
-            raise TypeError("State assertion called on live entity. Use `mock_entity` first.")
-
         expected_type = type(expected_value)
         actual_value = self.get_attribute(entity, attribute, expected_type)
         assert actual_value == expected_value, (
             f"Expected attribute '{attribute}' to be '{expected_value}' but got '{actual_value}'"
         )
-
-    # MARK: Entity Management
-
-    def mock_entity(self, entity: Entity) -> None:
-        """
-        Inject a real Entity object into the test context, allowing it to use mock clients.
-
-        This patches the entity's state_manager to use the test's StateManager (with mocks),
-        so when entity methods are called, they interact with the test environment.
-        """
-        entity._state_manager = self.state_manager

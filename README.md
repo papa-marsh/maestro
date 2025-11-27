@@ -649,7 +649,6 @@ def test_with_entities(maestro_test: MaestroTest):
     from maestro.registry import light
 
     maestro_test.set_state(light.bedroom, "off")
-    maestro_test.mock_entity(light.bedroom)
 
     light.bedroom.turn_on(brightness=255)
     maestro_test.assert_action_called("light", "turn_on", brightness=255)
