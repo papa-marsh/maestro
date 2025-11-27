@@ -618,6 +618,9 @@ Maestro includes a comprehensive testing framework that lets you unit test your 
 from maestro.registry import light, switch
 from maestro.testing import MaestroTest
 
+# Import the module you want to test to register its triggers
+from scripts.bedroom import lights
+
 def test_motion_turns_on_light(maestro_test: MaestroTest):
     # Setup: Set initial entity states
     maestro_test.set_state(switch.motion_sensor, "off")
@@ -629,6 +632,8 @@ def test_motion_turns_on_light(maestro_test: MaestroTest):
     # Assert: Verify the light was turned on
     maestro_test.assert_action_called("light", "turn_on", entity_id="light.bedroom")
 ```
+
+**Note:** You must import the script module(s) you want to test. This registers the trigger decorators (`@state_change_trigger`, etc.) so they can be invoked by `trigger_state_change()` and similar methods.
 
 ### Common Testing Patterns
 

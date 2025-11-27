@@ -34,8 +34,10 @@ ignore = []
     "I001", # Unsorted imports
 ]
 "maestro/testing/maestro_test.py" = [
-    "S101", # Assert usage
+    "S101", # Assert statements
 ]
 "**/tests/**.py" = [
-    "S101", # Allow assert statements in test files
+    "E501", # Line length
+    "F401", # Unused imports
+    "S101", # Assert statements
 ]

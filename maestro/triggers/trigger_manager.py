@@ -100,6 +100,7 @@ class TriggerManager(ABC):
 
         if is_test_context():
             cls.invoke_funcs_sync(funcs_to_execute, func_params, app)
+            return
 
         func_params_dict = dict(func_params)
 
