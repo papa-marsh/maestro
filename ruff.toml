@@ -37,7 +37,8 @@ ignore = []
     "S101", # Assert statements
 ]
 "**/tests/**.py" = [
-    "E501", # Line length
-    "F401", # Unused imports
-    "S101", # Assert statements
+    "ARG001", # Unused Arg
+    "E501",   # Line length
+    "F401",   # Unused imports
+    "S101",   # Assert statements
 ]
