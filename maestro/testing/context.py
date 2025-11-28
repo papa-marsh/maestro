@@ -1,3 +1,4 @@
+import sys
 import threading
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -10,6 +11,20 @@ if TYPE_CHECKING:
 _test_context = threading.local()
 
 
+def test_mode_active() -> bool:
+    """Returns True if pytest is loaded, False otherwise. Works before fixtures run."""
+    return "pytest" in sys.modules
+
+
+def raise_for_missing_test_context() -> None:
+    """Raise a runtime error if test context is not active and ready."""
+    if not test_mode_active():
+        raise RuntimeError("Test mode is not active")
+
+    if get_test_state_manager() is None:
+        raise RuntimeError("Test mode is active but test context is not ready")
+
+
 def set_test_state_manager(state_manager: "StateManager | None") -> None:
     """
     Set the active test state manager for the current thread.
@@ -19,31 +34,15 @@ def set_test_state_manager(state_manager: "StateManager | None") -> None:
 
 
 def get_test_state_manager() -> "StateManager | None":
-    """
-    Get the active test state manager for the current thread, if any.
-    Returns None if not in a test context.
-    """
+    """Get the test state manager of the current thread, or None if not in a test context"""
     return getattr(_test_context, "state_manager", None)
-
-
-def is_test_context() -> bool:
-    """
-    Check if the current thread is running in a test context.
-    Returns True if a test state manager is active, False otherwise.
-    """
-    return get_test_state_manager() is not None
 
 
 @contextmanager
 def test_context(state_manager: "StateManager") -> Generator["StateManager"]:
     """
     Context manager that activates test mode for the current thread.
-    All entities created within this context will automatically use the provided state_manager.
-
-    Usage:
-        with test_context(my_state_manager):
-            # All entities will use my_state_manager
-            entity.turn_on()
+    All entities referenced from within this context will use the provided state_manager.
     """
     old_state_manager = get_test_state_manager()
     set_test_state_manager(state_manager)

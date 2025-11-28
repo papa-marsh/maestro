@@ -1,4 +1,5 @@
 import atexit
+import os
 from enum import StrEnum, auto
 from http import HTTPMethod
 from typing import Any
@@ -15,6 +16,7 @@ from maestro.config import (
     SQLALCHEMY_TRACK_MODIFICATIONS,
     TIMEZONE,
 )
+from maestro.testing.context import test_mode_active
 from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.sun import SunTriggerManager
@@ -31,6 +33,11 @@ class MaestroFlask(Flask):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._initialize_db()
+
+        if test_mode_active():
+            self._initialize_test_environment()
+            return
+
         load_script_modules()
         self._initialize_scheduler()
         with self.app_context():
@@ -53,6 +60,10 @@ class MaestroFlask(Flask):
     def _shutdown_handler(self) -> None:
         self.app_context().push()
         MaestroTriggerManager.fire_triggers(MaestroEvent.SHUTDOWN, self)
+
+    def _initialize_test_environment(self) -> None:
+        """Initialize in-memory scheduler for registering decorators while testing."""
+        self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
 
 
 configure_logging()
