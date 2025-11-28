@@ -7,7 +7,7 @@ from maestro.integrations.home_assistant.client import HomeAssistantClient
 from maestro.integrations.home_assistant.types import AttributeId, EntityData, EntityId, StateId
 from maestro.integrations.redis import CachedValue, CachedValueT, CachePrefix, RedisClient
 from maestro.registry.registry_manager import RegistryManager
-from maestro.testing.context import test_mode_active
+from maestro.testing.context import get_test_state_manager, test_mode_active
 from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
 from maestro.utils.logger import log
 
@@ -28,6 +28,16 @@ class StateManager:
     ) -> None:
         self.hass_client = hass_client or HomeAssistantClient()
         self.redis_client = redis_client or RedisClient()
+
+        if test_mode_active():
+            self._initialize_as_mock()
+
+    def _initialize_as_mock(self) -> None:
+        """Override clients with existing mock clients if they exist"""
+        with suppress(RuntimeError):
+            test_state_manager = get_test_state_manager()
+            self.hass_client = test_state_manager.hass_client
+            self.redis_client = test_state_manager.redis_client
 
     def get_entity_state(self, entity_id: EntityId) -> str:
         """Retrieve an entity's cached state or fetch from HASS on cache miss"""

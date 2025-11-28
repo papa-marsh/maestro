@@ -1,5 +1,7 @@
 from contextlib import suppress
 
+import pytest
+
 from maestro.domains import BinarySensor, Switch
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.testing import MaestroTest
@@ -224,7 +226,7 @@ def test_multiple_entities_use_same_mock(maestro_test: MaestroTest) -> None:
     maestro_test.set_state("binary_sensor.motion", "off")
     maestro_test.set_state("switch.fan", "off")
 
-    assert sensor.state_manager is switch.state_manager
+    assert sensor.state_manager.hass_client is switch.state_manager.hass_client
     assert sensor.state_manager.redis_client is maestro_test.redis_client
 
     switch.turn_on()
@@ -232,3 +234,21 @@ def test_multiple_entities_use_same_mock(maestro_test: MaestroTest) -> None:
 
     switch_calls = maestro_test.get_action_calls(domain=Domain.SWITCH)
     assert len(switch_calls) == 2
+
+
+def test_assert_entity_exists(maestro_test: MaestroTest) -> None:
+    """Test assert_entity_exists passes when entity exists"""
+    with pytest.raises(AssertionError):
+        maestro_test.assert_entity_exists("light.bedroom")
+
+    maestro_test.set_state("light.bedroom", "on")
+    maestro_test.assert_entity_exists("light.bedroom")
+
+
+def test_assert_entity_does_not_exist(maestro_test: MaestroTest) -> None:
+    """Test assert_entity_does_not_exist passes when entity doesn't exist"""
+    maestro_test.assert_entity_does_not_exist("light.nonexistent")
+
+    maestro_test.set_state("light.bedroom", "on")
+    with pytest.raises(AssertionError):
+        maestro_test.assert_entity_does_not_exist("light.bedroom")

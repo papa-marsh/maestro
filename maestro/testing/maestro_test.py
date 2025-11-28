@@ -1,3 +1,4 @@
+from contextlib import suppress
 from datetime import datetime
 from typing import Any
 
@@ -246,7 +247,22 @@ class MaestroTest:
         """
         self.hass_client.clear_action_calls()
 
-    # MARK: State Assertions
+    # MARK: Entity Assertions
+
+    def assert_entity_exists(self, entity: Entity | str) -> None:
+        """Assert that an entity exists in the mock home assistant client."""
+        entity_id = entity.id if isinstance(entity, Entity) else entity
+        try:
+            self.get_state(entity)
+        except ValueError:
+            assert False, f"Expected entity {entity_id} to exist, but it doesn't"
+
+    def assert_entity_does_not_exist(self, entity: Entity | str) -> None:
+        """Assert that an entity does not exist in the mock home assistant client."""
+        entity_id = entity.id if isinstance(entity, Entity) else entity
+        with suppress(ValueError):
+            state = self.get_state(entity)
+            assert False, f"Expected entity {entity_id} to not exist, but it has state '{state}'"
 
     def assert_state(self, entity: Entity | str, expected_state: str) -> None:
         """Assert that an entity has a specific state."""
