@@ -28,11 +28,12 @@ class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
             raise ValueError(f"Failed to retrieve entity response for {obj.id}")
 
         entity_response.attributes[self.name] = value
-        obj.state_manager.hass_client.set_entity(
+        entity_data, _ = obj.state_manager.hass_client.set_entity(
             entity_id=obj.id,
             state=entity_response.state,
             attributes=entity_response.attributes,
         )
+        obj.state_manager.cache_entity(entity_data)
 
 
 class Entity(ABC):
@@ -84,11 +85,12 @@ class Entity(ABC):
             raise ValueError(f"Failed to retrieve entity response for {self.id}")
 
         entity_response.state = value
-        self.state_manager.hass_client.set_entity(
+        entity_data, _ = self.state_manager.hass_client.set_entity(
             entity_id=self.id,
             state=entity_response.state,
             attributes=entity_response.attributes,
         )
+        self.state_manager.cache_entity(entity_data)
 
     def perform_action(self, action: str, **kwargs: Any) -> None:
         """Perform an action related to the entity"""
