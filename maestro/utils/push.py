@@ -15,7 +15,7 @@ class Notif:
     """
     Comprehensive push notification class.
     Setting sound="passive" will send silently without waking screen.
-    `url` must be a full web URL (https://example.com) or a lovelace mobile view (overview).
+    `url` must be a full web URL (https://example.com) or a lovelace view.
     `action_data` is included in the event payload when HASS
     receives an actionable notification's response.
     """
