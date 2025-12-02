@@ -191,16 +191,17 @@ Anything intended to be used in automation logic is exported by a top-level pack
 
 ```python
 # scripts/bedroom_lights.py
+from maestro.domains import OFF, ON
 from maestro.triggers import state_change_trigger
 from maestro.integrations import StateChangeEvent
 from maestro.registry import switch, light
 
-@state_change_trigger(switch.bedroom_motion_sensor, to_state="on")
+@state_change_trigger(switch.bedroom_motion_sensor, to_state=ON)
 def motion_detected(state_change: StateChangeEvent) -> None:
     """Turn on bedroom lights when motion detected"""
     light.bedroom_ceiling.turn_on()
 
-@state_change_trigger(switch.bedroom_motion_sensor, to_state="off")
+@state_change_trigger(switch.bedroom_motion_sensor, to_state=OFF)
 def motion_cleared(state_change: StateChangeEvent) -> None:
     """Turn off bedroom lights when motion clears"""
     light.bedroom_ceiling.turn_off()
@@ -253,7 +254,7 @@ Responds when an entity's state changes. Can trigger on one or multiple entities
 
 ```python
 # Single entity
-@state_change_trigger(switch.bedroom_motion_sensor, to_state="on")
+@state_change_trigger(switch.bedroom_motion_sensor, to_state=ON)
 def motion_detected(state_change: StateChangeEvent) -> None:
     log.info(f"Changed from {state_change.old.state} to {state_change.new.state}")
 
@@ -623,11 +624,11 @@ from scripts.bedroom import lights
 
 def test_motion_turns_on_light(maestro_test: MaestroTest):
     # Setup: Set initial entity states
-    maestro_test.set_state(switch.motion_sensor, "off")
-    maestro_test.set_state(light.bedroom, "off")
+    maestro_test.set_state(switch.motion_sensor, OFF)
+    maestro_test.set_state(light.bedroom, OFF)
 
     # Act: Trigger your automation by simulating a state change
-    maestro_test.trigger_state_change(switch.motion_sensor, old="off", new="on")
+    maestro_test.trigger_state_change(switch.motion_sensor, old=OFF, new=ON)
 
     # Assert: Verify the light was turned on
     maestro_test.assert_action_called("light", "turn_on", entity_id="light.bedroom")
@@ -658,7 +659,7 @@ def test_custom_event(maestro_test: MaestroTest):
 
 ```python
 def test_with_entities(maestro_test: MaestroTest):
-    maestro_test.set_state(light.bedroom, "off")
+    maestro_test.set_state(light.bedroom, OFF)
 
     # Entities automatically use the test's mock state manager - no setup needed!
     light.bedroom.turn_on(rgb_color=(255, 255, 255), temperature=4000)
@@ -669,14 +670,14 @@ def test_with_entities(maestro_test: MaestroTest):
 
 ```python
 def test_motion_sequence(maestro_test: MaestroTest):
-    maestro_test.set_state("light.bedroom", "off")
+    maestro_test.set_state("light.bedroom", OFF)
 
-    maestro_test.trigger_state_change("switch.motion", "off", "on")
+    maestro_test.trigger_state_change("switch.motion", OFF, ON)
     maestro_test.assert_action_called("light", "turn_on")
 
     maestro_test.clear_action_calls()
 
-    maestro_test.trigger_state_change("switch.motion", "on", "off")
+    maestro_test.trigger_state_change("switch.motion", ON, OFF)
     maestro_test.assert_action_called("light", "turn_off")
 ```
 
@@ -810,7 +811,7 @@ def snooze_bedtime_routine(notif_action: NotifActionEvent) -> None:
     )
     notif.send(person.john)
 
-@state_change_trigger(person.john, to_state="home")
+@state_change_trigger(person.john, to_state=HOME)
 def welcome_home(state_change: StateChangeEvent) -> None:
     """Cancel bedtime routine if arriving home late"""
     hour = local_now().hour

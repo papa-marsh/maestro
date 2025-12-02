@@ -5,6 +5,11 @@ from typing import Any, cast
 from maestro.integrations.home_assistant.types import AttributeId, EntityId
 from maestro.integrations.state_manager import StateManager
 
+ON = "on"
+OFF = "off"
+HOME = "home"
+AWAY = "not_home"
+
 
 class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
     def __init__(self, attribute_type: type[T]) -> None:

@@ -1,5 +1,5 @@
 from maestro.config import NOTIFY_ACTION_MAPPINGS
-from maestro.domains.entity import Entity
+from maestro.domains.entity import HOME, Entity
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.utils.push import Notif
 
@@ -13,7 +13,7 @@ class Person(Entity):
 
     @property
     def is_home(self) -> bool:
-        return self.state == "home"
+        return self.state == HOME
 
     def notify(self, notif: Notif) -> None:
         notif.send(self)

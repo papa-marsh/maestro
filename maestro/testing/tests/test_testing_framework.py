@@ -3,30 +3,31 @@ from contextlib import suppress
 import pytest
 
 from maestro.domains import BinarySensor, Switch
+from maestro.domains.entity import OFF, ON
 from maestro.integrations.home_assistant.domain import Domain
-from maestro.testing import MaestroTest
-from maestro.utils import local_now
+from maestro.testing.maestro_test import MaestroTest
+from maestro.utils.dates import local_now
 
 
 def test_set_and_get_state(maestro_test: MaestroTest) -> None:
-    maestro_test.set_state("light.bedroom", "on")
+    maestro_test.set_state("light.bedroom", ON)
     state = maestro_test.get_state("light.bedroom")
-    assert state == "on"
+    assert state == ON
 
-    maestro_test.set_state("light.bedroom", "off")
+    maestro_test.set_state("light.bedroom", OFF)
     state = maestro_test.get_state("light.bedroom")
-    assert state == "off"
+    assert state == OFF
 
 
 def test_set_state_with_attributes(maestro_test: MaestroTest) -> None:
-    maestro_test.set_state("light.bedroom", "on", {"brightness": 255})
+    maestro_test.set_state("light.bedroom", ON, {"brightness": 255})
     brightness = maestro_test.get_attribute("light.bedroom", "brightness", int)
     assert brightness == 255
 
 
 def test_mock_client_action_tracking(maestro_test: MaestroTest) -> None:
     """Test that mock client tracks action calls"""
-    maestro_test.set_state("light.bedroom", "off")
+    maestro_test.set_state("light.bedroom", OFF)
 
     maestro_test.hass_client.perform_action(
         domain=Domain.LIGHT,
@@ -116,17 +117,17 @@ def test_assert_action_times(maestro_test: MaestroTest) -> None:
 
 
 def test_assert_state(maestro_test: MaestroTest) -> None:
-    maestro_test.set_state("light.bedroom", "on")
-    maestro_test.assert_state("light.bedroom", "on")
+    maestro_test.set_state("light.bedroom", ON)
+    maestro_test.assert_state("light.bedroom", ON)
 
 
 def test_assert_attribute(maestro_test: MaestroTest) -> None:
-    maestro_test.set_state("light.bedroom", "on", {"brightness": 255})
+    maestro_test.set_state("light.bedroom", ON, {"brightness": 255})
     maestro_test.assert_attribute("light.bedroom", "brightness", 255)
 
 
 def test_reset_clears_state_and_actions(maestro_test: MaestroTest) -> None:
-    maestro_test.set_state("light.bedroom", "on")
+    maestro_test.set_state("light.bedroom", ON)
     maestro_test.hass_client.perform_action(
         domain=Domain.LIGHT,
         action="turn_on",
@@ -143,20 +144,20 @@ def test_reset_clears_state_and_actions(maestro_test: MaestroTest) -> None:
 
 
 def test_set_attribute(maestro_test: MaestroTest) -> None:
-    maestro_test.set_state("light.bedroom", "on", {"brightness": 100})
+    maestro_test.set_state("light.bedroom", ON, {"brightness": 100})
     maestro_test.set_attribute("light.bedroom", "brightness", 255)
     brightness = maestro_test.get_attribute("light.bedroom", "brightness", int)
     assert brightness == 255
 
 
 def test_multiple_entities(maestro_test: MaestroTest) -> None:
-    maestro_test.set_state("light.bedroom", "on")
-    maestro_test.set_state("light.kitchen", "off")
-    maestro_test.set_state("switch.fan", "off")
+    maestro_test.set_state("light.bedroom", ON)
+    maestro_test.set_state("light.kitchen", OFF)
+    maestro_test.set_state("switch.fan", OFF)
 
-    maestro_test.assert_state("light.bedroom", "on")
-    maestro_test.assert_state("light.kitchen", "off")
-    maestro_test.assert_state("switch.fan", "off")
+    maestro_test.assert_state("light.bedroom", ON)
+    maestro_test.assert_state("light.kitchen", OFF)
+    maestro_test.assert_state("switch.fan", OFF)
 
 
 def test_entity_with_complex_attributes(maestro_test: MaestroTest) -> None:
@@ -188,9 +189,9 @@ def test_entity_auto_uses_mock_state_manager(maestro_test: MaestroTest) -> None:
 
     switch = Switch("switch.test_switch")
 
-    maestro_test.set_state("switch.test_switch", "off")
+    maestro_test.set_state("switch.test_switch", OFF)
 
-    assert switch.state == "off"
+    assert switch.state == OFF
     assert switch.state_manager.redis_client is maestro_test.redis_client
 
 
@@ -198,7 +199,7 @@ def test_entity_methods_are_tracked_automatically(maestro_test: MaestroTest) -> 
     """Test that entity action methods are automatically tracked"""
 
     switch = Switch("switch.test_switch")
-    maestro_test.set_state("switch.test_switch", "off")
+    maestro_test.set_state("switch.test_switch", OFF)
 
     switch.turn_on()
 
@@ -209,9 +210,9 @@ def test_entity_state_access_without_manual_mocking(maestro_test: MaestroTest) -
     """Test that entity state/attribute access works without manual setup"""
 
     switch = Switch("switch.bedroom")
-    maestro_test.set_state("switch.bedroom", "on", {"power_usage": 50})
+    maestro_test.set_state("switch.bedroom", ON, {"power_usage": 50})
 
-    assert switch.state == "on"
+    assert switch.state == ON
 
     power = maestro_test.get_attribute(switch, "power_usage", int)
     assert power == 50
@@ -223,8 +224,8 @@ def test_multiple_entities_use_same_mock(maestro_test: MaestroTest) -> None:
     sensor = BinarySensor("binary_sensor.motion")
     switch = Switch("switch.fan")
 
-    maestro_test.set_state("binary_sensor.motion", "off")
-    maestro_test.set_state("switch.fan", "off")
+    maestro_test.set_state("binary_sensor.motion", OFF)
+    maestro_test.set_state("switch.fan", OFF)
 
     assert sensor.state_manager.hass_client is switch.state_manager.hass_client
     assert sensor.state_manager.redis_client is maestro_test.redis_client
@@ -241,7 +242,7 @@ def test_assert_entity_exists(maestro_test: MaestroTest) -> None:
     with pytest.raises(AssertionError):
         maestro_test.assert_entity_exists("light.bedroom")
 
-    maestro_test.set_state("light.bedroom", "on")
+    maestro_test.set_state("light.bedroom", ON)
     maestro_test.assert_entity_exists("light.bedroom")
 
 
@@ -249,6 +250,6 @@ def test_assert_entity_does_not_exist(maestro_test: MaestroTest) -> None:
     """Test assert_entity_does_not_exist passes when entity doesn't exist"""
     maestro_test.assert_entity_does_not_exist("light.nonexistent")
 
-    maestro_test.set_state("light.bedroom", "on")
+    maestro_test.set_state("light.bedroom", ON)
     with pytest.raises(AssertionError):
         maestro_test.assert_entity_does_not_exist("light.bedroom")

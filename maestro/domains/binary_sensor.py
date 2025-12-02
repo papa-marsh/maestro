@@ -1,4 +1,4 @@
-from maestro.domains.entity import Entity
+from maestro.domains.entity import ON, Entity
 from maestro.integrations.home_assistant.domain import Domain
 
 
@@ -7,4 +7,4 @@ class BinarySensor(Entity):
 
     @property
     def is_on(self) -> bool:
-        return self.state == "on"
+        return self.state == ON
