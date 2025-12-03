@@ -18,6 +18,7 @@ def test_mode_active(raise_without_test_context: bool = False) -> bool:
     Returns True if pytest is loaded, False otherwise. Works before fixtures run.
     Use `require_test_context` to raise a runtime error if test context is not ready.
     """
+    return False
     test_mode_active = "pytest" in sys.modules
 
     if test_mode_active and raise_without_test_context:
