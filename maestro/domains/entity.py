@@ -4,6 +4,7 @@ from typing import Any, cast
 
 from maestro.integrations.home_assistant.types import AttributeId, EntityId
 from maestro.integrations.state_manager import StateManager
+from maestro.testing.context import test_mode_active
 
 ON = "on"
 OFF = "off"
@@ -64,6 +65,9 @@ class Entity(ABC):
     @property
     def state_manager(self) -> StateManager:
         """Lazy load the state manager for this entity"""
+        if test_mode_active():
+            return StateManager()
+
         self._state_manager = self._state_manager or StateManager()
         return self._state_manager
 

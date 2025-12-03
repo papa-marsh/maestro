@@ -2,7 +2,7 @@ from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 from uuid import uuid4
 
-from maestro.config import DEFAULT_NOTIF_SOUND, DEFAULT_NOTIF_URL, NOTIFY_ACTION_MAPPINGS
+from maestro.config import DEFAULT_NOTIF_SOUND, DEFAULT_NOTIF_URL
 from maestro.integrations.home_assistant.domain import Domain
 
 if TYPE_CHECKING:
@@ -79,13 +79,12 @@ class Notif:
                 message=self.payload["message"],
                 target=target.id,
             )
-            action_name = NOTIFY_ACTION_MAPPINGS.get(target.id)
-            if action_name is None:
+            if target.notify_action_name is None:
                 raise KeyError(f"Couldn't map {target.id} to a notify action. Check .env file")
 
             target.state_manager.hass_client.perform_action(
                 domain=Domain.NOTIFY,
-                action=action_name,
+                action=target.notify_action_name,
                 entity_id=None,
                 **self.payload,
             )
