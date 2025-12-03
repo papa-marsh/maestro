@@ -12,7 +12,7 @@ from maestro.registry import sun
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import SunParams, TriggerRegistryEntry, TriggerType
 from maestro.utils.dates import local_now
-from maestro.utils.logging import log
+from maestro.utils.logging import build_process_id, log, set_process_id
 
 
 class SolarEvent(StrEnum):
@@ -86,6 +86,9 @@ def sun_trigger(solar_event: SolarEvent, offset: timedelta = timedelta()) -> Cal
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            process_id = build_process_id(SunTriggerManager.trigger_type)
+            set_process_id(process_id)
+
             log.info(
                 "Thread created for triggered script",
                 function_name=func.__name__,

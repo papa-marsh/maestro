@@ -10,7 +10,7 @@ from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 from maestro.config import TIMEZONE
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import CronParams, TriggerRegistryEntry, TriggerType
-from maestro.utils.logging import log
+from maestro.utils.logging import build_process_id, log, set_process_id
 
 SCHEDULER_JOB_PREFIX = "cron_trigger_job_"
 
@@ -58,6 +58,9 @@ def cron_trigger(
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            process_id = build_process_id(CronTriggerManager.trigger_type)
+            set_process_id(process_id)
+
             log.info(
                 "Thread created for triggered script",
                 function_name=func.__name__,
