@@ -4,8 +4,8 @@ from typing import Any, cast
 
 from maestro.integrations.home_assistant.types import AttributeId, EntityId
 from maestro.integrations.state_manager import StateManager
-from maestro.testing.context import test_mode_active
 from maestro.utils.exceptions import EntityConfigurationError, MalformedResponseError
+from maestro.utils.internal import test_mode_active
 
 ON = "on"
 OFF = "off"

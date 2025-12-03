@@ -13,20 +13,6 @@ if TYPE_CHECKING:
 _test_context = threading.local()
 
 
-def test_mode_active(raise_without_test_context: bool = False) -> bool:
-    """
-    Returns True if pytest is loaded, False otherwise. Works before fixtures run.
-    Use `require_test_context` to raise a runtime error if test context is not ready.
-    """
-    return False
-    test_mode_active = "pytest" in sys.modules
-
-    if test_mode_active and raise_without_test_context:
-        get_test_state_manager()
-
-    return test_mode_active
-
-
 def set_test_state_manager(state_manager: "StateManager | None") -> None:
     """Set the active test state manager for the current test thread."""
     _test_context.state_manager = state_manager

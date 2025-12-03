@@ -14,6 +14,10 @@ from maestro.utils.exceptions import MissingScriptsDirectoryError
 from maestro.utils.logger import log
 
 
+def test_mode_active() -> bool:
+    return "pytest" in sys.modules
+
+
 def configure_logging() -> None:
     """Configure structlog with colored output for all environments."""
     # Configure structlog

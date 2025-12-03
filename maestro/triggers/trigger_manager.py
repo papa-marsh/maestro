@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, final
 
 from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 
-from maestro.testing.context import test_mode_active
 from maestro.triggers.types import TriggerFuncParamsT, TriggerRegistryEntry, TriggerType
+from maestro.utils.internal import test_mode_active
 
 if TYPE_CHECKING:
     from maestro.app import MaestroFlask
@@ -94,7 +94,7 @@ class TriggerManager(ABC):
 
         app: MaestroFlask = current_app._get_current_object()  # type:ignore[attr-defined]
 
-        if test_mode_active(raise_without_test_context=True):
+        if test_mode_active():
             cls.invoke_funcs_sync(funcs_to_execute, func_params, app)
             return
 

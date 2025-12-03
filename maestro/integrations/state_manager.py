@@ -14,6 +14,7 @@ from maestro.utils.exceptions import (
     EntityOperationError,
     TestFrameworkError,
 )
+from maestro.utils.internal import test_mode_active
 from maestro.utils.logger import log
 
 
@@ -31,8 +32,6 @@ class StateManager:
         hass_client: HomeAssistantClient | None = None,
         redis_client: RedisClient | None = None,
     ) -> None:
-        from maestro.testing.context import test_mode_active
-
         self.hass_client = hass_client or HomeAssistantClient()
         self.redis_client = redis_client or RedisClient()
 
@@ -152,7 +151,6 @@ class StateManager:
 
     def cache_entity(self, entity_data: EntityData) -> None:
         """Overwrite an entity's state and attributes, removing any stale attributes"""
-        from maestro.testing.context import test_mode_active
 
         keys_to_delete = set(self.get_all_entity_keys(entity_data.entity_id))
         keys_to_delete.remove(entity_data.entity_id.cache_key)
