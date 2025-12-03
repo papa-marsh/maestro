@@ -1,8 +1,7 @@
-import sys
-
 from maestro.config import NOTIFY_ACTION_MAPPINGS
 from maestro.domains.entity import HOME, Entity
 from maestro.integrations.home_assistant.domain import Domain
+from maestro.utils.internal import test_mode_active
 from maestro.utils.push import Notif
 
 
@@ -11,7 +10,7 @@ class Person(Entity):
 
     @property
     def notify_action_name(self) -> str | None:
-        if "pytest" in sys.modules:
+        if test_mode_active():
             return f"test_mock_notify_{self.id.entity}"
 
         return NOTIFY_ACTION_MAPPINGS.get(self.id)

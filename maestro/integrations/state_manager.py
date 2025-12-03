@@ -12,7 +12,6 @@ from maestro.utils.exceptions import (
     AttributeDoesNotExistError,
     EntityDoesNotExistError,
     EntityOperationError,
-    TestFrameworkError,
 )
 from maestro.utils.internal import test_mode_active
 from maestro.utils.logger import log
@@ -41,11 +40,16 @@ class StateManager:
     def _initialize_as_mock(self) -> None:
         """Override clients with existing mock clients if they exist"""
         from maestro.testing.context import get_test_state_manager
+        from maestro.testing.mocks import MockHomeAssistantClient, MockRedisClient
 
-        with suppress(TestFrameworkError):
-            test_state_manager = get_test_state_manager()
-            self.hass_client = test_state_manager.hass_client
-            self.redis_client = test_state_manager.redis_client
+        if isinstance(self.hass_client, MockHomeAssistantClient) and isinstance(
+            self.redis_client, MockRedisClient
+        ):
+            return
+
+        test_state_manager = get_test_state_manager()
+        self.hass_client = test_state_manager.hass_client
+        self.redis_client = test_state_manager.redis_client
 
     def get_entity_state(self, entity_id: EntityId) -> str:
         """Retrieve an entity's cached state or fetch from HASS on cache miss"""
