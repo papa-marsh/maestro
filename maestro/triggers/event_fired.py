@@ -5,6 +5,7 @@ from typing import Any, cast
 from maestro.integrations.home_assistant.types import FiredEvent
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import EventFiredParams, TriggerRegistryEntry, TriggerType
+from maestro.utils.exceptions import EventTriggerOverrideError
 
 
 class EventFiredTriggerManager(TriggerManager):
@@ -48,7 +49,7 @@ def event_fired_trigger(
             return func(*args, **kwargs)
 
         if event_type in EventType:
-            raise ValueError(
+            raise EventTriggerOverrideError(
                 "Avoid `event_fired_trigger` when an event-specific trigger exists. "
                 "eg. Use state_change_trigger, not event_fired_trigger(event_type='state_changed')"
             )
