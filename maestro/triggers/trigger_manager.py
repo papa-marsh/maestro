@@ -9,7 +9,7 @@ from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 
 from maestro.triggers.types import TriggerFuncParamsT, TriggerRegistryEntry, TriggerType
 from maestro.utils.internal import test_mode_active
-from maestro.utils.logging import log
+from maestro.utils.logging import get_request_id, log, set_request_id
 
 if TYPE_CHECKING:
     from maestro.app import MaestroFlask
@@ -99,11 +99,12 @@ class TriggerManager(ABC):
             return
 
         func_params_dict = dict(func_params)
+        request_id = get_request_id()
 
         for func in funcs_to_execute:
             thread = Thread(
                 target=cls._invoke_func_with_param_handling,
-                args=(func, func_params_dict, app),
+                args=(func, func_params_dict, app, request_id),
                 daemon=True,
             )
             thread.start()
@@ -140,6 +141,7 @@ class TriggerManager(ABC):
         func: Callable,
         func_params_dict: dict[str, Any],
         app: "MaestroFlask",
+        request_id: str | None = None,
     ) -> None:
         """
         Wrapper logic to handle a varied number of optional args passed to a decorated function.
@@ -151,6 +153,9 @@ class TriggerManager(ABC):
 
         trigger_params is a typeddict to enumerate the available valid arguments.
         """
+        if request_id is not None:
+            set_request_id(request_id)
+
         try:
             execution_args = []
             for signature_param in signature(func).parameters:

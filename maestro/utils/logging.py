@@ -1,8 +1,12 @@
+from contextlib import suppress
+from contextvars import ContextVar
 from typing import Any
 from uuid import uuid4
 
 from flask import request
 from structlog.stdlib import BoundLogger, get_logger
+
+_request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 
 class LoggerProxy:
@@ -15,6 +19,20 @@ class LoggerProxy:
 log: BoundLogger = LoggerProxy()  # type:ignore[assignment]
 
 
+def get_request_id() -> str | None:
+    """Get the current request ID from Flask request or context variable."""
+    with suppress(RuntimeError):
+        if hasattr(request, "id"):
+            return request.id  # type:ignore[no-any-return]
+
+    return _request_id_ctx.get()
+
+
+def set_request_id(request_id: str) -> None:
+    """Set request ID in context variable for use in background threads."""
+    _request_id_ctx.set(request_id)
+
+
 def _get_maestro_logger() -> BoundLogger:
     try:
         if hasattr(request, "logger"):
@@ -25,4 +43,5 @@ def _get_maestro_logger() -> BoundLogger:
         return request.logger  # type:ignore[attr-defined, no-any-return]
 
     except RuntimeError:
-        return get_logger().bind(request_id=None)
+        request_id = _request_id_ctx.get()
+        return get_logger().bind(request_id=request_id)
