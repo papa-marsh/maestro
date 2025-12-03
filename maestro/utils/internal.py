@@ -10,6 +10,7 @@ from pathlib import Path
 
 import structlog
 
+from maestro.utils.exceptions import MissingScriptsDirectoryError
 from maestro.utils.logger import log
 
 
@@ -52,7 +53,7 @@ def load_script_modules() -> None:
     if not scripts_dir.exists():
         scripts_dir = Path.cwd() / "scripts"
     if not scripts_dir.exists():
-        raise ImportError("Failed to find scripts directory while attempting to load modules")
+        raise MissingScriptsDirectoryError("Failed to find scripts directory while loading modules")
 
     scripts_path = str(scripts_dir)
     if scripts_path not in sys.path:

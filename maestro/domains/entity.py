@@ -5,6 +5,7 @@ from typing import Any, cast
 from maestro.integrations.home_assistant.types import AttributeId, EntityId
 from maestro.integrations.state_manager import StateManager
 from maestro.testing.context import test_mode_active
+from maestro.utils.exceptions import EntityConfigurationError, MalformedResponseError
 
 ON = "on"
 OFF = "off"
@@ -30,8 +31,6 @@ class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
 
     def __set__(self, obj: "Entity", value: T) -> None:
         entity_response = obj.state_manager.fetch_hass_entity(obj.id)
-        if entity_response is None:
-            raise ValueError(f"Failed to retrieve entity response for {obj.id}")
 
         entity_response.attributes[self.name] = value
         entity_data, _ = obj.state_manager.hass_client.set_entity(
@@ -60,7 +59,7 @@ class Entity(ABC):
 
         valid_classes = {c.__name__ for c in type(self).__mro__ if c not in [Entity, ABC, object]}
         if self.id.domain_class_name not in valid_classes:
-            raise ValueError("Mismatch between entity domain and domain class")
+            raise EntityConfigurationError("Mismatch between entity domain and domain class")
 
     @property
     def state_manager(self) -> StateManager:
@@ -90,8 +89,6 @@ class Entity(ABC):
     def state(self, value: str) -> None:
         """Set the state of the entity"""
         entity_response = self.state_manager.fetch_hass_entity(self.id)
-        if entity_response is None:
-            raise ValueError(f"Failed to retrieve entity response for {self.id}")
 
         entity_response.state = value
         entity_data, _ = self.state_manager.hass_client.set_entity(
@@ -110,4 +107,4 @@ class Entity(ABC):
             **kwargs,
         )
         if len(response) > 1:
-            raise ValueError("Unexpectedly received more than one EntityData from action call")
+            raise MalformedResponseError("Received more than one EntityData from action call")

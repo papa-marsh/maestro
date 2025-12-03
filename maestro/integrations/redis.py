@@ -60,7 +60,7 @@ class RedisClient:
         try:
             result = self.client.ping()
             if not isinstance(result, bool):
-                raise TypeError(f"Expected `bool` from redis `ping` but got {type(result)}")
+                raise TypeError(f"Expected `bool` but got {type(result).__name__}")
             return result
         except redis.RedisError:
             return False
@@ -69,7 +69,7 @@ class RedisClient:
         """Get a string value by key"""
         result = self.client.get(key)
         if not isinstance(result, (str | type(None))):
-            raise TypeError(f"Expected `str | None` from redis `get` but got {type(result)}")
+            raise TypeError(f"Expected `str | None` but got {type(result).__name__}")
         return result
 
     def set(
@@ -84,7 +84,7 @@ class RedisClient:
         old_value = self.client.set(name=key, value=value, ex=ex, get=True)
 
         if not isinstance(old_value, (str | type(None))):
-            raise TypeError(f"Expected `str | None` from redis `set` but got {type(old_value)}")
+            raise TypeError(f"Expected `str | None` but got {type(old_value).__name__}")
         return old_value
 
     def delete(self, *keys: str) -> int:
@@ -93,14 +93,14 @@ class RedisClient:
             return 0
         keys_deleted = self.client.delete(*keys)
         if not isinstance(keys_deleted, int):
-            raise TypeError(f"Expected `int` from redis delete but got {type(keys_deleted)}")
+            raise TypeError(f"Expected `int` but got {type(keys_deleted).__name__}")
         return keys_deleted
 
     def exists(self, *keys: str) -> int:
         """Check if a key exists"""
         result = self.client.exists(*keys)
         if not isinstance(result, int):
-            raise TypeError(f"Expected `int` from redis `exists` but got {type(result)}")
+            raise TypeError(f"Expected `int` but got {type(result).__name__}")
         return result
 
     def get_keys(self, pattern: str | None = None) -> list[str]:
@@ -113,7 +113,7 @@ class RedisClient:
                 cursor = 0
             result = self.client.scan(cursor=cursor, match=pattern)
             if not isinstance(result, tuple):
-                raise TypeError
+                raise TypeError(f"Expected `tuple` but got {type(result).__name__}")
             cursor, new_keys = result
             keys.extend(new_keys)
 

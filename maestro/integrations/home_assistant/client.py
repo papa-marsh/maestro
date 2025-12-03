@@ -3,11 +3,18 @@ from http import HTTPMethod, HTTPStatus
 from typing import Any
 
 import requests
+from requests.exceptions import JSONDecodeError, RequestException
 
 from maestro.config import DOMAIN_IGNORE_LIST, HOME_ASSISTANT_TOKEN, HOME_ASSISTANT_URL
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.integrations.home_assistant.types import EntityData, EntityId
 from maestro.utils.dates import resolve_timestamp, serialize_datetimes
+from maestro.utils.exceptions import (
+    EntityDoesNotExistError,
+    EntityOperationError,
+    HomeAssistantClientError,
+    MalformedResponseError,
+)
 from maestro.utils.logger import log
 
 
@@ -32,9 +39,11 @@ class HomeAssistantClient:
         response_data, status = self.execute_request(method=HTTPMethod.GET, path=path)
 
         if status == HTTPStatus.NOT_FOUND:
-            raise ValueError(f"Entity {entity_id} doesn't exist")
-        if status != HTTPStatus.OK or not response_data or not isinstance(response_data, dict):
-            raise ConnectionError(f"Failed to retrieve valid state for `{entity_id}`")
+            raise EntityDoesNotExistError(f"Entity `{entity_id}` doesn't exist")
+        if status != HTTPStatus.OK:
+            raise HomeAssistantClientError(f"Request failed fetching entity `{entity_id}`")
+        if not response_data or not isinstance(response_data, dict):
+            raise MalformedResponseError(f"Invalid response shape fetching entity `{entity_id}`")
 
         return self.resolve_entity_response(response_data)
 
@@ -46,15 +55,17 @@ class HomeAssistantClient:
             path=path,
         )
 
-        if status != HTTPStatus.OK or not response_data or not isinstance(response_data, list):
-            raise ConnectionError("Failed to retrieve states")
+        if status != HTTPStatus.OK:
+            raise HomeAssistantClientError("Request failed fetching all entities")
+        if not response_data or not isinstance(response_data, list):
+            raise MalformedResponseError("Invalid response shape fetching all entities")
 
         entities = []
         for state_data in response_data:
             if not isinstance(state_data, dict):
-                raise TypeError("Unexpected non-dict in state response")
+                raise MalformedResponseError("Unexpected non-dict in state response")
             if "entity_id" not in state_data or not isinstance(state_data["entity_id"], str):
-                raise KeyError("Entity dictionary is missing entity_id")
+                raise MalformedResponseError("Entity dictionary is missing entity_id string")
 
             domain = state_data["entity_id"].split(".")[0]
             if domain in DOMAIN_IGNORE_LIST:
@@ -85,10 +96,10 @@ class HomeAssistantClient:
         )
 
         if status not in (HTTPStatus.OK, HTTPStatus.CREATED):
-            raise ConnectionError(f"Failed to set state for entity {entity_id}")
+            raise EntityOperationError(f"Failed to set state for entity {entity_id}")
 
         if not isinstance(response_data, dict):
-            raise ConnectionError(f"Expected dict response for entity {entity_id}")
+            raise MalformedResponseError(f"Expected dict response for entity {entity_id}")
 
         entity = self.resolve_entity_response(response_data)
         created = status == HTTPStatus.CREATED
@@ -102,9 +113,9 @@ class HomeAssistantClient:
         _, status = self.execute_request(method=HTTPMethod.DELETE, path=path)
 
         if status == HTTPStatus.NOT_FOUND:
-            raise ValueError(f"Entity {entity_id} doesn't exist")
+            raise EntityDoesNotExistError(f"Entity {entity_id} doesn't exist")
         if status != HTTPStatus.OK:
-            raise ConnectionError(f"Failed to delete entity {entity_id}")
+            raise EntityOperationError(f"Failed to delete entity {entity_id}")
 
     def delete_entity_if_exists(self, entity_id: str) -> None:
         """Delete an entity if it exists, ignoring errors if it doesn't exist"""
@@ -130,18 +141,18 @@ class HomeAssistantClient:
         )
 
         if status != HTTPStatus.OK:
-            raise ConnectionError(
+            raise EntityOperationError(
                 f"Failed to perform action {domain}.{action}: "
                 f"status={status}, response={response_data}"
             )
 
         if not isinstance(response_data, list):
-            raise ConnectionError(f"Expected list response for action {domain}.{action}")
+            raise MalformedResponseError(f"Expected list response for action {domain}.{action}")
 
         entities = []
         for state_data in response_data:
             if not isinstance(state_data, dict):
-                raise TypeError("Unexpected non-dict in state response")
+                raise MalformedResponseError("Unexpected non-dict in state response")
 
             entity = self.resolve_entity_response(state_data)
             entities.append(entity)
@@ -172,10 +183,10 @@ class HomeAssistantClient:
             )
             data = response.json() if response.content else {}
 
-        except requests.exceptions.JSONDecodeError:
-            data = {}
-        except requests.exceptions.RequestException as e:
-            raise ConnectionError(f"Network error: {e}") from e
+        except (JSONDecodeError, RequestException) as e:
+            raise HomeAssistantClientError(f"Network error: {e}") from e
+        if response.status_code >= 500:
+            raise HomeAssistantClientError("Home Assistant server error")
 
         return data, response.status_code
 
@@ -191,7 +202,7 @@ class HomeAssistantClient:
             "last_updated",
         }
         if not all(key in raw_dict for key in keys):
-            raise KeyError("Couldn't resolve EntityData. Missing required keys.")
+            raise MalformedResponseError("Couldn't resolve EntityData. Missing required keys.")
 
         state = raw_dict["state"]
         entity_id = EntityId(raw_dict["entity_id"])

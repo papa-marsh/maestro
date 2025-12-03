@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.utils.dates import resolve_timestamp
+from maestro.utils.exceptions import EntityMissingFromRegistryError, MalformedRegistryModule
 
 if TYPE_CHECKING:
     from maestro.domains import Entity
@@ -58,10 +59,13 @@ class EntityId(StateId):
         from maestro.domains import Entity
 
         registry_module = importlib.import_module(f"maestro.registry.{self.domain}")
-        entity = getattr(registry_module, self.entity)
+        entity = getattr(registry_module, self.entity, None)
+
+        if entity is None:
+            raise EntityMissingFromRegistryError(f"Couldn't find `{self}` in registry")
 
         if not isinstance(entity, Entity):
-            raise TypeError
+            raise MalformedRegistryModule(f"Registry returned non-entity object for {self}")
 
         return entity
 

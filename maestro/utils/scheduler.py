@@ -9,6 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore
 from flask import current_app
 
 from maestro.utils.dates import IntervalSeconds, local_now
+from maestro.utils.exceptions import SchedulerMisconfiguredError
 from maestro.utils.logger import log
 
 
@@ -20,7 +21,7 @@ class JobScheduler:
     def __init__(self, apscheduler: BackgroundScheduler | None = None) -> None:
         self.apscheduler = apscheduler or current_app.scheduler  # type:ignore[attr-defined]
         if not isinstance(self.apscheduler, BackgroundScheduler):
-            raise TypeError
+            raise SchedulerMisconfiguredError
 
     def schedule_job(
         self,

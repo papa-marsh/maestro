@@ -8,6 +8,7 @@ from maestro.integrations.home_assistant.domain import Domain
 if TYPE_CHECKING:
     from maestro.domains.person import Person
 
+from maestro.utils.exceptions import NotifActionMappingError
 from maestro.utils.logger import log
 
 
@@ -80,7 +81,7 @@ class Notif:
                 target=target.id,
             )
             if target.notify_action_name is None:
-                raise KeyError(f"Couldn't map {target.id} to a notify action. Check .env file")
+                raise NotifActionMappingError(f"Couldn't map {target.id} to an action. Check .env")
 
             target.state_manager.hass_client.perform_action(
                 domain=Domain.NOTIFY,

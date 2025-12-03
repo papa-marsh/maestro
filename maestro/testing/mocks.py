@@ -1,3 +1,4 @@
+import re
 from http import HTTPStatus
 from typing import Any, override
 
@@ -7,6 +8,7 @@ from maestro.integrations.home_assistant.domain import Domain
 from maestro.integrations.home_assistant.types import EntityData, EntityId
 from maestro.integrations.redis import RedisClient
 from maestro.utils.dates import local_now
+from maestro.utils.exceptions import TestImplementationError
 
 
 class ActionCall:
@@ -91,7 +93,7 @@ class MockHomeAssistantClient(HomeAssistantClient):
     def get_entity(self, entity_id: str) -> EntityData:
         """Get a mock entity by ID"""
         if entity_id not in self._entities:
-            raise ValueError(f"Entity {entity_id} doesn't exist")
+            raise TestImplementationError(f"Entity {entity_id} doesn't exist")
         return self._entities[entity_id]
 
     @override
@@ -131,7 +133,7 @@ class MockHomeAssistantClient(HomeAssistantClient):
     def delete_entity(self, entity_id: str) -> None:
         """Delete a mock entity"""
         if entity_id not in self._entities:
-            raise ValueError(f"Entity {entity_id} doesn't exist")
+            raise TestImplementationError(f"Entity {entity_id} doesn't exist")
         del self._entities[entity_id]
 
     @override
@@ -231,9 +233,6 @@ class MockRedisClient(RedisClient):
         """Returns a list of keys, optionally filtered by pattern"""
         if pattern is None:
             return list(self._cache.keys())
-
-        # Simple pattern matching (supports * wildcard)
-        import re
 
         regex_pattern = pattern.replace("*", ".*")
         regex = re.compile(f"^{regex_pattern}$")

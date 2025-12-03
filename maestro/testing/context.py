@@ -4,6 +4,8 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
+from maestro.utils.exceptions import TestFrameworkError
+
 if TYPE_CHECKING:
     from maestro.integrations.state_manager import StateManager
 
@@ -34,7 +36,7 @@ def get_test_state_manager() -> "StateManager":
     state_manager: StateManager | None = getattr(_test_context, "state_manager", None)
 
     if state_manager is None:
-        raise RuntimeError("Couldn't find test state manager. Is the test context active?")
+        raise TestFrameworkError("Couldn't find test state manager. Is the test context active?")
 
     return state_manager
 

@@ -9,6 +9,7 @@ from maestro.integrations.redis import CachedValue, CachedValueT, CachePrefix, R
 from maestro.registry.registry_manager import RegistryManager
 from maestro.testing.context import get_test_state_manager, test_mode_active
 from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
+from maestro.utils.exceptions import AttributeDoesNotExistError, EntityOperationError
 from maestro.utils.logger import log
 
 
@@ -65,7 +66,7 @@ class StateManager:
             attribute_state = entity_data.attributes.get(attribute_id.attribute)
 
         if attribute_state is None:
-            raise AttributeError(f"Attribute {attribute_id} not found")
+            raise AttributeDoesNotExistError(f"Attribute {attribute_id} not found")
 
         if not isinstance(attribute_state, expected_type):
             raise TypeError(
@@ -120,7 +121,7 @@ class StateManager:
         """Create or update an entity in Home Assistant and cache locally to Redis"""
         with suppress(ValueError):
             if create_only and self.fetch_hass_entity(entity_id):
-                raise FileExistsError(f"Entity {entity_id} already exists in Home Assistant")
+                raise EntityOperationError(f"Entity {entity_id} already exists in Home Assistant")
 
         entity_data, _ = self.hass_client.set_entity(entity_id, state, attributes)
         self.cache_entity(entity_data)
