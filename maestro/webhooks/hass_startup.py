@@ -1,7 +1,7 @@
 from flask import Response, jsonify
 
 from maestro.triggers.hass import HassEvent, HassTriggerManager
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 
 def handle_hass_startup(_request_body: dict) -> tuple[Response, int]:

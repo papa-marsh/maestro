@@ -5,7 +5,7 @@ from maestro.integrations.home_assistant.types import EntityData, EntityId, Stat
 from maestro.integrations.state_manager import StateManager
 from maestro.triggers.state_change import StateChangeTriggerManager
 from maestro.utils.dates import resolve_timestamp
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 
 def handle_state_changed(request_body: dict) -> tuple[Response, int]:

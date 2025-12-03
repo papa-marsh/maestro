@@ -10,7 +10,7 @@ from flask import current_app
 
 from maestro.utils.dates import IntervalSeconds, local_now
 from maestro.utils.exceptions import SchedulerMisconfiguredError
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 
 class JobScheduler:

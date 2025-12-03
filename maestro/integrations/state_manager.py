@@ -14,7 +14,7 @@ from maestro.utils.exceptions import (
     EntityOperationError,
 )
 from maestro.utils.internal import test_mode_active
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 
 class StateManager:

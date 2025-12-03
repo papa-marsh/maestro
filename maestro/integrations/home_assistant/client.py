@@ -15,7 +15,7 @@ from maestro.utils.exceptions import (
     HomeAssistantClientError,
     MalformedResponseError,
 )
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 
 class HomeAssistantClient:

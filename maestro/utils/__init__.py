@@ -1,5 +1,5 @@
 from .dates import IntervalSeconds, format_duration, local_now, resolve_timestamp
-from .logger import log
+from .logging import log
 from .push import Notif
 from .scheduler import JobScheduler
 

@@ -8,7 +8,7 @@ from maestro.integrations.home_assistant.types import EntityData, EntityId
 from maestro.integrations.redis import CachePrefix, RedisClient
 from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
 
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 
 class RegistryManager:

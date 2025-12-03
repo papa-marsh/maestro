@@ -12,7 +12,7 @@ from maestro.registry import sun
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import SunParams, TriggerRegistryEntry, TriggerType
 from maestro.utils.dates import local_now
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 
 class SolarEvent(StrEnum):

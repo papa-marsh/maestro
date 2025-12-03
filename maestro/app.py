@@ -20,7 +20,7 @@ from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.sun import SunTriggerManager
 from maestro.utils.internal import configure_logging, load_script_modules, test_mode_active
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 from maestro.webhooks.event_fired import handle_event_fired
 from maestro.webhooks.hass_shutdown import handle_hass_shutdown
 from maestro.webhooks.hass_startup import handle_hass_startup

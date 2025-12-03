@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from maestro.domains.person import Person
 
 from maestro.utils.exceptions import NotifActionMappingError
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 
 class Notif:

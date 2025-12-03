@@ -10,7 +10,7 @@ from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 from maestro.config import TIMEZONE
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import CronParams, TriggerRegistryEntry, TriggerType
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 SCHEDULER_JOB_PREFIX = "cron_trigger_job_"
 

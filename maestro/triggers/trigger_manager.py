@@ -13,7 +13,7 @@ from maestro.utils.internal import test_mode_active
 if TYPE_CHECKING:
     from maestro.app import MaestroFlask
 
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 RegistryT = dict[TriggerType, defaultdict[str, list[TriggerRegistryEntry]]]
 

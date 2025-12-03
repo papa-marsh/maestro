@@ -11,7 +11,7 @@ from pathlib import Path
 import structlog
 
 from maestro.utils.exceptions import MissingScriptsDirectoryError
-from maestro.utils.logger import log
+from maestro.utils.logging import log
 
 
 def test_mode_active() -> bool:
