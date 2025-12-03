@@ -9,11 +9,11 @@ from apscheduler.triggers.cron import CronTrigger  # type:ignore[import-untyped]
 
 from maestro.triggers.types import TriggerFuncParamsT, TriggerRegistryEntry, TriggerType
 from maestro.utils.internal import test_mode_active
+from maestro.utils.logging import log
 
 if TYPE_CHECKING:
     from maestro.app import MaestroFlask
 
-from maestro.utils.logging import log
 
 RegistryT = dict[TriggerType, defaultdict[str, list[TriggerRegistryEntry]]]
 
