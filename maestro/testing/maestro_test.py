@@ -21,6 +21,7 @@ from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.notif_action import NotifActionTriggerManager
 from maestro.triggers.state_change import StateChangeTriggerManager
 from maestro.utils.dates import local_now
+from maestro.utils.exceptions import MockEntityDoesNotExistError
 
 
 class MaestroTest:
@@ -254,13 +255,13 @@ class MaestroTest:
         entity_id = entity.id if isinstance(entity, Entity) else entity
         try:
             self.get_state(entity)
-        except ValueError:
+        except MockEntityDoesNotExistError:
             assert False, f"Expected entity {entity_id} to exist, but it doesn't"
 
     def assert_entity_does_not_exist(self, entity: Entity | str) -> None:
         """Assert that an entity does not exist in the mock home assistant client."""
         entity_id = entity.id if isinstance(entity, Entity) else entity
-        with suppress(ValueError):
+        with suppress(MockEntityDoesNotExistError):
             state = self.get_state(entity)
             assert False, f"Expected entity {entity_id} to not exist, but it has state '{state}'"
 

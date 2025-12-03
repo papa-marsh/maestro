@@ -7,6 +7,7 @@ from maestro.domains.entity import OFF, ON
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.testing.maestro_test import MaestroTest
 from maestro.utils.dates import local_now
+from maestro.utils.exceptions import MockEntityDoesNotExistError
 
 
 def test_set_and_get_state(maestro_test: MaestroTest) -> None:
@@ -136,7 +137,7 @@ def test_reset_clears_state_and_actions(maestro_test: MaestroTest) -> None:
 
     maestro_test.reset()
 
-    with suppress(ValueError):
+    with suppress(MockEntityDoesNotExistError):
         maestro_test.get_state("light.bedroom")
         assert False, "Expected ValueError for missing entity"
 

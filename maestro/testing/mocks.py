@@ -8,7 +8,7 @@ from maestro.integrations.home_assistant.domain import Domain
 from maestro.integrations.home_assistant.types import EntityData, EntityId
 from maestro.integrations.redis import RedisClient
 from maestro.utils.dates import local_now
-from maestro.utils.exceptions import TestImplementationError
+from maestro.utils.exceptions import MockEntityDoesNotExistError
 
 
 class ActionCall:
@@ -93,7 +93,7 @@ class MockHomeAssistantClient(HomeAssistantClient):
     def get_entity(self, entity_id: str) -> EntityData:
         """Get a mock entity by ID"""
         if entity_id not in self._entities:
-            raise TestImplementationError(f"Entity {entity_id} doesn't exist")
+            raise MockEntityDoesNotExistError(f"Entity {entity_id} doesn't exist")
         return self._entities[entity_id]
 
     @override
@@ -133,7 +133,7 @@ class MockHomeAssistantClient(HomeAssistantClient):
     def delete_entity(self, entity_id: str) -> None:
         """Delete a mock entity"""
         if entity_id not in self._entities:
-            raise TestImplementationError(f"Entity {entity_id} doesn't exist")
+            raise MockEntityDoesNotExistError(f"Entity {entity_id} doesn't exist")
         del self._entities[entity_id]
 
     @override

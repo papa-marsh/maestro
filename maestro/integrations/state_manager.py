@@ -8,7 +8,12 @@ from maestro.integrations.home_assistant.types import AttributeId, EntityData, E
 from maestro.integrations.redis import CachedValue, CachedValueT, CachePrefix, RedisClient
 from maestro.registry.registry_manager import RegistryManager
 from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
-from maestro.utils.exceptions import AttributeDoesNotExistError, EntityOperationError
+from maestro.utils.exceptions import (
+    AttributeDoesNotExistError,
+    EntityDoesNotExistError,
+    EntityOperationError,
+    TestFrameworkError,
+)
 from maestro.utils.logger import log
 
 
@@ -38,7 +43,7 @@ class StateManager:
         """Override clients with existing mock clients if they exist"""
         from maestro.testing.context import get_test_state_manager
 
-        with suppress(RuntimeError):
+        with suppress(TestFrameworkError):
             test_state_manager = get_test_state_manager()
             self.hass_client = test_state_manager.hass_client
             self.redis_client = test_state_manager.redis_client
@@ -122,7 +127,7 @@ class StateManager:
         create_only: bool = False,
     ) -> EntityData:
         """Create or update an entity in Home Assistant and cache locally to Redis"""
-        with suppress(ValueError):
+        with suppress(EntityDoesNotExistError):
             if create_only and self.fetch_hass_entity(entity_id):
                 raise EntityOperationError(f"Entity {entity_id} already exists in Home Assistant")
 
