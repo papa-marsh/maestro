@@ -7,7 +7,6 @@ from maestro.integrations.home_assistant.client import HomeAssistantClient
 from maestro.integrations.home_assistant.types import AttributeId, EntityData, EntityId, StateId
 from maestro.integrations.redis import CachedValue, CachedValueT, CachePrefix, RedisClient
 from maestro.registry.registry_manager import RegistryManager
-from maestro.testing.context import get_test_state_manager, test_mode_active
 from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
 from maestro.utils.exceptions import AttributeDoesNotExistError, EntityOperationError
 from maestro.utils.logger import log
@@ -27,6 +26,8 @@ class StateManager:
         hass_client: HomeAssistantClient | None = None,
         redis_client: RedisClient | None = None,
     ) -> None:
+        from maestro.testing.context import test_mode_active
+
         self.hass_client = hass_client or HomeAssistantClient()
         self.redis_client = redis_client or RedisClient()
 
@@ -35,6 +36,8 @@ class StateManager:
 
     def _initialize_as_mock(self) -> None:
         """Override clients with existing mock clients if they exist"""
+        from maestro.testing.context import get_test_state_manager
+
         with suppress(RuntimeError):
             test_state_manager = get_test_state_manager()
             self.hass_client = test_state_manager.hass_client
@@ -144,6 +147,8 @@ class StateManager:
 
     def cache_entity(self, entity_data: EntityData) -> None:
         """Overwrite an entity's state and attributes, removing any stale attributes"""
+        from maestro.testing.context import test_mode_active
+
         keys_to_delete = set(self.get_all_entity_keys(entity_data.entity_id))
         keys_to_delete.remove(entity_data.entity_id.cache_key)
 
