@@ -254,3 +254,146 @@ def test_assert_entity_does_not_exist(maestro_test: MaestroTest) -> None:
     maestro_test.set_state("light.bedroom", ON)
     with pytest.raises(AssertionError):
         maestro_test.assert_entity_does_not_exist("light.bedroom")
+
+
+def test_job_scheduler_uses_mock(maestro_test: MaestroTest) -> None:
+    """Test that JobScheduler automatically uses mock in test mode"""
+    from datetime import timedelta
+
+    from maestro.utils.scheduler import JobScheduler
+
+    def example_function() -> None:
+        pass
+
+    # Create JobScheduler without passing apscheduler - should auto-detect test mode
+    scheduler = JobScheduler()
+
+    # Schedule a job
+    run_time = local_now() + timedelta(hours=1)
+    job_id = scheduler.schedule_job(
+        run_time=run_time,
+        func=example_function,
+    )
+
+    # Verify it was scheduled in the mock
+    maestro_test.assert_job_scheduled(job_id)
+
+    # Get the job and verify details
+    job = maestro_test.get_scheduled_job(job_id)
+    assert job.func == example_function
+
+
+def test_cancel_scheduled_job(maestro_test: MaestroTest) -> None:
+    """Test canceling a scheduled job"""
+    from datetime import timedelta
+
+    from maestro.utils.scheduler import JobScheduler
+
+    def example_function() -> None:
+        pass
+
+    scheduler = JobScheduler()
+    run_time = local_now() + timedelta(hours=1)
+    job_id = scheduler.schedule_job(run_time, example_function)
+
+    # Verify it was scheduled
+    maestro_test.assert_job_scheduled(job_id)
+
+    # Cancel the job
+    scheduler.cancel_job(job_id)
+
+    # Verify it's no longer scheduled
+    maestro_test.assert_job_not_scheduled(job_id)
+
+
+def test_get_all_scheduled_jobs(maestro_test: MaestroTest) -> None:
+    """Test getting all scheduled jobs"""
+    from datetime import timedelta
+
+    from maestro.utils.scheduler import JobScheduler
+
+    def func1() -> None:
+        pass
+
+    def func2() -> None:
+        pass
+
+    scheduler = JobScheduler()
+    run_time = local_now() + timedelta(hours=1)
+
+    # Schedule multiple jobs
+    job_id1 = scheduler.schedule_job(run_time, func1)
+    job_id2 = scheduler.schedule_job(run_time, func2)
+
+    # Get all jobs
+    jobs = maestro_test.get_scheduled_jobs()
+    assert len(jobs) == 2
+
+    job_ids = [job.id for job in jobs]
+    assert job_id1 in job_ids
+    assert job_id2 in job_ids
+
+
+def test_scheduled_job_isolation_between_tests(maestro_test: MaestroTest) -> None:
+    """Test that scheduled jobs are cleared between tests"""
+    from datetime import timedelta
+
+    from maestro.utils.scheduler import JobScheduler
+
+    def example_function() -> None:
+        pass
+
+    scheduler = JobScheduler()
+    run_time = local_now() + timedelta(hours=1)
+
+    # Schedule a job
+    scheduler.schedule_job(run_time, example_function, job_id="isolation_test_job")
+
+    # Verify it was scheduled
+    maestro_test.assert_job_scheduled("isolation_test_job")
+
+    # Manually reset (simulating what happens between tests)
+    maestro_test.reset()
+
+    # Verify the job is gone after reset
+    maestro_test.assert_job_not_scheduled("isolation_test_job")
+
+
+def test_schedule_job_with_custom_id(maestro_test: MaestroTest) -> None:
+    """Test scheduling a job with a custom job ID"""
+    from datetime import timedelta
+
+    from maestro.utils.scheduler import JobScheduler
+
+    def example_function() -> None:
+        pass
+
+    scheduler = JobScheduler()
+    run_time = local_now() + timedelta(hours=1)
+    custom_job_id = "my_custom_job_id"
+
+    # Schedule with custom ID
+    job_id = scheduler.schedule_job(run_time, example_function, job_id=custom_job_id)
+
+    assert job_id == custom_job_id
+    maestro_test.assert_job_scheduled(custom_job_id)
+
+
+def test_schedule_job_with_params(maestro_test: MaestroTest) -> None:
+    """Test scheduling a job with function parameters"""
+    from datetime import timedelta
+
+    from maestro.utils.scheduler import JobScheduler
+
+    def example_function(param1: str, param2: int) -> None:
+        pass
+
+    scheduler = JobScheduler()
+    run_time = local_now() + timedelta(hours=1)
+    func_params = {"param1": "test", "param2": 42}
+
+    job_id = scheduler.schedule_job(run_time, example_function, func_params=func_params)
+
+    # Get the job and verify params were stored
+    job = maestro_test.get_scheduled_job(job_id)
+    assert job.kwargs == func_params

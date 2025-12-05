@@ -10,6 +10,7 @@ from flask import current_app
 
 from maestro.utils.dates import IntervalSeconds, local_now
 from maestro.utils.exceptions import SchedulerMisconfiguredError
+from maestro.utils.internal import test_mode_active
 from maestro.utils.logging import log
 
 
@@ -19,8 +20,9 @@ class JobScheduler:
     run_time_limit = IntervalSeconds.THIRTY_DAYS
 
     def __init__(self, apscheduler: BackgroundScheduler | None = None) -> None:
-        self.apscheduler = apscheduler or current_app.scheduler  # type:ignore[attr-defined]
-        if not isinstance(self.apscheduler, BackgroundScheduler):
+        self.apscheduler = apscheduler or current_app.scheduler  # type: ignore[attr-defined]
+
+        if not test_mode_active() and not isinstance(self.apscheduler, BackgroundScheduler):
             raise SchedulerMisconfiguredError
 
     def schedule_job(

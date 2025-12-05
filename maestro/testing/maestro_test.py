@@ -2,6 +2,8 @@ from contextlib import suppress
 from datetime import datetime
 from typing import Any
 
+from apscheduler.jobstores.base import JobLookupError  # type:ignore[import-untyped]
+
 from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.integrations.home_assistant.types import (
@@ -26,8 +28,11 @@ from maestro.utils.exceptions import MockEntityDoesNotExistError
 
 class MaestroTest:
     def __init__(self) -> None:
+        from maestro.testing.mocks import MockJobScheduler
+
         self.hass_client = MockHomeAssistantClient()
         self.redis_client = MockRedisClient()
+        self.job_scheduler = MockJobScheduler()
         self.state_manager = StateManager(
             hass_client=self.hass_client,
             redis_client=self.redis_client,
@@ -37,6 +42,7 @@ class MaestroTest:
         """Reset mock state and action call history"""
         self.hass_client.reset()
         self.redis_client.reset()
+        self.job_scheduler.reset()
 
     # MARK: Entity State Setup
 
@@ -284,3 +290,24 @@ class MaestroTest:
         assert actual_value == expected_value, (
             f"Expected attribute '{attribute}' to be '{expected_value}' but got '{actual_value}'"
         )
+
+    # MARK: Job Scheduler Assertions
+
+    def assert_job_scheduled(self, job_id: str) -> None:
+        """Assert that a job with the given ID has been scheduled."""
+        job = self.job_scheduler.get_job(job_id)
+        assert job is not None, f"Expected job {job_id} to be scheduled, but it wasn't"
+
+    def assert_job_not_scheduled(self, job_id: str) -> None:
+        """Assert that a job with the given ID has NOT been scheduled."""
+        with suppress(JobLookupError):
+            self.job_scheduler.get_job(job_id)
+            assert False, f"Expected job {job_id} to NOT be scheduled, but it was"
+
+    def get_scheduled_jobs(self) -> list[Any]:
+        """Get all scheduled jobs from the mock scheduler."""
+        return self.job_scheduler.get_jobs()
+
+    def get_scheduled_job(self, job_id: str) -> Any:
+        """Get a specific scheduled job by ID."""
+        return self.job_scheduler.get_job(job_id)

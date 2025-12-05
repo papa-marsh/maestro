@@ -1,6 +1,9 @@
 import re
+from collections.abc import Callable
 from http import HTTPStatus
 from typing import Any, override
+
+from apscheduler.jobstores.base import JobLookupError  # type:ignore[import-untyped]
 
 from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.client import HomeAssistantClient
@@ -237,3 +240,88 @@ class MockRedisClient(RedisClient):
         regex_pattern = pattern.replace("*", ".*")
         regex = re.compile(f"^{regex_pattern}$")
         return [key for key in self._cache if regex.match(key)]
+
+
+class MockJob:
+    """Mock job object returned by MockJobScheduler"""
+
+    def __init__(
+        self,
+        job_id: str,
+        name: str,
+        func: Callable[..., Any],
+        kwargs: dict[str, Any],
+        trigger: str | object | None = None,
+        run_date: Any | None = None,
+    ):
+        self.id = job_id
+        self.name = name
+        self.func = func
+        self.kwargs = kwargs
+        self.trigger = trigger
+        self.run_date = run_date
+
+
+class MockJobScheduler:
+    """
+    Mock APScheduler BackgroundScheduler for testing.
+    Stores jobs in memory but doesn't actually execute them.
+    """
+
+    def __init__(self) -> None:
+        self._jobs: dict[str, MockJob] = {}
+
+    def reset(self) -> None:
+        """Clear all scheduled jobs"""
+        self._jobs.clear()
+
+    def add_job(
+        self,
+        func: Callable[..., Any],
+        trigger: str | object | None = None,
+        run_date: Any = None,
+        id: str | None = None,
+        name: str | None = None,
+        kwargs: dict[str, Any] | None = None,
+        replace_existing: bool = False,
+        **_trigger_args: Any,
+    ) -> MockJob:
+        """Mock add_job - stores job but doesn't schedule execution"""
+        from uuid import uuid4
+
+        job_id = id or str(uuid4())
+
+        if job_id in self._jobs and not replace_existing:
+            raise ValueError(f"Job {job_id} already exists")
+
+        job = MockJob(
+            job_id=job_id,
+            name=name or str(getattr(func, "__name__", "unknown")),
+            func=func,
+            kwargs=kwargs or {},
+            trigger=trigger,
+            run_date=run_date,
+        )
+
+        self._jobs[job_id] = job
+        return job
+
+    def get_job(self, job_id: str) -> MockJob:
+        """Get a mock job by ID"""
+
+        if job_id not in self._jobs:
+            raise JobLookupError(job_id)
+
+        return self._jobs[job_id]
+
+    def get_jobs(self) -> list[MockJob]:
+        """Get all scheduled jobs"""
+        return list(self._jobs.values())
+
+    def remove_job(self, job_id: str) -> None:
+        """Remove a job by ID"""
+
+        if job_id not in self._jobs:
+            raise JobLookupError(job_id)
+
+        del self._jobs[job_id]

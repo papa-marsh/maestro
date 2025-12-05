@@ -19,6 +19,8 @@ def maestro_test() -> Generator[MaestroTest]:
     app = Flask("maestro_test")
 
     context = MaestroTest()
-    with app.app_context(), test_context(context.state_manager):
+    app.scheduler = context.job_scheduler  # type: ignore[attr-defined]
+
+    with app.app_context(), test_context(context.state_manager, context.job_scheduler):
         yield context
     context.reset()
