@@ -23,14 +23,15 @@ class CachedValue:
 
 CachedValueT = str | int | float | dict | list | bool | datetime
 
-state_encoder_map: dict[str, Callable[[CachedValueT], str]] = {
-    str.__name__: lambda x: str(x),
-    int.__name__: lambda x: str(x),
-    float.__name__: lambda x: str(x),
-    dict.__name__: lambda x: json.dumps(x),
-    list.__name__: lambda x: json.dumps(x),
-    bool.__name__: lambda x: str(x),
-    datetime.__name__: lambda x: x.isoformat() if isinstance(x, datetime) else "",
+
+state_encoder_map: dict[type, Callable[[CachedValueT], str]] = {
+    str: lambda x: str(x),
+    int: lambda x: str(x),
+    float: lambda x: str(x),
+    dict: lambda x: json.dumps(x),
+    list: lambda x: json.dumps(x),
+    bool: lambda x: str(x),
+    datetime: lambda x: x.isoformat() if isinstance(x, datetime) else "",
 }
 state_decoder_map: dict[str, Callable[[str], CachedValueT]] = {
     str.__name__: lambda x: str(x),
@@ -126,13 +127,15 @@ class RedisClient:
 
     @classmethod
     def encode_cached_state(cls, value: CachedValueT) -> str:
-        type_name = type(value).__name__
-        if type_name not in state_encoder_map:
-            raise TypeError(f"No state encoder exists for type {type_name}")
+        for encoder_type in state_encoder_map:
+            if isinstance(value, encoder_type):
+                break
+        else:
+            raise TypeError(f"No state encoder exists for type {encoder_type.__name__}")
 
         encoded_state = CachedValue(
-            value=state_encoder_map[type_name](value),
-            type=type_name,
+            value=state_encoder_map[encoder_type](value),
+            type=encoder_type.__name__,
         )
 
         return json.dumps(

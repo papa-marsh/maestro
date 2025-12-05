@@ -80,7 +80,7 @@ class Notif:
                 message=self.payload["message"],
                 target=target.id,
             )
-            if target.notify_action_name is None:
+            if not target.notify_action_name:
                 raise NotifActionMappingError(f"Couldn't map {target.id} to an action. Check .env")
 
             target.state_manager.hass_client.perform_action(

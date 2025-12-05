@@ -9,11 +9,11 @@ class Person(Entity):
     domain = Domain.PERSON
 
     @property
-    def notify_action_name(self) -> str | None:
+    def notify_action_name(self) -> str:
         if test_mode_active():
             return f"test_mock_notify_{self.id.entity}"
 
-        return NOTIFY_ACTION_MAPPINGS.get(self.id)
+        return NOTIFY_ACTION_MAPPINGS.get(self.id, "")
 
     @property
     def is_home(self) -> bool:
