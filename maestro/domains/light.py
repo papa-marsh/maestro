@@ -4,6 +4,7 @@ from maestro.integrations.home_assistant.domain import Domain
 
 class Light(Entity):
     domain = Domain.LIGHT
+    allow_set_state = False
 
     def turn_on(
         self,

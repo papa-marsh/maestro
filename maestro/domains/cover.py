@@ -4,6 +4,7 @@ from maestro.integrations.home_assistant.domain import Domain
 
 class Cover(Entity):
     domain = Domain.COVER
+    allow_set_state = False
 
     def open_cover(self) -> None:
         self.perform_action("open_cover")

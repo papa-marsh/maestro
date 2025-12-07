@@ -4,6 +4,7 @@ from maestro.integrations.home_assistant.domain import Domain
 
 class Climate(Entity):
     domain = Domain.CLIMATE
+    allow_set_state = False
 
     def turn_on(self) -> None:
         self.perform_action("turn_on")

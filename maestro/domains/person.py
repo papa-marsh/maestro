@@ -7,6 +7,7 @@ from maestro.utils.push import Notif
 
 class Person(Entity):
     domain = Domain.PERSON
+    allow_set_state = False
 
     @property
     def notify_action_name(self) -> str:

@@ -4,6 +4,7 @@ from maestro.integrations.home_assistant.domain import Domain
 
 class Select(Entity):
     domain = Domain.SELECT
+    allow_set_state = False
 
     def select_first(self) -> None:
         self.perform_action("select_first")

@@ -12,6 +12,7 @@ class ForecastType(StrEnum):
 
 class Weather(Entity):
     domain = Domain.WEATHER
+    allow_set_state = False
 
     def get_forecasts(self, type: ForecastType) -> None:
         self.perform_action("get_forecasts", type=type)

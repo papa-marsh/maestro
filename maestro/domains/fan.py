@@ -6,6 +6,7 @@ from maestro.integrations.home_assistant.domain import Domain
 
 class Fan(Entity):
     domain = Domain.FAN
+    allow_set_state = False
 
     class Speed(IntEnum):
         LOW = 33

@@ -7,6 +7,7 @@ from maestro.integrations.home_assistant.domain import Domain
 
 class Calendar(Entity):
     domain = Domain.CALENDAR
+    allow_set_state = False
 
     def create_event(self, **kwargs: Any) -> None:
         self.perform_action("create_event", **kwargs)

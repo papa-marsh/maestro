@@ -4,6 +4,7 @@ from maestro.integrations.home_assistant.domain import Domain
 
 class Update(Entity):
     domain = Domain.UPDATE
+    allow_set_state = False
 
     def install(self) -> None:
         self.perform_action("install")

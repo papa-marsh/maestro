@@ -2,9 +2,14 @@ from abc import ABC
 from datetime import datetime
 from typing import Any, cast
 
+from maestro.integrations.home_assistant.domain import Domain
 from maestro.integrations.home_assistant.types import AttributeId, EntityId
 from maestro.integrations.state_manager import StateManager
-from maestro.utils.exceptions import EntityConfigurationError, MalformedResponseError
+from maestro.utils.exceptions import (
+    EntityConfigurationError,
+    MalformedResponseError,
+    StateOverwriteNotAllowedError,
+)
 from maestro.utils.internal import test_mode_active
 
 ON = "on"
@@ -42,6 +47,9 @@ class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
 
 
 class Entity(ABC):
+    domain: Domain
+    allow_set_state: bool = True
+
     id: EntityId
 
     friendly_name = EntityAttribute(str)
@@ -88,6 +96,9 @@ class Entity(ABC):
     @state.setter
     def state(self, value: str) -> None:
         """Set the state of the entity"""
+        if not self.allow_set_state:
+            raise StateOverwriteNotAllowedError(f"Cannot set state for {self.domain} entities")
+
         entity_response = self.state_manager.fetch_hass_entity(self.id)
 
         entity_response.state = value
