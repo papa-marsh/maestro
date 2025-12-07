@@ -129,6 +129,8 @@ class RedisClient:
     def encode_cached_state(cls, value: CachedValueT) -> str:
         for encoder_type in state_encoder_map:
             if isinstance(value, encoder_type):
+                if encoder_type is int and isinstance(value, bool):
+                    continue  # Special case because bool subclasses int
                 break
         else:
             raise TypeError(f"No state encoder exists for type {encoder_type.__name__}")
