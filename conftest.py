@@ -4,7 +4,8 @@ import pytest
 
 pytest_plugins = ["maestro.testing.fixtures"]
 
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+# Force SQLite in-memory database for tests, overriding any .env settings
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 
 @pytest.fixture(scope="session", autouse=True)
