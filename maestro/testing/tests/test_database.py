@@ -5,7 +5,7 @@ This ensures SQLite in-memory DB is properly configured for tests.
 
 from pathlib import Path
 
-from maestro.testing import MaestroTest
+from maestro.testing.maestro_test import MaestroTest
 
 
 def test_database_is_configured(mt: MaestroTest) -> None:

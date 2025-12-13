@@ -5,7 +5,7 @@ This ensures the scheduler is available but doesn't actually run jobs during tes
 
 import time
 
-from maestro.testing import MaestroTest
+from maestro.testing.maestro_test import MaestroTest
 
 
 def test_scheduler_exists(mt: MaestroTest) -> None:
