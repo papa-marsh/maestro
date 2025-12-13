@@ -17,7 +17,7 @@ from maestro.integrations.home_assistant.types import (
 )
 from maestro.integrations.redis import CachedValueT
 from maestro.testing.context import get_test_job_scheduler, get_test_state_manager
-from maestro.testing.mocks import ActionCall, MockHomeAssistantClient, MockRedisClient
+from maestro.testing.mocks import ActionCall, MockHomeAssistantClient, MockJob, MockRedisClient
 from maestro.triggers.event_fired import EventFiredTriggerManager
 from maestro.triggers.hass import HassEvent, HassTriggerManager
 from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
@@ -72,13 +72,13 @@ class MaestroTest:
 
     def get_attribute(self, entity: Entity | str, attribute: str, expected_type: type) -> Any:
         """Get an attribute value from an entity. Accepts an entity or entity ID string."""
-        entity_id = entity.id if hasattr(entity, "id") else entity
+        entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
         attribute_id = AttributeId(f"{entity_id}.{attribute}")
         return self.state_manager.get_attribute_state(attribute_id, expected_type)
 
     def set_attribute(self, entity: Entity | str, attribute: str, value: Any) -> None:
         """Set an attribute value on an entity."""
-        entity_id = EntityId(entity.id if hasattr(entity, "id") else entity)
+        entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
         entity_data = self.state_manager.fetch_hass_entity(entity_id)
         entity_data.attributes[attribute] = value
 
@@ -299,12 +299,20 @@ class MaestroTest:
 
     # MARK: Job Scheduler Assertions
 
-    def assert_job_scheduled(self, job_id: str, func: Callable[..., Any]) -> None:
+    def assert_job_scheduled(
+        self,
+        job_id: str,
+        func: Callable[..., Any],
+        run_time: datetime | None = None,
+    ) -> None:
         """Assert that a job with the given ID has been scheduled."""
         job = self.job_scheduler.get_job(job_id)
+        job_func_name = f"{job.func.__module__}.{job.func.__name__}"
         func_name = f"{func.__module__}.{func.__name__}"
-        assert job is not None, f"Expected job {job_id} to be scheduled, but it wasn't"
-        assert job.func == func, f"Expected job to have func {func_name} scheduled, but it wasn't"
+        assert job is not None, f"Expected job {job_id} to be scheduled but it wasn't"
+        assert job.func == func, f"Expected job to have func {func_name} but got {job_func_name}"
+        if run_time is not None:
+            assert job.run_date == run_time, f"Expected run time {run_time} but got {job.run_date}"
 
     def assert_job_not_scheduled(self, job_id: str) -> None:
         """Assert that a job with the given ID has NOT been scheduled."""
@@ -312,10 +320,10 @@ class MaestroTest:
             self.job_scheduler.get_job(job_id)
             assert False, f"Expected job {job_id} to NOT be scheduled, but it was"
 
-    def get_scheduled_jobs(self) -> list[Any]:
+    def get_scheduled_jobs(self) -> list[MockJob]:
         """Get all scheduled jobs from the mock scheduler."""
         return self.job_scheduler.get_jobs()
 
-    def get_scheduled_job(self, job_id: str) -> Any:
+    def get_scheduled_job(self, job_id: str) -> MockJob:
         """Get a specific scheduled job by ID."""
         return self.job_scheduler.get_job(job_id)

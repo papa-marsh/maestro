@@ -2,7 +2,7 @@ import hashlib
 import re
 from collections.abc import Callable
 from datetime import datetime, timedelta
-from http import HTTPStatus
+from http import HTTPMethod, HTTPStatus
 from typing import Any, override
 
 from apscheduler.jobstores.base import JobLookupError  # type:ignore[import-untyped]
@@ -185,7 +185,7 @@ class MockHomeAssistantClient(HomeAssistantClient):
     @override
     def execute_request(
         self,
-        _method: Any,
+        _method: HTTPMethod,
         _path: str,
         _body: dict | None = None,
     ) -> tuple[dict | list, int]:
@@ -270,7 +270,7 @@ class MockJob:
         func: Callable[..., Any],
         kwargs: dict[str, Any],
         trigger: str | object | None = None,
-        run_date: Any | None = None,
+        run_date: datetime | None = None,
     ):
         self.id = job_id
         self.name = name
@@ -297,7 +297,7 @@ class MockJobScheduler:
         self,
         func: Callable[..., Any],
         trigger: str | object | None = None,
-        run_date: Any = None,
+        run_date: datetime | None = None,
         id: str | None = None,
         name: str | None = None,
         kwargs: dict[str, Any] | None = None,
