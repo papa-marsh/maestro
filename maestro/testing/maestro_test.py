@@ -88,8 +88,8 @@ class MaestroTest:
     def trigger_state_change(
         self,
         entity: Entity | str,
-        old: str,
-        new: str,
+        old: str = "",
+        new: str = "",
         old_attributes: dict[str, Any] | None = None,
         new_attributes: dict[str, Any] | None = None,
         time_fired: datetime | None = None,
@@ -97,6 +97,10 @@ class MaestroTest:
         """Simulate a state change event, triggering any registered state_change_triggers."""
         entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
         timestamp = time_fired or local_now()
+
+        if not old:
+            with suppress(MockEntityDoesNotExistError):
+                old = self.get_state(entity_id)
 
         old_data = EntityData(
             entity_id=entity_id,

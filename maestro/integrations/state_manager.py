@@ -10,8 +10,8 @@ from maestro.registry.registry_manager import RegistryManager
 from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
 from maestro.utils.exceptions import (
     AttributeDoesNotExistError,
+    EntityAlreadyExistsError,
     EntityDoesNotExistError,
-    EntityOperationError,
 )
 from maestro.utils.internal import test_mode_active
 from maestro.utils.logging import log
@@ -132,7 +132,7 @@ class StateManager:
         """Create or update an entity in Home Assistant and cache locally to Redis"""
         with suppress(EntityDoesNotExistError):
             if create_only and self.fetch_hass_entity(entity_id):
-                raise EntityOperationError(f"Entity {entity_id} already exists in Home Assistant")
+                raise EntityAlreadyExistsError(f"Entity {entity_id} already exists in HASS")
 
         entity_data, _ = self.hass_client.set_entity(entity_id, state, attributes)
         self.cache_entity(entity_data)
