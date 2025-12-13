@@ -134,9 +134,9 @@ class MockHomeAssistantClient(HomeAssistantClient):
         created = entity_id not in self._entities
 
         now = local_now()
-        attributes["last_changed"] = now
-        attributes["last_reported"] = now
-        attributes["last_updated"] = now
+        for timestamp_attr in ["last_changed", "last_reported", "last_updated"]:
+            if timestamp_attr not in attributes:
+                attributes[timestamp_attr] = now
 
         if "friendly_name" not in attributes:
             attributes["friendly_name"] = entity_id.entity.replace("_", " ").title()
