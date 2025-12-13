@@ -10,7 +10,7 @@ from maestro.utils.exceptions import (
     MalformedResponseError,
     MockEntityDoesNotExistError,
     StateOverwriteNotAllowedError,
-    TestFrameworkError,
+    UnitTestFrameworkError,
 )
 from maestro.utils.internal import test_mode_active
 
@@ -53,7 +53,7 @@ class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
     def _build_default_test_value(self) -> T:
         """Used only during test mode to generate placeholder attribute values"""
         if not test_mode_active():
-            raise TestFrameworkError("Mock state manager found outside of test mode")
+            raise UnitTestFrameworkError("Mock state manager found outside of test mode")
         from maestro.testing.mocks import mock_attribute_default_value_map
 
         return cast(T, mock_attribute_default_value_map[self.attribute_type](self.name))

@@ -23,7 +23,7 @@ from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.notif_action import NotifActionTriggerManager
 from maestro.triggers.state_change import StateChangeTriggerManager
 from maestro.utils.dates import local_now
-from maestro.utils.exceptions import MockEntityDoesNotExistError, TestFrameworkError
+from maestro.utils.exceptions import MockEntityDoesNotExistError, UnitTestFrameworkError
 
 
 class MaestroTest:
@@ -32,9 +32,9 @@ class MaestroTest:
         self.state_manager = get_test_state_manager()
 
         if not isinstance(self.state_manager.hass_client, MockHomeAssistantClient):
-            raise TestFrameworkError
+            raise UnitTestFrameworkError
         if not isinstance(self.state_manager.redis_client, MockRedisClient):
-            raise TestFrameworkError
+            raise UnitTestFrameworkError
 
         self.hass_client = self.state_manager.hass_client
         self.redis_client = self.state_manager.redis_client
