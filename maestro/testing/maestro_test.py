@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from contextlib import suppress
 from datetime import datetime
 from typing import Any
@@ -298,10 +299,12 @@ class MaestroTest:
 
     # MARK: Job Scheduler Assertions
 
-    def assert_job_scheduled(self, job_id: str) -> None:
+    def assert_job_scheduled(self, job_id: str, func: Callable[..., Any]) -> None:
         """Assert that a job with the given ID has been scheduled."""
         job = self.job_scheduler.get_job(job_id)
+        func_name = f"{func.__module__}.{func.__name__}"
         assert job is not None, f"Expected job {job_id} to be scheduled, but it wasn't"
+        assert job.func == func, f"Expected job to have func {func_name} scheduled, but it wasn't"
 
     def assert_job_not_scheduled(self, job_id: str) -> None:
         """Assert that a job with the given ID has NOT been scheduled."""
