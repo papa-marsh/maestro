@@ -276,7 +276,7 @@ def test_job_scheduler_uses_mock(mt: MaestroTest) -> None:
     )
 
     # Verify it was scheduled in the mock
-    mt.assert_job_scheduled(job_id)
+    mt.assert_job_scheduled(job_id, example_function)
 
     # Get the job and verify details
     job = mt.get_scheduled_job(job_id)
@@ -297,7 +297,7 @@ def test_cancel_scheduled_job(mt: MaestroTest) -> None:
     job_id = scheduler.schedule_job(run_time, example_function)
 
     # Verify it was scheduled
-    mt.assert_job_scheduled(job_id)
+    mt.assert_job_scheduled(job_id, example_function)
 
     # Cancel the job
     scheduler.cancel_job(job_id)
@@ -350,7 +350,7 @@ def test_scheduled_job_isolation_between_tests(mt: MaestroTest) -> None:
     scheduler.schedule_job(run_time, example_function, job_id="isolation_test_job")
 
     # Verify it was scheduled
-    mt.assert_job_scheduled("isolation_test_job")
+    mt.assert_job_scheduled("isolation_test_job", example_function)
 
     # Manually reset (simulating what happens between tests)
     mt.reset()
@@ -376,7 +376,7 @@ def test_schedule_job_with_custom_id(mt: MaestroTest) -> None:
     job_id = scheduler.schedule_job(run_time, example_function, job_id=custom_job_id)
 
     assert job_id == custom_job_id
-    mt.assert_job_scheduled(custom_job_id)
+    mt.assert_job_scheduled(custom_job_id, example_function)
 
 
 def test_schedule_job_with_params(mt: MaestroTest) -> None:
