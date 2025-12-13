@@ -8,7 +8,7 @@ from pathlib import Path
 from maestro.testing import MaestroTest
 
 
-def test_database_is_configured(maestro_test: MaestroTest) -> None:
+def test_database_is_configured(mt: MaestroTest) -> None:
     """Test that database is configured with SQLite in-memory"""
     from maestro.app import app
 
@@ -16,7 +16,7 @@ def test_database_is_configured(maestro_test: MaestroTest) -> None:
     assert "sqlite:///:memory:" in app.config["SQLALCHEMY_DATABASE_URI"]
 
 
-def test_database_tables_exist(maestro_test: MaestroTest) -> None:
+def test_database_tables_exist(mt: MaestroTest) -> None:
     """Test that database tables are created automatically"""
     from maestro.app import app, db
 
@@ -29,7 +29,7 @@ def test_database_tables_exist(maestro_test: MaestroTest) -> None:
         assert len(table_names) >= 0, "Database should have tables created"
 
 
-def test_database_isolation_between_tests(maestro_test: MaestroTest) -> None:
+def test_database_isolation_between_tests(mt: MaestroTest) -> None:
     """Test that database state doesn't leak between tests"""
     from maestro.app import app, db
 
@@ -43,7 +43,7 @@ def test_database_isolation_between_tests(maestro_test: MaestroTest) -> None:
         assert isinstance(table_names, list)
 
 
-def test_can_query_database(maestro_test: MaestroTest) -> None:
+def test_can_query_database(mt: MaestroTest) -> None:
     """Test that we can perform basic database queries"""
     from maestro.app import app, db
 
@@ -54,7 +54,7 @@ def test_can_query_database(maestro_test: MaestroTest) -> None:
         assert result[0] == 1
 
 
-def test_database_uses_in_memory_sqlite(maestro_test: MaestroTest) -> None:
+def test_database_uses_in_memory_sqlite(mt: MaestroTest) -> None:
     """Test that database is truly in-memory (not persisted to disk)"""
     from maestro.app import app
 

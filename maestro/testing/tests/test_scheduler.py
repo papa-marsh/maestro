@@ -8,7 +8,7 @@ import time
 from maestro.testing import MaestroTest
 
 
-def test_scheduler_exists(maestro_test: MaestroTest) -> None:
+def test_scheduler_exists(mt: MaestroTest) -> None:
     """Test that scheduler object exists in test environment"""
     from maestro.app import app
 
@@ -17,7 +17,7 @@ def test_scheduler_exists(maestro_test: MaestroTest) -> None:
     assert app.scheduler is not None, "Scheduler should not be None"
 
 
-def test_scheduler_uses_memory_jobstore(maestro_test: MaestroTest) -> None:
+def test_scheduler_uses_memory_jobstore(mt: MaestroTest) -> None:
     """Test that scheduler uses in-memory job store (not Redis)"""
     from maestro.app import app
 
@@ -41,7 +41,7 @@ def test_scheduler_uses_memory_jobstore(maestro_test: MaestroTest) -> None:
     # when it starts (which we don't do in tests)
 
 
-def test_scheduler_not_started(maestro_test: MaestroTest) -> None:
+def test_scheduler_not_started(mt: MaestroTest) -> None:
     """Test that scheduler is not running during tests"""
     from maestro.app import app
 
@@ -50,7 +50,7 @@ def test_scheduler_not_started(maestro_test: MaestroTest) -> None:
     assert not app.scheduler.running, "Scheduler should not be running during tests"
 
 
-def test_can_add_jobs_to_scheduler(maestro_test: MaestroTest) -> None:
+def test_can_add_jobs_to_scheduler(mt: MaestroTest) -> None:
     """Test that jobs can be registered with the test scheduler"""
     from maestro.app import app
 
@@ -73,7 +73,7 @@ def test_can_add_jobs_to_scheduler(maestro_test: MaestroTest) -> None:
     app.scheduler.remove_job("test_job_123")
 
 
-def test_jobs_dont_execute_automatically(maestro_test: MaestroTest) -> None:
+def test_jobs_dont_execute_automatically(mt: MaestroTest) -> None:
     """Test that scheduled jobs don't actually run during tests"""
     from maestro.app import app
 
@@ -95,7 +95,7 @@ def test_jobs_dont_execute_automatically(maestro_test: MaestroTest) -> None:
     app.scheduler.remove_job("immediate_job")
 
 
-def test_cron_triggers_can_register(maestro_test: MaestroTest) -> None:
+def test_cron_triggers_can_register(mt: MaestroTest) -> None:
     """Test that @cron_trigger decorated functions can register with scheduler"""
     from maestro.app import app
     from maestro.triggers.cron import cron_trigger
@@ -116,7 +116,7 @@ def test_cron_triggers_can_register(maestro_test: MaestroTest) -> None:
     assert final_job_count >= initial_job_count, "Scheduler should still be functional"
 
 
-def test_scheduler_timezone_configured(maestro_test: MaestroTest) -> None:
+def test_scheduler_timezone_configured(mt: MaestroTest) -> None:
     """Test that scheduler has timezone configured"""
     from maestro.app import app
 
@@ -124,7 +124,7 @@ def test_scheduler_timezone_configured(maestro_test: MaestroTest) -> None:
     assert app.scheduler.timezone is not None, "Scheduler should have timezone configured"
 
 
-def test_job_isolation_between_tests(maestro_test: MaestroTest) -> None:
+def test_job_isolation_between_tests(mt: MaestroTest) -> None:
     """Test that jobs added in one test don't leak to other tests"""
     from maestro.app import app
 

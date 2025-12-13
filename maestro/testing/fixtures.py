@@ -8,7 +8,7 @@ from maestro.testing.maestro_test import MaestroTest
 
 
 @pytest.fixture
-def maestro_test() -> Generator[MaestroTest]:
+def mt() -> Generator[MaestroTest]:
     """
     Main pytest fixture providing a clean test context for each test.
     This fixture is automatically reset between tests, ensuring isolation.

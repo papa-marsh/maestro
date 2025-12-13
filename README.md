@@ -622,16 +622,16 @@ from maestro.testing import MaestroTest
 # Import the module you want to test to register its triggers
 from scripts.bedroom import lights
 
-def test_motion_turns_on_light(maestro_test: MaestroTest):
+def test_motion_turns_on_light(mt: MaestroTest):
     # Setup: Set initial entity states
-    maestro_test.set_state(switch.motion_sensor, OFF)
-    maestro_test.set_state(light.bedroom, OFF)
+    mt.set_state(switch.motion_sensor, OFF)
+    mt.set_state(light.bedroom, OFF)
 
     # Act: Trigger your automation by simulating a state change
-    maestro_test.trigger_state_change(switch.motion_sensor, old=OFF, new=ON)
+    mt.trigger_state_change(switch.motion_sensor, old=OFF, new=ON)
 
     # Assert: Verify the light was turned on
-    maestro_test.assert_action_called("light", "turn_on", entity_id="light.bedroom")
+    mt.assert_action_called("light", "turn_on", entity_id="light.bedroom")
 ```
 
 **Note:** You must import the script module(s) you want to test. This registers the trigger decorators (`@state_change_trigger`, etc.) so they can be invoked by `trigger_state_change()` and similar methods.
@@ -641,44 +641,44 @@ def test_motion_turns_on_light(maestro_test: MaestroTest):
 **Test state changes:**
 
 ```python
-def test_temperature_control(maestro_test: MaestroTest):
-    maestro_test.set_state(sensor.temperature, "70")
-    maestro_test.trigger_state_change(sensor.temperature, old="70", new="76")
-    maestro_test.assert_action_called("switch", "turn_on", entity_id="switch.fan")
+def test_temperature_control(mt: MaestroTest):
+    mt.set_state(sensor.temperature, "70")
+    mt.trigger_state_change(sensor.temperature, old="70", new="76")
+    mt.assert_action_called("switch", "turn_on", entity_id="switch.fan")
 ```
 
 **Test custom events:**
 
 ```python
-def test_custom_event(maestro_test: MaestroTest):
-    maestro_test.trigger_event("something_happened", data={"duration": 30})
-    maestro_test.assert_action_called("notify", "mobile_app", message="Something happened!")
+def test_custom_event(mt: MaestroTest):
+    mt.trigger_event("something_happened", data={"duration": 30})
+    mt.assert_action_called("notify", "mobile_app", message="Something happened!")
 ```
 
 **Test with entity objects (automatically mocked):**
 
 ```python
-def test_with_entities(maestro_test: MaestroTest):
-    maestro_test.set_state(light.bedroom, OFF)
+def test_with_entities(mt: MaestroTest):
+    mt.set_state(light.bedroom, OFF)
 
     # Entities automatically use the test's mock state manager - no setup needed!
     light.bedroom.turn_on(rgb_color=(255, 255, 255), temperature=4000)
-    maestro_test.assert_action_called("light", "turn_on")
+    mt.assert_action_called("light", "turn_on")
 ```
 
 **Test multiple scenarios:**
 
 ```python
-def test_motion_sequence(maestro_test: MaestroTest):
-    maestro_test.set_state("light.bedroom", OFF)
+def test_motion_sequence(mt: MaestroTest):
+    mt.set_state("light.bedroom", OFF)
 
-    maestro_test.trigger_state_change("switch.motion", OFF, ON)
-    maestro_test.assert_action_called("light", "turn_on")
+    mt.trigger_state_change("switch.motion", OFF, ON)
+    mt.assert_action_called("light", "turn_on")
 
-    maestro_test.clear_action_calls()
+    mt.clear_action_calls()
 
-    maestro_test.trigger_state_change("switch.motion", ON, OFF)
-    maestro_test.assert_action_called("light", "turn_off")
+    mt.trigger_state_change("switch.motion", ON, OFF)
+    mt.assert_action_called("light", "turn_off")
 ```
 
 ### Running Tests
