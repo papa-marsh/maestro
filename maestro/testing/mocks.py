@@ -1,5 +1,7 @@
+import hashlib
 import re
 from collections.abc import Callable
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import Any, override
 
@@ -9,9 +11,25 @@ from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.client import HomeAssistantClient
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.integrations.home_assistant.types import EntityData, EntityId
-from maestro.integrations.redis import RedisClient
+from maestro.integrations.redis import CachedValueT, RedisClient
 from maestro.utils.dates import local_now
 from maestro.utils.exceptions import MockEntityDoesNotExistError
+
+
+def hash_string(seed: str) -> int:
+    return int(hashlib.sha256(seed.encode()).hexdigest()[:8], 16)
+
+
+# Generates default values for mock attributes in test mode
+mock_attribute_default_value_map: dict[type, Callable[[str], CachedValueT]] = {
+    str: lambda name: f"test_{name}",
+    int: lambda name: hash_string(name),
+    float: lambda name: float(hash_string(name)),
+    dict: lambda name: {"mock_value": name},
+    list: lambda name: [name],
+    bool: lambda _name: False,
+    datetime: lambda name: datetime.fromtimestamp(0) + timedelta(seconds=hash_string(name)),
+}
 
 
 class ActionCall:

@@ -3,7 +3,7 @@ from collections.abc import Generator
 import pytest
 from flask import Flask
 
-from maestro.testing.context import test_context
+from maestro.testing.context import reset_test_context
 from maestro.testing.maestro_test import MaestroTest
 
 
@@ -21,6 +21,8 @@ def maestro_test() -> Generator[MaestroTest]:
     context = MaestroTest()
     app.scheduler = context.job_scheduler  # type: ignore[attr-defined]
 
-    with app.app_context(), test_context(context.state_manager, context.job_scheduler):
+    with app.app_context():
         yield context
+
     context.reset()
+    reset_test_context()

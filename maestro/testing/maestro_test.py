@@ -15,7 +15,7 @@ from maestro.integrations.home_assistant.types import (
     StateChangeEvent,
 )
 from maestro.integrations.redis import CachedValueT
-from maestro.integrations.state_manager import StateManager
+from maestro.testing.context import get_test_job_scheduler, get_test_state_manager
 from maestro.testing.mocks import ActionCall, MockHomeAssistantClient, MockRedisClient
 from maestro.triggers.event_fired import EventFiredTriggerManager
 from maestro.triggers.hass import HassEvent, HassTriggerManager
@@ -23,20 +23,21 @@ from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.notif_action import NotifActionTriggerManager
 from maestro.triggers.state_change import StateChangeTriggerManager
 from maestro.utils.dates import local_now
-from maestro.utils.exceptions import MockEntityDoesNotExistError
+from maestro.utils.exceptions import MockEntityDoesNotExistError, TestFrameworkError
 
 
 class MaestroTest:
     def __init__(self) -> None:
-        from maestro.testing.mocks import MockJobScheduler
+        self.job_scheduler = get_test_job_scheduler()
+        self.state_manager = get_test_state_manager()
 
-        self.hass_client = MockHomeAssistantClient()
-        self.redis_client = MockRedisClient()
-        self.job_scheduler = MockJobScheduler()
-        self.state_manager = StateManager(
-            hass_client=self.hass_client,
-            redis_client=self.redis_client,
-        )
+        if not isinstance(self.state_manager.hass_client, MockHomeAssistantClient):
+            raise TestFrameworkError
+        if not isinstance(self.state_manager.redis_client, MockRedisClient):
+            raise TestFrameworkError
+
+        self.hass_client = self.state_manager.hass_client
+        self.redis_client = self.state_manager.redis_client
 
     def reset(self) -> None:
         """Reset mock state and action call history"""

@@ -8,7 +8,9 @@ from maestro.integrations.state_manager import StateManager
 from maestro.utils.exceptions import (
     EntityConfigurationError,
     MalformedResponseError,
+    MockEntityDoesNotExistError,
     StateOverwriteNotAllowedError,
+    TestFrameworkError,
 )
 from maestro.utils.internal import test_mode_active
 
@@ -27,10 +29,13 @@ class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
 
     def __get__(self, obj: "Entity", objtype: type["Entity"] | None = None) -> T:
         attribute_id = AttributeId(f"{obj.id}.{self.name}")
-        value = obj.state_manager.get_attribute_state(
-            attribute_id=attribute_id,
-            expected_type=self.attribute_type,
-        )
+        try:
+            value = obj.state_manager.get_attribute_state(
+                attribute_id=attribute_id,
+                expected_type=self.attribute_type,
+            )
+        except MockEntityDoesNotExistError:
+            value = self._build_default_test_value()
 
         return cast(T, value)
 
@@ -44,6 +49,14 @@ class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
             attributes=entity_response.attributes,
         )
         obj.state_manager.cache_entity(entity_data)
+
+    def _build_default_test_value(self) -> T:
+        """Used only during test mode to generate placeholder attribute values"""
+        if not test_mode_active():
+            raise TestFrameworkError("Mock state manager found outside of test mode")
+        from maestro.testing.mocks import mock_attribute_default_value_map
+
+        return cast(T, mock_attribute_default_value_map[self.attribute_type](self.name))
 
 
 class Entity(ABC):
