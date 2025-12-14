@@ -4,7 +4,9 @@ from datetime import datetime
 from typing import Any
 
 from apscheduler.jobstores.base import JobLookupError  # type:ignore[import-untyped]
+from freezegun import freeze_time
 
+from maestro.config import TIMEZONE
 from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.integrations.home_assistant.types import (
@@ -327,3 +329,24 @@ class MaestroTest:
     def get_scheduled_job(self, job_id: str) -> MockJob:
         """Get a specific scheduled job by ID."""
         return self.job_scheduler.get_job(job_id)
+
+    # MARK: Time Mocking
+
+    def mock_datetime_as(self, frozen_time: datetime | str | None = None) -> Any:
+        """Wrapper around freeze_time that supports local_now() and handles timezone weirdness."""
+        if frozen_time is None:
+            return freeze_time()
+
+        if isinstance(frozen_time, str):
+            frozen_time = datetime.fromisoformat(frozen_time)
+
+        if frozen_time.tzinfo is None:
+            frozen_time = frozen_time.replace(tzinfo=TIMEZONE)
+        elif frozen_time.tzinfo != TIMEZONE:
+            frozen_time = frozen_time.astimezone(TIMEZONE)
+
+        tz_offset = frozen_time.utcoffset()
+        if tz_offset is None:
+            raise ValueError("Timezone offset is None, even after timezone processing")
+
+        return freeze_time(frozen_time, tz_offset=tz_offset)
