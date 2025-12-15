@@ -57,7 +57,8 @@ class MediaPlayer(Entity):
 
     def set_volume(self, volume: float) -> None:
         if not (0 <= volume <= 1):
-            raise ValueError
+            raise ValueError("Volume target must be between 0 and 1")
+        self.perform_action("volume_set", volume_level=volume)
 
     def mute(self) -> None:
         self.perform_action("volume_mute", is_volume_muted=True)
