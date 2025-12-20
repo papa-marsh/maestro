@@ -18,6 +18,7 @@ ON = "on"
 OFF = "off"
 HOME = "home"
 AWAY = "not_home"
+UNAVAILABLE = "unavailable"
 
 
 class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
