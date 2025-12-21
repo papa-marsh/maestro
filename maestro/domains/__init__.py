@@ -4,7 +4,7 @@ from .calendar import Calendar
 from .climate import Climate
 from .cover import Cover
 from .device_tracker import DeviceTracker
-from .entity import AWAY, HOME, OFF, ON, Entity  # noqa: F401
+from .entity import AWAY, HOME, OFF, ON, UNAVAILABLE, Entity
 from .event import Event
 from .fan import Fan
 from .humidifier import Humidifier
@@ -36,7 +36,11 @@ __all__ = [
     Climate.__name__,
     Cover.__name__,
     DeviceTracker.__name__,
-    *("AWAY", "HOME", "OFF", "ON"),
+    AWAY,
+    HOME,
+    OFF,
+    ON,
+    UNAVAILABLE,
     Entity.__name__,
     Event.__name__,
     Fan.__name__,
