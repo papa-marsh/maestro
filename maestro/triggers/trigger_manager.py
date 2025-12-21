@@ -169,7 +169,11 @@ class TriggerManager(ABC):
                     continue
                 execution_args.append(func_params_dict[signature_param])
 
-            with app.app_context():
+            # Prevent session issues when triggers are fired during tests
+            if test_mode_active():
                 func(*execution_args)
+            else:
+                with app.app_context():
+                    func(*execution_args)
         except Exception:
             log.exception("Error executing triggered function", function_name=func.__name__)
