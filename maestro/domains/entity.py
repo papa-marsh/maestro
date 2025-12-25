@@ -83,15 +83,6 @@ class Entity(ABC):
         if self.id.domain_class_name not in valid_classes:
             raise EntityConfigurationError("Mismatch between entity domain and domain class")
 
-    @property
-    def state_manager(self) -> StateManager:
-        """Lazy load the state manager for this entity"""
-        if test_mode_active():
-            return StateManager()
-
-        self._state_manager = self._state_manager or StateManager()
-        return self._state_manager
-
     def __getstate__(self) -> dict[str, Any]:
         """Exclude _state_manager from pickling to avoid serializing locks"""
         state = self.__dict__.copy()
@@ -101,6 +92,30 @@ class Entity(ABC):
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore instance from pickled state, allowing lazy re-init of state_manager"""
         self.__dict__.update(state)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Entity):
+            other_type = type(other).__name__
+            raise TypeError(f"Can't compare Entity to {other_type}. Did you mean {self.id}.state?")
+        return self is other
+
+    def __ne__(self, other: object) -> bool:
+        if not isinstance(other, Entity):
+            other_type = type(other).__name__
+            raise TypeError(f"Can't compare Entity to {other_type}. Did you mean {self.id}.state?")
+        return self is not other
+
+    def __hash__(self) -> int:
+        return object.__hash__(self)
+
+    @property
+    def state_manager(self) -> StateManager:
+        """Lazy load the state manager for this entity"""
+        if test_mode_active():
+            return StateManager()
+
+        self._state_manager = self._state_manager or StateManager()
+        return self._state_manager
 
     @property
     def state(self) -> str:
