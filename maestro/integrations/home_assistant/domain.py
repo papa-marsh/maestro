@@ -23,6 +23,7 @@ class Domain(StrEnum):
     NOTIFY = auto()
     NUMBER = auto()
     PERSON = auto()
+    RAINBIRD = auto()
     REMOTE = auto()
     SELECT = auto()
     SENSOR = auto()
