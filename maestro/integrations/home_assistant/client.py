@@ -187,6 +187,7 @@ class HomeAssistantClient:
                 json=body,
                 timeout=5,
             )
+            log.info("Response received", status=response.status_code, content=response.text)
             data = response.json() if response.content else {}
 
         except (JSONDecodeError, RequestException) as e:
