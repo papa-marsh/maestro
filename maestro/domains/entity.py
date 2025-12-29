@@ -138,12 +138,13 @@ class Entity(ABC):
         )
         self.state_manager.cache_entity(entity_data)
 
-    def perform_action(self, action: str, **kwargs: Any) -> None:
+    def perform_action(self, action: str, response_expected: bool = False, **kwargs: Any) -> None:
         """Perform an action related to the entity"""
         response = self.state_manager.hass_client.perform_action(
             domain=self.id.domain,
             action=action,
             entity_id=self.id,
+            response_expected=response_expected,
             **kwargs,
         )
         if len(response) > 1:

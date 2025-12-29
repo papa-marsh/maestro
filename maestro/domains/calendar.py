@@ -27,4 +27,5 @@ class Calendar(Entity):
             start_date_time=start_date_time,
             end_date_time=end_date_time,
             duration=duration,
+            response_expected=True,
         )
