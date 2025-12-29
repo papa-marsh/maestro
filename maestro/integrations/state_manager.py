@@ -139,6 +139,22 @@ class StateManager:
 
         return entity_data
 
+    def initialize_hass_entity(
+        self,
+        entity_id: EntityId,
+        state: str,
+        attributes: dict[str, Any],
+    ) -> tuple[EntityData, bool]:
+        """Create and cache a home assistant entity only if it doesn't already exist"""
+        try:
+            entity_data = self.fetch_hass_entity(entity_id)
+            created = False
+        except EntityDoesNotExistError:
+            entity_data = self.upsert_hass_entity(entity_id, state, attributes, create_only=True)
+            created = True
+
+        return entity_data, created
+
     def get_all_entity_keys(self, entity_id: EntityId) -> list[str]:
         """Returns a list of all cached state and attribute keys for a given entity ID"""
         attribute_pattern = self.redis_client.build_key(

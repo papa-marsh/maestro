@@ -127,6 +127,7 @@ class HomeAssistantClient:
         domain: Domain,
         action: str,
         entity_id: str | list[str] | None = None,
+        response_expected: bool = False,
         **body_params: Any,
     ) -> list[EntityData]:
         """Perform an action on one or more entities"""
@@ -134,10 +135,13 @@ class HomeAssistantClient:
         if entity_id is not None:
             body_params["entity_id"] = entity_id
 
+        params = {"return_response": True} if response_expected else None
+
         response_data, status = self.execute_request(
             method=HTTPMethod.POST,
             path=path,
             body=body_params,
+            params=params,
         )
 
         if status != HTTPStatus.OK:
@@ -164,6 +168,7 @@ class HomeAssistantClient:
         method: HTTPMethod,
         path: str,
         body: dict | None = None,
+        params: dict | None = None,
     ) -> tuple[dict | list, int]:
         """Execute an HTTP request to the Home Assistant API"""
         url = f"{HOME_ASSISTANT_URL}{path}"
@@ -177,6 +182,7 @@ class HomeAssistantClient:
             response = requests.request(
                 method=method,
                 url=url,
+                params=params,
                 headers=headers,
                 json=body,
                 timeout=5,
