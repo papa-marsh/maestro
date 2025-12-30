@@ -1,5 +1,6 @@
 import hashlib
 import re
+from collections import deque
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from http import HTTPMethod, HTTPStatus
@@ -39,11 +40,13 @@ class ActionCall:
         self,
         domain: Domain,
         action: str,
+        response: dict[str, Any] | None,
         entity_id: str | list[str] | None = None,
         **kwargs: Any,
     ):
         self.domain = domain
         self.action = action
+        self.response = response
         self.entity_id = entity_id
         self.kwargs = kwargs
         self.timestamp = local_now()
@@ -63,12 +66,14 @@ class MockHomeAssistantClient(HomeAssistantClient):
     def __init__(self) -> None:
         self._entities: dict[str, EntityData] = {}
         self._action_calls: list[ActionCall] = []
+        self._action_response_queue: deque[dict[str, Any]] = deque()
         self._healthy = True
 
     def reset(self) -> None:
         """Reset mock HASS client and clear stored entities & action calls."""
         self._entities.clear()
         self._action_calls.clear()
+        self._action_response_queue.clear()
         self._healthy = True
 
     def set_health(self, healthy: bool) -> None:
@@ -104,6 +109,14 @@ class MockHomeAssistantClient(HomeAssistantClient):
     def clear_action_calls(self) -> None:
         """Remove all stored mock action calls"""
         self._action_calls.clear()
+
+    def set_action_responses(self, responses: list[dict[str, Any]]) -> None:
+        """
+        Define a list of action response mocks.
+        When an action is called that expects a response, the
+        next response mock will be returned via FIFO queue.
+        """
+        self._action_response_queue = deque(responses)
 
     @override
     def check_health(self) -> bool:
@@ -163,14 +176,20 @@ class MockHomeAssistantClient(HomeAssistantClient):
         domain: Domain,
         action: str,
         entity_id: str | list[str] | None = None,
+        response_expected: bool = False,
         **body_params: Any,
-    ) -> list[EntityData]:
+    ) -> tuple[list[EntityData], dict[str, Any] | None]:
         """Record an action call and return mock entity states"""
-        action_call = ActionCall(domain, action, entity_id, **body_params)
+        try:
+            action_response = self._action_response_queue.popleft() if response_expected else None
+        except IndexError:
+            raise ValueError("No mocked action responses. Use mt.set_action_responses(...) first.")
+
+        action_call = ActionCall(domain, action, action_response, entity_id, **body_params)
         self._action_calls.append(action_call)
 
         if entity_id is None:
-            return []
+            return [], action_response
 
         entity_ids = (
             [EntityId(id) for id in entity_id]
@@ -180,7 +199,7 @@ class MockHomeAssistantClient(HomeAssistantClient):
 
         entities = [self._entities[id] for id in entity_ids if id in self._entities]
 
-        return entities
+        return entities, action_response
 
     @override
     def execute_request(
@@ -188,6 +207,7 @@ class MockHomeAssistantClient(HomeAssistantClient):
         _method: HTTPMethod,
         _path: str,
         _body: dict | None = None,
+        _params: dict | None = None,
     ) -> tuple[dict | list, int]:
         """Mock HTTP request execution - not typically used directly in tests"""
         return {}, HTTPStatus.OK

@@ -87,6 +87,7 @@ class Notif:
                 domain=Domain.NOTIFY,
                 action=target.notify_action_name,
                 entity_id=None,
+                response_expected=False,
                 **self.payload,
             )
 

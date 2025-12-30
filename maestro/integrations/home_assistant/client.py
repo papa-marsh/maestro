@@ -129,8 +129,11 @@ class HomeAssistantClient:
         entity_id: str | list[str] | None = None,
         response_expected: bool = False,
         **body_params: Any,
-    ) -> list[EntityData]:
-        """Perform an action on one or more entities"""
+    ) -> tuple[list[EntityData], dict[str, Any] | None]:
+        """
+        Perform an action on one or more entities.
+        Returns a list of changed entities and an action response if one exists.
+        """
         path = f"/api/services/{domain}/{action}"
         if entity_id is not None:
             body_params["entity_id"] = entity_id
@@ -150,18 +153,27 @@ class HomeAssistantClient:
                 f"status={status}, response={response_data}"
             )
 
-        if not isinstance(response_data, list):
-            raise MalformedResponseError(f"Expected list response for action {domain}.{action}")
+        if isinstance(response_data, list):
+            changed_states = response_data
+            action_response = None
+        else:
+            changed_states = response_data["changed_states"]
+            action_response = response_data["service_response"]
+
+        if not isinstance(changed_states, list):
+            raise MalformedResponseError(f"Expected list for {domain}.{action} changed states")
+        if not isinstance(action_response, dict) and action_response is not None:
+            raise MalformedResponseError(f"Expected dict for {domain}.{action} action response")
 
         entities = []
-        for state_data in response_data:
+        for state_data in changed_states:
             if not isinstance(state_data, dict):
-                raise MalformedResponseError("Unexpected non-dict in state response")
+                raise MalformedResponseError("Unexpected non-dict in changed states response")
 
             entity = self.resolve_entity_response(state_data)
             entities.append(entity)
 
-        return entities
+        return entities, action_response
 
     def execute_request(
         self,

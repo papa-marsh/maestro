@@ -86,6 +86,10 @@ class MaestroTest:
 
         self.state_manager.cache_entity(entity_data)
 
+    def set_action_responses(self, responses: list[dict[str, Any]]) -> None:
+        """Mock the responses returned in order whenever a performed action expects a response"""
+        self.hass_client.set_action_responses(responses)
+
     # MARK: Trigger Simulation
 
     def trigger_state_change(
