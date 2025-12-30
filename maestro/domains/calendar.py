@@ -17,7 +17,7 @@ class Calendar(Entity):
         start_date_time: datetime | None = None,
         end_date_time: datetime | None = None,
         duration: dict[str, int] | None = None,
-    ) -> dict[str, Any]:  # TODO: specific return type
+    ) -> dict[str, Any]:
         """
         Use only one of start/end_date_time or duration.
         Duration example: {"hours": 48} or {"days": 7}.
@@ -34,8 +34,4 @@ class Calendar(Entity):
         else:
             raise ValueError("Action get_events must be passed start/end dates or duration")
 
-        response = self.perform_action("get_events", **kwargs, response_expected=True)
-
-        # TODO: actually parse the response into something useful
-
-        return response
+        return self.perform_action("get_events", **kwargs, response_expected=True)
