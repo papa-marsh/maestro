@@ -18,7 +18,7 @@ class Calendar(Entity):
         start_date_time: datetime | None = None,
         end_date_time: datetime | None = None,
         duration: dict[str, int] | None = None,
-        calendars: list[EntityId] | None = None,
+        calendar_ids: list[EntityId] | None = None,
     ) -> dict[str, Any]:
         """
         Use only one of start/end_date_time or duration.
@@ -40,7 +40,7 @@ class Calendar(Entity):
         _entities, response = self.state_manager.hass_client.perform_action(
             domain=self.domain,
             action="get_events",
-            entity_id=[str(c) for c in calendars] if calendars else str(self.id),
+            entity_id=[str(c) for c in calendar_ids] if calendar_ids else str(self.id),
             **kwargs,
             response_expected=True,
         )
