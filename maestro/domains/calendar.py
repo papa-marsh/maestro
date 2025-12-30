@@ -37,11 +37,12 @@ class Calendar(Entity):
         else:
             raise ValueError("Action get_events must be passed start/end dates or duration")
 
-        self.state_manager.hass_client.perform_action(
+        _entities, response = self.state_manager.hass_client.perform_action(
             domain=self.domain,
             action="get_events",
             entity_id=[str(c) for c in calendars] if calendars else str(self.id),
             **kwargs,
+            response_expected=True,
         )
 
-        return self.perform_action("get_events", **kwargs, response_expected=True)
+        return response or {}
