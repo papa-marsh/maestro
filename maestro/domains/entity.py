@@ -128,6 +128,8 @@ class Entity(ABC):
         """Set the state of the entity"""
         if not self.allow_set_state:
             raise StateOverwriteNotAllowedError(f"Cannot set state for {self.domain} entities")
+        if not isinstance(value, str):
+            raise TypeError(f"Expected string but got `{value}` of type `{type(value).__name__}`")
 
         entity_response = self.state_manager.fetch_hass_entity(self.id)
 
