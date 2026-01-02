@@ -54,7 +54,7 @@ pull-deploy-f:
 
 # Get logs from the maestro container
 logs:
-	docker compose logs maestro
+	docker compose logs maestro | grep -v 'debug'
 
 # Open a Flask shell in the container with pre-loaded imports
 shell: build
