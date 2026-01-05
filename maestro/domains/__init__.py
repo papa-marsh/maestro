@@ -4,7 +4,7 @@ from .calendar import Calendar
 from .climate import Climate
 from .cover import Cover
 from .device_tracker import DeviceTracker
-from .entity import AWAY, HOME, OFF, ON, UNAVAILABLE, Entity
+from .entity import AWAY, HOME, OFF, ON, UNAVAILABLE, Entity, EntityAttribute
 from .event import Event
 from .fan import Fan
 from .humidifier import Humidifier
@@ -42,6 +42,7 @@ __all__ = [
     ON,
     UNAVAILABLE,
     Entity.__name__,
+    EntityAttribute.__name__,
     Event.__name__,
     Fan.__name__,
     Humidifier.__name__,
