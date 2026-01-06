@@ -144,14 +144,33 @@ class StateManager:
         entity_id: EntityId,
         state: str,
         attributes: dict[str, Any],
+        restore_cached: bool = False,
     ) -> tuple[EntityData, bool]:
-        """Create and cache a home assistant entity only if it doesn't already exist"""
-        try:
+        """
+        Create and cache a home assistant entity only if it doesn't already exist.
+        Returns the EntityData and a `created` boolean.
+
+        Optionally restore the entity from cache if it exists. Useful for custom
+        entities that aren't persisted across Home Assistant restarts. Restoring from
+        cache will prioritize cached data over any values passed as arguments.
+        """
+        with suppress(EntityDoesNotExistError):
             entity_data = self.fetch_hass_entity(entity_id)
-            created = False
-        except EntityDoesNotExistError:
-            entity_data = self.upsert_hass_entity(entity_id, state, attributes, create_only=True)
-            created = True
+            return entity_data, False
+
+        if restore_cached and (cached_entity := self.fetch_cached_entity(entity_id)):
+            log.info(
+                "Restoring initialized entity from cache",
+                entity_id=entity_id,
+                cached_state=cached_entity.state,
+                cached_attributes=cached_entity.attributes,
+            )
+            state = cached_entity.state
+            for cached_attribute, value in cached_entity.attributes.items():
+                attributes[cached_attribute] = value
+
+        entity_data = self.upsert_hass_entity(entity_id, state, attributes, create_only=True)
+        created = True
 
         return entity_data, created
 
@@ -204,6 +223,23 @@ class StateManager:
 
         if AUTOPOPULATE_REGISTRY and not test_mode_active():
             RegistryManager.upsert_entity(entity_data)
+
+    def fetch_cached_entity(self, entity_id: EntityId) -> EntityData | None:
+        attributes = {}
+        if not (state := self.get_cached_state(entity_id)):
+            return None
+        if not isinstance(state, str):
+            raise TypeError
+
+        for key in self.get_all_entity_keys(entity_id):
+            parts = key.split(":")
+            if len(parts) == 3:
+                continue
+
+            attribute_id = AttributeId(".".join(parts[1:]))
+            attributes[attribute_id.attribute] = self.get_cached_state(attribute_id)
+
+        return EntityData(entity_id=entity_id, state=state, attributes=attributes)
 
     def delete_cached_entity(self, entity_id: EntityId) -> int:
         """Remove an entity and its attributes from the cache. Returns the count deleted."""
