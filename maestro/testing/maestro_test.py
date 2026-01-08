@@ -59,7 +59,7 @@ class MaestroTest:
         """Set the state of an entity for testing. Accepts an entity or entity ID string."""
         entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
 
-        entity_data = self.state_manager.upsert_hass_entity(
+        entity_data = self.state_manager.set_hass_entity(
             entity_id=EntityId(entity_id),
             state=state,
             attributes=attributes or {},

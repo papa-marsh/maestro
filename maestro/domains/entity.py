@@ -43,15 +43,8 @@ class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
         return cast(T, value)
 
     def __set__(self, obj: "Entity", value: T) -> None:
-        entity_response = obj.state_manager.fetch_hass_entity(obj.id)
-
-        entity_response.attributes[self.name] = value
-        entity_data, _ = obj.state_manager.hass_client.set_entity(
-            entity_id=obj.id,
-            state=entity_response.state,
-            attributes=entity_response.attributes,
-        )
-        obj.state_manager.cache_entity(entity_data)
+        attribute_id = AttributeId(f"{obj.id}.{self.name}")
+        obj.state_manager.set_hass_state(id=attribute_id, value=value)
 
     def _build_default_test_value(self) -> T:
         """Used only during test mode to generate placeholder attribute values"""
@@ -132,15 +125,7 @@ class Entity(ABC):
         if not isinstance(value, str):
             raise TypeError(f"Expected string but got `{value}` of type `{type(value).__name__}`")
 
-        entity_response = self.state_manager.fetch_hass_entity(self.id)
-
-        entity_response.state = value
-        entity_data, _ = self.state_manager.hass_client.set_entity(
-            entity_id=self.id,
-            state=entity_response.state,
-            attributes=entity_response.attributes,
-        )
-        self.state_manager.cache_entity(entity_data)
+        self.state_manager.set_hass_state(id=self.id, value=value)
 
     @overload
     def perform_action(
