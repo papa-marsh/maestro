@@ -2,11 +2,13 @@ import hashlib
 import re
 from collections import deque
 from collections.abc import Callable
+from contextlib import nullcontext
 from datetime import datetime, timedelta
 from http import HTTPMethod, HTTPStatus
 from typing import Any, override
 
 from apscheduler.jobstores.base import JobLookupError  # type:ignore[import-untyped]
+from redis.lock import Lock
 
 from maestro.domains.entity import Entity
 from maestro.integrations.home_assistant.client import HomeAssistantClient
@@ -278,6 +280,11 @@ class MockRedisClient(RedisClient):
         regex_pattern = pattern.replace("*", ".*")
         regex = re.compile(f"^{regex_pattern}$")
         return [key for key in self._cache if regex.match(key)]
+
+    @override
+    def lock(self, key: str, timeout_seconds: int) -> Lock | nullcontext:
+        """Returns a nullcontext object for mock-friendly simulated lock context"""
+        return nullcontext()
 
 
 class MockJob:

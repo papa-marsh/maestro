@@ -1,10 +1,12 @@
 import json
 from collections.abc import Callable
+from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import datetime
 from enum import IntEnum, StrEnum
 
 import redis
+from redis.lock import Lock
 
 from maestro.config import REDIS_HOST, REDIS_PORT
 from maestro.utils.dates import IntervalSeconds, resolve_timestamp
@@ -13,7 +15,7 @@ from maestro.utils.dates import IntervalSeconds, resolve_timestamp
 class CachePrefix(StrEnum):
     STATE = "STATE"
     REGISTERED = "REGISTERED"
-    MUTEX = "MUTEX"
+    ENTITY_LOCK = "ENTITY_LOCK"
 
 
 @dataclass
@@ -156,3 +158,7 @@ class RedisClient:
         decoder_function = state_decoder_map[cached_state.type]
 
         return decoder_function(cached_state.value)
+
+    def lock(self, key: str, timeout_seconds: int) -> Lock | nullcontext:
+        """Returns a lock that can be used as a context manager"""
+        return Lock(redis=self.client, name=key, timeout=timeout_seconds)

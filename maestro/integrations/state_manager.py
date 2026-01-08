@@ -124,28 +124,27 @@ class StateManager:
 
     def set_hass_state(self, id: StateId, value: Any) -> EntityData:
         """Update a single state or attribute in Home Assistant and cache locally to Redis"""
-        if isinstance(id, AttributeId):
-            entity_id = id.entity_id
-            attribute_name = id.attribute
-        else:
-            entity_id = EntityId(id)
+        entity_id = id.entity_id if isinstance(id, AttributeId) else EntityId(id)
+        attribute_name = id.attribute or ""
 
-        entity_data = self.fetch_hass_entity(entity_id)
+        lock_key = self.redis_client.build_key(CachePrefix.ENTITY_LOCK, entity_id)
+        with self.redis_client.lock(key=lock_key, timeout_seconds=5):
+            entity_data = self.fetch_hass_entity(entity_id)
 
-        if id.is_entity:
-            if not isinstance(value, str):
-                raise TypeError("Entity state must be string")
-            entity_data.state = value
-        elif not value:
-            entity_data.attributes.pop(attribute_name, None)
-        else:
-            entity_data.attributes[attribute_name] = value
+            if id.is_entity:
+                if not isinstance(value, str):
+                    raise TypeError("Entity state must be string")
+                entity_data.state = value
+            elif not value:
+                entity_data.attributes.pop(attribute_name, None)
+            else:
+                entity_data.attributes[attribute_name] = value
 
-        return self.set_hass_entity(
-            entity_id=entity_id,
-            state=entity_data.state,
-            attributes=entity_data.attributes,
-        )
+            return self.set_hass_entity(
+                entity_id=entity_id,
+                state=entity_data.state,
+                attributes=entity_data.attributes,
+            )
 
     def set_hass_entity(
         self,
