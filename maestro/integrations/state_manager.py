@@ -134,10 +134,16 @@ class StateManager:
             if id.is_entity:
                 if not isinstance(value, str):
                     raise TypeError("Entity state must be string")
+                if entity_data.state == value:
+                    return entity_data
                 entity_data.state = value
             elif not value:
+                if attribute_name not in entity_data.attributes:
+                    return entity_data
                 entity_data.attributes.pop(attribute_name, None)
             else:
+                if entity_data.attributes.get(attribute_name) == value:
+                    return entity_data
                 entity_data.attributes[attribute_name] = value
 
             return self.set_hass_entity(
