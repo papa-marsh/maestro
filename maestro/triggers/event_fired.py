@@ -21,8 +21,11 @@ class EventFiredTriggerManager(TriggerManager):
         for registry_entry in registry[cls.trigger_type].get(event.type, []):
             trigger_params = cast(EventFiredParams.TriggerParams, registry_entry["trigger_args"])
             user_id = trigger_params["user_id"]
+            event_data = trigger_params["event_data"]
 
             if user_id is not None and event.user_id != user_id:
+                continue
+            if not all(event.data.get(key) == value for key, value in event_data.items()):
                 continue
 
             funcs_to_execute.append(registry_entry["func"])
@@ -33,9 +36,14 @@ class EventFiredTriggerManager(TriggerManager):
 def event_fired_trigger(
     event_type: str,
     user_id: str | None = None,
+    **event_data: Any,
 ) -> Callable:
     """
     Decorator to register a function as an event fired trigger for the specified entity.
+
+    Optionally pass kwargs to filter by matching event data. The following example will
+    trigger only if `"trigger": "weather_card_tap"` is present in the event_data dict
+        Example: `@event_fired_trigger("maestro_ui_event", trigger="weather_card_tap")
 
     Available function params:
         `event: FiredEvent`
@@ -54,7 +62,11 @@ def event_fired_trigger(
                 "eg. Use state_change_trigger, not event_fired_trigger(event_type='state_changed')"
             )
 
-        trigger_args = EventFiredParams.TriggerParams(user_id=user_id, event_type=event_type)
+        trigger_args = EventFiredParams.TriggerParams(
+            user_id=user_id,
+            event_type=event_type,
+            event_data=event_data,
+        )
         registry_entry = TriggerRegistryEntry(
             func=wrapper,
             trigger_args=trigger_args,

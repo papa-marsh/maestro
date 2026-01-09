@@ -2,7 +2,7 @@ from calendar import Day, Month
 from collections.abc import Callable
 from datetime import timedelta
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from maestro.integrations.home_assistant.types import (
     EntityId,
@@ -54,6 +54,7 @@ class EventFiredParams:
     class TriggerParams(TypedDict):
         event_type: str
         user_id: str | None
+        event_data: dict[str, Any]
 
     class FuncParams(TypedDict):
         event: FiredEvent
