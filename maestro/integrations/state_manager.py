@@ -128,7 +128,7 @@ class StateManager:
         attribute_name = id.attribute or ""
 
         lock_key = self.redis_client.build_key(CachePrefix.ENTITY_LOCK, entity_id)
-        with self.redis_client.lock(key=lock_key, timeout_seconds=5):
+        with self.redis_client.lock(key=lock_key, timeout_seconds=10):
             entity_data = self.fetch_hass_entity(entity_id)
 
             if id.is_entity:
