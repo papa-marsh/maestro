@@ -122,7 +122,7 @@ class StateManager:
 
         return self.redis_client.decode_cached_state(old_cached_state)
 
-    def set_hass_state(self, id: StateId, value: Any) -> EntityData:
+    def set_hass_state(self, id: StateId, value: CachedValueT) -> EntityData:
         """Update a single state or attribute in Home Assistant and cache locally to Redis"""
         entity_id = id.entity_id if isinstance(id, AttributeId) else EntityId(id)
         attribute_name = id.attribute or ""
@@ -135,14 +135,17 @@ class StateManager:
                 if not isinstance(value, str):
                     raise TypeError("Entity state must be string")
                 if entity_data.state == value:
+                    self.set_cached_state(id, value)
                     return entity_data
                 entity_data.state = value
             elif not value:
                 if attribute_name not in entity_data.attributes:
+                    self.set_cached_state(id, value)
                     return entity_data
                 entity_data.attributes.pop(attribute_name, None)
             else:
                 if entity_data.attributes.get(attribute_name) == value:
+                    self.set_cached_state(id, value)
                     return entity_data
                 entity_data.attributes[attribute_name] = value
 
