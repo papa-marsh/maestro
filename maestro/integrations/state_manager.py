@@ -1,6 +1,5 @@
 import json
 from contextlib import suppress
-from typing import Any
 
 from maestro.config import AUTOPOPULATE_REGISTRY
 from maestro.integrations.home_assistant.client import HomeAssistantClient
@@ -8,11 +7,7 @@ from maestro.integrations.home_assistant.types import AttributeId, EntityData, E
 from maestro.integrations.redis import CachedValue, CachedValueT, CachePrefix, RedisClient
 from maestro.registry.registry_manager import RegistryManager
 from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
-from maestro.utils.exceptions import (
-    AttributeDoesNotExistError,
-    EntityAlreadyExistsError,
-    EntityDoesNotExistError,
-)
+from maestro.utils.exceptions import AttributeDoesNotExistError, EntityDoesNotExistError
 from maestro.utils.internal import test_mode_active
 from maestro.utils.logging import log
 
@@ -122,53 +117,50 @@ class StateManager:
 
         return self.redis_client.decode_cached_state(old_cached_state)
 
-    def set_hass_state(self, id: StateId, value: CachedValueT) -> EntityData:
-        """Update a single state or attribute in Home Assistant and cache locally to Redis"""
-        entity_id = id.entity_id if isinstance(id, AttributeId) else EntityId(id)
-        attribute_name = id.attribute or ""
-
-        lock_key = self.redis_client.build_key(CachePrefix.ENTITY_LOCK, entity_id)
-        with self.redis_client.lock(key=lock_key, timeout_seconds=10):
+    def patch_hass_entity(
+        self,
+        entity_id: EntityId,
+        state: str | None = None,
+        **attributes: CachedValueT,
+    ) -> EntityData:
+        """Fetch a Home Assistant entity and update any provided state/attribute params"""
+        with self.redis_client.lock(key=entity_id, timeout_seconds=10):
             entity_data = self.fetch_hass_entity(entity_id)
+            data_updated = False
 
-            if id.is_entity:
-                if not isinstance(value, str):
-                    raise TypeError("Entity state must be string")
-                if entity_data.state == value:
-                    self.set_cached_state(id, value)
-                    return entity_data
-                entity_data.state = value
-            elif not value:
-                if attribute_name not in entity_data.attributes:
-                    self.set_cached_state(id, value)
-                    return entity_data
-                entity_data.attributes.pop(attribute_name, None)
-            else:
-                if entity_data.attributes.get(attribute_name) == value:
-                    self.set_cached_state(id, value)
-                    return entity_data
-                entity_data.attributes[attribute_name] = value
+            if state and state != entity_data.state:
+                entity_data.state = state
+                data_updated = True
 
-            return self.set_hass_entity(
-                entity_id=entity_id,
-                state=entity_data.state,
-                attributes=entity_data.attributes,
-            )
+            for attribute, value in attributes.items():
+                if value != entity_data.attributes.get(attribute):
+                    entity_data.attributes[attribute] = value
+                    data_updated = True
 
-    def set_hass_entity(
+            if data_updated:
+                entity_data, _ = self.hass_client.set_entity(
+                    entity_id=entity_id,
+                    state=entity_data.state,
+                    attributes=entity_data.attributes,
+                )
+            self.cache_entity(entity_data)
+
+        return entity_data
+
+    def post_hass_entity(
         self,
         entity_id: EntityId,
         state: str,
-        attributes: dict[str, Any],
-        create_only: bool = False,
+        attributes: dict[str, CachedValueT],
     ) -> EntityData:
-        """Create or update an entity in Home Assistant and cache locally to Redis"""
-        with suppress(EntityDoesNotExistError):
-            if create_only and self.fetch_hass_entity(entity_id):
-                raise EntityAlreadyExistsError(f"Entity {entity_id} already exists in HASS")
-
-        entity_data, _ = self.hass_client.set_entity(entity_id, state, attributes)
-        self.cache_entity(entity_data)
+        """Directly write a Home Assistant entity, replacing it with the provided params"""
+        with self.redis_client.lock(key=entity_id, timeout_seconds=10):
+            entity_data, _ = self.hass_client.set_entity(
+                entity_id=entity_id,
+                state=state,
+                attributes=attributes,
+            )
+            self.cache_entity(entity_data)
 
         return entity_data
 
@@ -176,7 +168,7 @@ class StateManager:
         self,
         entity_id: EntityId,
         state: str,
-        attributes: dict[str, Any],
+        attributes: dict[str, CachedValueT],
         restore_cached: bool = False,
     ) -> tuple[EntityData, bool]:
         """
@@ -188,6 +180,7 @@ class StateManager:
         cache will prioritize cached data over any values passed as arguments.
         """
         with suppress(EntityDoesNotExistError):
+            # If entity already exists in hass, don't do anything
             entity_data = self.fetch_hass_entity(entity_id)
             return entity_data, False
 
@@ -202,10 +195,9 @@ class StateManager:
             for cached_attribute, value in cached_entity.attributes.items():
                 attributes[cached_attribute] = value
 
-        entity_data = self.set_hass_entity(entity_id, state, attributes, create_only=True)
-        created = True
+        entity_data = self.post_hass_entity(entity_id, state, attributes)
 
-        return entity_data, created
+        return entity_data, True
 
     def get_all_entity_keys(self, entity_id: EntityId) -> list[str]:
         """Returns a list of all cached state and attribute keys for a given entity ID"""

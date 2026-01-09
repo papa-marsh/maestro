@@ -54,17 +54,16 @@ class MaestroTest:
         self,
         entity: Entity | str,
         state: str,
-        attributes: dict[str, Any] | None = None,
+        attributes: dict[str, CachedValueT] | None = None,
     ) -> EntityData:
         """Set the state of an entity for testing. Accepts an entity or entity ID string."""
         entity_id = entity.id if isinstance(entity, Entity) else EntityId(entity)
 
-        entity_data = self.state_manager.set_hass_entity(
-            entity_id=EntityId(entity_id),
+        return self.state_manager.post_hass_entity(
+            entity_id=entity_id,
             state=state,
             attributes=attributes or {},
         )
-        return entity_data
 
     def get_state(self, entity: Entity | str) -> str:
         """Get the current state of an entity. Accepts an entity or entity ID string."""

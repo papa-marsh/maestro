@@ -282,7 +282,7 @@ class MockRedisClient(RedisClient):
         return [key for key in self._cache if regex.match(key)]
 
     @override
-    def lock(self, key: str, timeout_seconds: int) -> Lock | nullcontext:
+    def lock(self, key: str, timeout_seconds: int = 10) -> Lock | nullcontext:
         """Returns a nullcontext object for mock-friendly simulated lock context"""
         return nullcontext()
 

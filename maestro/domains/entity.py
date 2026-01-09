@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import Any, Literal, cast, overload
 
 from maestro.integrations.home_assistant.domain import Domain
-from maestro.integrations.home_assistant.types import AttributeId, EntityId
+from maestro.integrations.home_assistant.types import AttributeId, EntityData, EntityId
+from maestro.integrations.redis import CachedValueT
 from maestro.integrations.state_manager import StateManager
 from maestro.utils.exceptions import (
     EntityConfigurationError,
@@ -43,8 +44,7 @@ class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
         return cast(T, value)
 
     def __set__(self, obj: "Entity", value: T) -> None:
-        attribute_id = AttributeId(f"{obj.id}.{self.name}")
-        obj.state_manager.set_hass_state(id=attribute_id, value=value)
+        obj.update(state=None, **{self.name: value})
 
     def _build_default_test_value(self) -> T:
         """Used only during test mode to generate placeholder attribute values"""
@@ -125,22 +125,24 @@ class Entity(ABC):
         if not isinstance(value, str):
             raise TypeError(f"Expected string but got `{value}` of type `{type(value).__name__}`")
 
-        self.state_manager.set_hass_state(id=self.id, value=value)
+        self.update(state=value)
+
+    def update(self, state: str | None = None, **attributes: CachedValueT) -> EntityData:
+        """Efficiently update entity state and/or multiple attributes in a single operation"""
+        return self.state_manager.patch_hass_entity(
+            entity_id=self.id,
+            state=state,
+            attributes=attributes,
+        )
 
     @overload
     def perform_action(
-        self,
-        action: str,
-        response_expected: Literal[True],
-        **kwargs: Any,
+        self, action: str, response_expected: Literal[True], **kwargs: Any
     ) -> dict[str, Any]: ...
 
     @overload
     def perform_action(
-        self,
-        action: str,
-        response_expected: Literal[False] = False,
-        **kwargs: Any,
+        self, action: str, response_expected: Literal[False] = False, **kwargs: Any
     ) -> None: ...
 
     def perform_action(
