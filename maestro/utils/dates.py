@@ -46,14 +46,14 @@ def format_duration(duration: timedelta, verbose: bool = False) -> str:
     if total_seconds > SECONDS_PER_DAY:
         days = duration_seconds // SECONDS_PER_DAY
         duration_seconds %= SECONDS_PER_DAY
-        output += f"{days}d"
+        output += f"{days}d "
         if verbose:
             output = output.replace("d", " day " if days == 1 else " days ")
 
     if total_seconds > SECONDS_PER_HOUR:
         hours = duration_seconds // SECONDS_PER_HOUR
         duration_seconds %= SECONDS_PER_HOUR
-        output += f"{hours}h"
+        output += f"{hours}h "
         if verbose:
             output = output.replace("h", " hour " if hours == 1 else " hours ")
 
