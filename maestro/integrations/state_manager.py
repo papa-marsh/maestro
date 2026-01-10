@@ -121,12 +121,14 @@ class StateManager:
         self,
         entity_id: EntityId,
         state: str | None = None,
-        **attributes: CachedValueT,
+        attributes: dict[str, CachedValueT] | None = None,
     ) -> EntityData:
         """Fetch a Home Assistant entity and update any provided state/attribute params"""
+        attributes = attributes or {}
+        data_updated = False
+
         with self.redis_client.lock(key=entity_id, timeout_seconds=10):
             entity_data = self.fetch_hass_entity(entity_id)
-            data_updated = False
 
             if state and state != entity_data.state:
                 entity_data.state = state
