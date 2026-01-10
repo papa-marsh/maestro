@@ -58,6 +58,8 @@ def cron_trigger(
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            from maestro.app import app
+
             process_id = build_process_id(CronTriggerManager.trigger_type)
             set_process_id(process_id)
 
@@ -66,7 +68,9 @@ def cron_trigger(
                 function_name=func.__name__,
                 trigger_type=TriggerType.CRON,
             )
-            return func(*args, **kwargs)
+
+            with app.app_context():
+                return func(*args, **kwargs)
 
         if pattern is not None and any(
             arg is not None for arg in [minute, hour, day_of_month, month, day_of_week]

@@ -86,6 +86,8 @@ def sun_trigger(solar_event: SolarEvent, offset: timedelta = timedelta()) -> Cal
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            from maestro.app import app
+
             process_id = build_process_id(SunTriggerManager.trigger_type)
             set_process_id(process_id)
 
@@ -102,7 +104,8 @@ def sun_trigger(solar_event: SolarEvent, offset: timedelta = timedelta()) -> Cal
             )
             SunTriggerManager.scheduler.add_job(func=wrapper, trigger=next_trigger)
 
-            return func(*args, **kwargs)
+            with app.app_context():
+                return func(*args, **kwargs)
 
         trigger = SunTriggerManager.build_date_trigger(
             solar_event=solar_event,
