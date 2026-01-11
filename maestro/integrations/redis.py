@@ -159,8 +159,17 @@ class RedisClient:
 
         return decoder_function(cached_state.value)
 
-    def lock(self, key: str, timeout_seconds: int = 10) -> Lock | nullcontext:
-        """Returns a lock that can be used as a context manager"""
+    def lock(
+        self,
+        key: str,
+        timeout_seconds: int = 10,
+        exit_if_owned: bool = False,
+    ) -> Lock | nullcontext:
+        """
+        Returns a lock that can be used as a context manager.
+        If `exit_if_owned` is set, return immediately if lock is already check out.
+        """
         name = self.build_key(CachePrefix.ENTITY_LOCK, key)
+        blocking = not exit_if_owned
 
-        return Lock(redis=self.client, name=name, timeout=timeout_seconds)
+        return Lock(redis=self.client, name=name, timeout=timeout_seconds, blocking=blocking)

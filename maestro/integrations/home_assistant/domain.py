@@ -27,6 +27,7 @@ class Domain(StrEnum):
     REMOTE = auto()
     SELECT = auto()
     SENSOR = auto()
+    SHELL_COMMAND = auto()
     SONOS = auto()
     SUN = auto()
     SWITCH = auto()

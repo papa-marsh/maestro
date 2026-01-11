@@ -6,7 +6,6 @@ from uuid import uuid4
 from apscheduler.job import Job  # type:ignore[import-untyped]
 from apscheduler.jobstores.base import JobLookupError  # type:ignore[import-untyped]
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
-from flask import current_app
 
 from maestro.utils.dates import IntervalSeconds, local_now
 from maestro.utils.exceptions import SchedulerMisconfiguredError
@@ -20,7 +19,9 @@ class JobScheduler:
     run_time_limit = IntervalSeconds.THIRTY_DAYS
 
     def __init__(self, apscheduler: BackgroundScheduler | None = None) -> None:
-        self.apscheduler = apscheduler or current_app.scheduler  # type: ignore[attr-defined]
+        from maestro.app import app
+
+        self.apscheduler = apscheduler or app.scheduler
 
         if not test_mode_active() and not isinstance(self.apscheduler, BackgroundScheduler):
             raise SchedulerMisconfiguredError
