@@ -184,6 +184,7 @@ class StateManager:
         with suppress(EntityDoesNotExistError):
             # If entity already exists in hass, don't do anything
             entity_data = self.fetch_hass_entity(entity_id)
+            log.info("Entity already exists. Skipping initialization", entity_id=entity_id)
             return entity_data, False
 
         if restore_cached and (cached_entity := self.fetch_cached_entity(entity_id)):
