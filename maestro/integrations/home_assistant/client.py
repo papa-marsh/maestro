@@ -197,7 +197,7 @@ class HomeAssistantClient:
                 params=params,
                 headers=headers,
                 json=body,
-                timeout=10,
+                timeout=20,
             )
             log.info("Response received", status=response.status_code, content=response.text)
             data = response.json() if response.content else {}

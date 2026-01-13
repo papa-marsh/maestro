@@ -162,7 +162,7 @@ class RedisClient:
     def lock(
         self,
         key: str,
-        timeout_seconds: int = 10,
+        timeout_seconds: int = 30,
         exit_if_owned: bool = False,
     ) -> Lock | nullcontext:
         """
