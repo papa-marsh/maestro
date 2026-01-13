@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from enum import IntEnum
 from typing import Any
 
@@ -75,3 +75,21 @@ def serialize_datetimes(obj: Any) -> Any:
         return [serialize_datetimes(item) for item in obj]
     else:
         return obj
+
+
+def readable_relative_date(target_date: datetime | date) -> str:
+    """Returns a human-readable date string (eg. Today, Tomorrow, Thursday, or July 21)"""
+    if isinstance(target_date, datetime):
+        target_date = target_date.date()
+
+    today = local_now().date()
+    days_diff = (target_date - today).days
+
+    if days_diff == 0:
+        return "today"
+    elif days_diff == 1:
+        return "tomorrow"
+    elif days_diff < 7:
+        return target_date.strftime("%A")
+    else:
+        return target_date.strftime("%B %d")
