@@ -6,16 +6,30 @@ Not intended to be used by script modules
 import importlib
 import logging
 import sys
+from collections.abc import Mapping, MutableMapping
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import structlog
 
+from maestro import config
 from maestro.utils.exceptions import MissingScriptsDirectoryError
 from maestro.utils.logging import log
 
 
 def test_mode_active() -> bool:
     return "pytest" in sys.modules
+
+
+def add_timezone_timestamp(
+    _logger: Any,
+    _method_name: str,
+    event_dict: MutableMapping[str, Any],
+) -> Mapping[str, Any]:
+    """Add timestamp in configured timezone."""
+    event_dict["timestamp"] = datetime.now(config.TIMEZONE).isoformat()
+    return event_dict
 
 
 def configure_logging() -> None:
@@ -25,7 +39,7 @@ def configure_logging() -> None:
         processors=[
             structlog.contextvars.merge_contextvars,
             structlog.processors.add_log_level,
-            structlog.processors.TimeStamper(fmt="iso"),
+            add_timezone_timestamp,
             structlog.dev.ConsoleRenderer(colors=True),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(min_level=logging.DEBUG),
