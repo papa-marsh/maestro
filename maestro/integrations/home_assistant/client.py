@@ -50,10 +50,7 @@ class HomeAssistantClient:
     def get_all_entities(self) -> list[EntityData]:
         """Get the current state of all entities"""
         path = "/api/states"
-        response_data, status = self.execute_request(
-            method=HTTPMethod.GET,
-            path=path,
-        )
+        response_data, status = self.execute_request(method=HTTPMethod.GET, path=path)
 
         if status != HTTPStatus.OK:
             raise HomeAssistantClientError("Request failed fetching all entities")

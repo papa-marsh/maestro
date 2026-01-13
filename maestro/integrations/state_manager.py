@@ -37,9 +37,9 @@ class StateManager:
         from maestro.testing.context import get_test_state_manager
         from maestro.testing.mocks import MockHomeAssistantClient, MockRedisClient
 
-        if isinstance(self.hass_client, MockHomeAssistantClient) and isinstance(
-            self.redis_client, MockRedisClient
-        ):
+        hass_client_mocked = isinstance(self.hass_client, MockHomeAssistantClient)
+        redis_client_mocked = isinstance(self.redis_client, MockRedisClient)
+        if hass_client_mocked and redis_client_mocked:
             return
 
         test_state_manager = get_test_state_manager()

@@ -9,12 +9,12 @@ from maestro.integrations.state_manager import StateManager
 from maestro.utils.exceptions import (
     EntityConfigurationError,
     EntityOperationError,
-    MalformedResponseError,
     MockEntityDoesNotExistError,
     StateOverwriteNotAllowedError,
     UnitTestFrameworkError,
 )
 from maestro.utils.internal import test_mode_active
+from maestro.utils.logging import log
 
 ON = "on"
 OFF = "off"
@@ -152,6 +152,7 @@ class Entity(ABC):
         **kwargs: Any,
     ) -> dict[str, Any] | None:
         """Perform an action related to the entity"""
+        log.debug("Performing entity action", action=action, entity_id=self.id)
         changed_states, action_response = self.state_manager.hass_client.perform_action(
             domain=self.id.domain,
             action=action,
@@ -159,8 +160,14 @@ class Entity(ABC):
             response_expected=response_expected,
             **kwargs,
         )
+
         if len(changed_states) > 1:
-            raise MalformedResponseError("Received more than one EntityData from action call")
+            log.info(
+                "Received more than one EntityData from action call",
+                action=action,
+                entity_id=self.id,
+                changed_states=changed_states,
+            )
         if response_expected and not action_response:
             raise EntityOperationError("Did not receive action response where one was expected")
 
