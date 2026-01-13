@@ -200,12 +200,23 @@ class HomeAssistantClient:
                 timeout=20,
             )
             log.info("Response received", status=response.status_code, content=response.text)
-            data = response.json() if response.content else {}
 
-        except (JSONDecodeError, RequestException) as e:
+        except RequestException as e:
             raise HomeAssistantClientError(f"Network error: {e}") from e
         if response.status_code >= 500:
-            raise HomeAssistantClientError("Home Assistant server error")
+            error = response.text or "Unknown error"
+            raise HomeAssistantClientError(f"HASS server error - {response.status_code}: {error}")
+
+        # Parse JSON response, handling non-JSON error responses gracefully
+        try:
+            data = response.json() if response.content else {}
+        except JSONDecodeError as e:
+            log.exception(
+                "Failed to decode JSON response",
+                status=response.status_code,
+                content=response.text,
+            )
+            raise HomeAssistantClientError(f"Invalid JSON from HASS: {response.text}") from e
 
         return data, response.status_code
 
