@@ -4,6 +4,7 @@ from enum import StrEnum, auto
 from http import HTTPMethod
 from typing import Any
 
+from apscheduler.executors.pool import ThreadPoolExecutor  # type:ignore[import-untyped]
 from apscheduler.jobstores.redis import RedisJobStore  # type:ignore[import-untyped]
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
 from flask import Flask, Response, request
@@ -51,8 +52,11 @@ class MaestroFlask(Flask):
         db.init_app(self)
 
     def _initialize_scheduler(self) -> None:
-        jobstores = {"default": RedisJobStore(host=REDIS_HOST, port=REDIS_PORT)}
-        self.scheduler = BackgroundScheduler(jobstores=jobstores, timezone=TIMEZONE)
+        self.scheduler = BackgroundScheduler(
+            jobstores={"default": RedisJobStore(host=REDIS_HOST, port=REDIS_PORT)},
+            executors={"default": ThreadPoolExecutor(max_workers=100)},
+            timezone=TIMEZONE,
+        )
         self.scheduler.start()
         CronTriggerManager.register_jobs(self.scheduler)
         SunTriggerManager.register_jobs(self.scheduler)
