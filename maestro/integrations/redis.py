@@ -168,6 +168,7 @@ class RedisClient:
         """
         Returns a lock that can be used as a context manager.
         If `exit_if_owned` is set, return immediately if lock is already check out.
+        Return type includes `nullcontext` to accommodate testing mocks
         """
         name = self.build_key(CachePrefix.ENTITY_LOCK, key)
         blocking = not exit_if_owned
