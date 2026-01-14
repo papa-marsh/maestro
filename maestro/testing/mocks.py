@@ -285,7 +285,7 @@ class MockRedisClient(RedisClient):
     def lock(
         self,
         key: str,
-        timeout_seconds: int = 10,
+        timeout_seconds: int = 60,
         exit_if_owned: bool = False,
     ) -> Lock | nullcontext:
         """Returns a nullcontext object for mock-friendly simulated lock context"""

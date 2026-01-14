@@ -127,7 +127,7 @@ class StateManager:
         attributes = attributes or {}
         data_updated = False
 
-        with self.redis_client.lock(key=entity_id, timeout_seconds=10):
+        with self.redis_client.lock(key=entity_id, timeout_seconds=60):
             entity_data = self.fetch_hass_entity(entity_id)
 
             if state and state != entity_data.state:
@@ -156,7 +156,7 @@ class StateManager:
         attributes: dict[str, CachedValueT],
     ) -> EntityData:
         """Directly write a Home Assistant entity, replacing it with the provided params"""
-        with self.redis_client.lock(key=entity_id, timeout_seconds=10):
+        with self.redis_client.lock(key=entity_id, timeout_seconds=40):
             entity_data, _ = self.hass_client.set_entity(
                 entity_id=entity_id,
                 state=state,
