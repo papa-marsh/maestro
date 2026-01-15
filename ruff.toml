@@ -22,7 +22,9 @@ select = [
     "RUF",  # Ruff-specific rules
 ]
 
-ignore = []
+ignore = [
+    "E741", # Ambiguous variable name
+]
 
 [lint.per-file-ignores]
 "maestro/app.py" = [
