@@ -1,13 +1,8 @@
 import asyncio
 import threading
-from collections.abc import Callable
 from typing import Any
 
-from maestro.handlers.event_fired import handle_event_fired
-from maestro.handlers.hass_shutdown import handle_hass_shutdown
-from maestro.handlers.hass_startup import handle_hass_startup
-from maestro.handlers.notif_action import handle_notif_action
-from maestro.handlers.state_changed import handle_state_changed
+from maestro.handlers.types import EventType, EventTypeName, get_event_type
 from maestro.integrations.home_assistant.websocket_client import WebSocketClient
 from maestro.integrations.state_manager import StateManager
 from maestro.utils.exceptions import WebSocketConnectionError
@@ -23,8 +18,8 @@ class WebSocketManager:
     def __init__(self) -> None:
         self.client = WebSocketClient()
         self.min_reconnect_delay = 1
-        self.reconnect_delay = self.min_reconnect_delay
         self.max_reconnect_delay = 60
+        self.reconnect_delay = self.min_reconnect_delay
         self.running = True
 
     def start(self) -> None:
@@ -101,38 +96,32 @@ class WebSocketManager:
         Route incoming WebSocket events to appropriate handlers.
         Reuses existing webhook handler functions.
         """
-        from maestro.app import EventType, app
+        from maestro.app import app
 
-        event_type = event.get("event_type")
-        if not event_type or not isinstance(event_type, str):
-            raise WebSocketConnectionError("Malformed ")
+        event_type_name = event.get("event_type")
+        if not event_type_name or not isinstance(event_type_name, str):
+            raise WebSocketConnectionError("Malformed websocket event payload")
 
-        log.debug("WebSocket event received", event_type=event_type)
+        event_type = get_event_type(event_type_name)
+
+        process_id = build_process_id(event_type.process_id_prefix)
+        set_process_id(process_id)
+
+        log.debug("WebSocket event received", event_type=event_type_name)
 
         request_body = self._build_request_body(event_type, event)
 
-        # Route to appropriate handler (same handlers used by webhooks)
-        handler_map: dict[EventType, Callable] = {
-            EventType.STATE_CHANGED: handle_state_changed,
-            EventType.IOS_NOTIF_ACTION: handle_notif_action,
-            EventType.HASS_STARTED: handle_hass_startup,
-            EventType.HASS_STOPPED: handle_hass_shutdown,
-        }
-
-        handler = handler_map.get(event_type, handle_event_fired)
-
         try:
             with app.app_context():
-                handler(request_body)
+                event_type.handler_func(request_body)
         except Exception:
-            log.exception("Error handling WebSocket event", event_type=event_type)
+            log.exception("Error handling WebSocket event", event_type=event_type_name)
 
-    def _build_request_body(self, event_type: str, event: dict[str, Any]) -> dict[str, Any]:
+    def _build_request_body(self, event_type: EventType, event: dict[str, Any]) -> dict[str, Any]:
         """
         Convert WebSocket event format to webhook request_body format.
         This allows reuse of all existing webhook handler code.
         """
-        from maestro.app import EventType
 
         # Extract common fields
         time_fired = event.get("time_fired")
@@ -147,7 +136,7 @@ class WebSocketManager:
         }
 
         # Event-specific field mapping
-        if event_type == EventType.STATE_CHANGED:
+        if event_type.name == EventTypeName.STATE_CHANGED:
             # state_changed events have old_state and new_state in data
             old_state = data.get("old_state")
             new_state = data.get("new_state")
@@ -162,7 +151,7 @@ class WebSocketManager:
                 }
             )
 
-        elif event_type == EventType.IOS_NOTIF_ACTION:
+        elif event_type.name == EventTypeName.IOS_NOTIF_ACTION:
             # iOS notification actions
             request_body.update(
                 {

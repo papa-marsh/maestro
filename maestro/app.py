@@ -1,13 +1,10 @@
 import atexit
-import os
-from enum import StrEnum, auto
-from http import HTTPMethod
 from typing import Any
 
 from apscheduler.executors.pool import ThreadPoolExecutor  # type:ignore[import-untyped]
 from apscheduler.jobstores.redis import RedisJobStore  # type:ignore[import-untyped]
 from apscheduler.schedulers.background import BackgroundScheduler  # type:ignore[import-untyped]
-from flask import Flask, Response, request
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
 from maestro.config import (
@@ -43,18 +40,24 @@ class MaestroFlask(Flask):
             MaestroTriggerManager.fire_triggers(MaestroEvent.STARTUP)
         atexit.register(self._shutdown_handler)
 
+        log.info("Maestro app fully initialized")
+
     def _initialize_db(self) -> None:
+        log.info("Initializing database connection")
         self.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
         self.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = SQLALCHEMY_TRACK_MODIFICATIONS
         db.init_app(self)
+        log.info("Database connection initialized")
 
     def _initialize_scheduler(self) -> None:
+        log.info("Initializing job scheduler")
         self.scheduler = BackgroundScheduler(
             jobstores={"default": RedisJobStore(host=REDIS_HOST, port=REDIS_PORT)},
             executors={"default": ThreadPoolExecutor(max_workers=100)},
             timezone=TIMEZONE,
         )
         self.scheduler.start()
+        log.info("Job scheduler initialized")
         CronTriggerManager.register_jobs(self.scheduler)
         SunTriggerManager.register_jobs(self.scheduler)
         atexit.register(self.scheduler.shutdown)
@@ -62,6 +65,7 @@ class MaestroFlask(Flask):
     def _initialize_websocket(self) -> None:
         self.websocket_manager = WebSocketManager()
         self.websocket_manager.start()
+        log.info("Websocket manager initialized")
         atexit.register(self.websocket_manager.stop)
 
     def _shutdown_handler(self) -> None:
@@ -70,17 +74,12 @@ class MaestroFlask(Flask):
 
     def _initialize_test_environment(self) -> None:
         """Initialize in-memory scheduler for registering decorators while testing."""
+        log.info("Initializing test environment")
         self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
+        log.info("Test environment initialized")
 
 
 configure_logging()
-
-
-class EventType(StrEnum):
-    STATE_CHANGED = auto()
-    IOS_NOTIF_ACTION = "ios.notification_action_fired"
-    HASS_STARTED = "maestro_hass_started"
-    HASS_STOPPED = "homeassistant_final_write"
 
 
 db = SQLAlchemy()
