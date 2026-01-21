@@ -3,15 +3,15 @@ import threading
 from collections.abc import Callable
 from typing import Any
 
+from maestro.handlers.event_fired import handle_event_fired
+from maestro.handlers.hass_shutdown import handle_hass_shutdown
+from maestro.handlers.hass_startup import handle_hass_startup
+from maestro.handlers.notif_action import handle_notif_action
+from maestro.handlers.state_changed import handle_state_changed
 from maestro.integrations.home_assistant.websocket_client import WebSocketClient
 from maestro.integrations.state_manager import StateManager
 from maestro.utils.exceptions import WebSocketConnectionError
 from maestro.utils.logging import build_process_id, log, set_process_id
-from maestro.webhooks.event_fired import handle_event_fired
-from maestro.webhooks.hass_shutdown import handle_hass_shutdown
-from maestro.webhooks.hass_startup import handle_hass_startup
-from maestro.webhooks.notif_action import handle_notif_action
-from maestro.webhooks.state_changed import handle_state_changed
 
 
 class WebSocketManager:
