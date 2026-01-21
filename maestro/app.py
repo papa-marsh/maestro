@@ -17,6 +17,7 @@ from maestro.config import (
     SQLALCHEMY_TRACK_MODIFICATIONS,
     TIMEZONE,
 )
+from maestro.integrations.home_assistant.websocket_manager import WebSocketManager
 from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.sun import SunTriggerManager
@@ -42,6 +43,7 @@ class MaestroFlask(Flask):
 
         load_script_modules()
         self._initialize_scheduler()
+        self._initialize_websocket()
         with self.app_context():
             MaestroTriggerManager.fire_triggers(MaestroEvent.STARTUP)
         atexit.register(self._shutdown_handler)
@@ -62,6 +64,11 @@ class MaestroFlask(Flask):
         SunTriggerManager.register_jobs(self.scheduler)
         atexit.register(self.scheduler.shutdown)
 
+    def _initialize_websocket(self) -> None:
+        self.websocket_manager = WebSocketManager()
+        self.websocket_manager.start()
+        atexit.register(self.websocket_manager.stop)
+
     def _shutdown_handler(self) -> None:
         self.app_context().push()
         MaestroTriggerManager.fire_triggers(MaestroEvent.SHUTDOWN, self)
@@ -80,13 +87,6 @@ class EventType(StrEnum):
     HASS_STARTED = "maestro_hass_started"
     HASS_STOPPED = "homeassistant_final_write"
 
-
-WEBHOOK_HANDLERS = {
-    EventType.STATE_CHANGED: handle_state_changed,
-    EventType.IOS_NOTIF_ACTION: handle_notif_action,
-    EventType.HASS_STARTED: handle_hass_startup,
-    EventType.HASS_STOPPED: handle_hass_shutdown,
-}
 
 db = SQLAlchemy()
 app = MaestroFlask(__name__)
@@ -113,7 +113,6 @@ def make_shell_context() -> dict:
         JobScheduler,
         Notif,
         local_now,
-        log,
         resolve_timestamp,
     )
 
@@ -123,14 +122,3 @@ def make_shell_context() -> dict:
     registry = TriggerManager.get_registry()
 
     return locals()
-
-
-@app.route("/webhooks/hass_event", methods=[HTTPMethod.POST])
-def event_fired() -> tuple[Response, int]:
-    request_body = request.get_json() or {}
-    event_type = request_body["event_type"]
-    log.debug("HASS event webhook received", event_type=event_type)
-
-    webhook_handler = WEBHOOK_HANDLERS.get(event_type, handle_event_fired)
-
-    return webhook_handler(request_body)

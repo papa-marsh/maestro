@@ -20,7 +20,7 @@ Maestro is a framework that lets you write Home Assistant automations in Python 
 
 - Python 3.13+
 - Docker & Docker Compose
-- Home Assistant instance with REST API access
+- Home Assistant instance with WebSocket API access
 
 ### Setup
 
@@ -59,120 +59,19 @@ Maestro is a framework that lets you write Home Assistant automations in Python 
 
    **Note:** Whenever you make changes to your automation scripts, run `make deploy` to rebuild and restart the services with your latest changes.
 
-5. **Configure Home Assistant REST commands**
+5. **Verify WebSocket connection**
 
-   Add to your `configuration.yaml`:
+   Check the logs to confirm successful connection:
 
-   ```yaml
-   rest_command:
-     maestro_send_state_change:
-       url: !secret maestro_webhook_url
-       method: POST
-       headers:
-         Content-Type: "application/json"
-         X-Auth-Token: !secret maestro_token
-       payload: >
-         {
-           "timestamp": {{ now().isoformat()| tojson }},
-           "time_fired": {{ time_fired | tojson }},
-           "event_type": {{ event_type | tojson }},
-           "entity_id": {{ entity_id | tojson }},
-           "old_state": {{ old_state | tojson }},
-           "new_state": {{ new_state | tojson }},
-           "old_attributes": {{ old_attributes if old_attributes is not none else "null" }},
-           "new_attributes": {{ new_attributes if new_attributes is not none else "null" }}
-         }
-     maestro_send_event:
-       url: !secret maestro_webhook_url
-       method: POST
-       headers:
-         Content-Type: "application/json"
-         X-Auth-Token: !secret maestro_token
-       payload: >
-         {
-           "timestamp": {{ now().isoformat()| tojson }},
-           "time_fired": {{ time_fired | tojson }},
-           "event_type": {{ event_type | tojson }},
-           "user_id": {{ user_id | tojson }},
-           "data": {{ data }}
-         }
+   ```bash
+   docker logs maestro | grep WebSocket
    ```
 
-6. **Configure Home Assistant Automations**
+   You should see:
 
-   Add to your `automations.yaml`:
-
-   ```yaml
-   - id: "1755384623909"
-     alias: Maestro Send State Changed
-     description: ""
-     triggers:
-       - trigger: event
-         event_type: state_changed
-         context: {}
-     conditions:
-       - condition: not
-         conditions:
-           - condition: template
-             value_template: "{{ trigger.event.data.entity_id.startswith('automation.') }}"
-     actions:
-       - action: rest_command.maestro_send_state_change
-         metadata: {}
-         data:
-           time_fired: "{{ trigger.event.time_fired }}"
-           event_type: "{{ trigger.event.event_type }}"
-           entity_id: "{{ trigger.event.data.entity_id }}"
-           old_state: "{{ trigger.event.data.old_state.state if trigger.event.data.old_state else none }}"
-           new_state: "{{ trigger.event.data.new_state.state if trigger.event.data.new_state else none }}"
-           old_attributes: "{{ trigger.event.data.old_state.attributes | tojson if trigger.event.data.old_state else none }}"
-           new_attributes: "{{ trigger.event.data.new_state.attributes | tojson if trigger.event.data.new_state else none }}"
-     mode: parallel
-     max: 100
-   - id: "1758549424655"
-     alias: Maestro Send Event Fired
-     description: ""
-     triggers:
-       - trigger: event
-         event_type: "*"
-         context: {}
-     conditions:
-       - condition: not
-         conditions:
-           - condition: template
-             value_template: '{{ trigger.event.event_type in ["state_changed", "automation_triggered", "call_service"] }}'
-     actions:
-       - action: rest_command.maestro_send_event
-         metadata: {}
-         data:
-           time_fired: "{{ trigger.event.time_fired }}"
-           event_type: "{{ trigger.event.event_type }}"
-           user_id: "{{ trigger.event.context.user_id }}"
-           data: "{{ trigger.event.data | tojson }}"
-     mode: parallel
-     max: 100
-   - id: "1763596274572"
-     alias: Maestro HASS Started
-     description: ""
-     triggers:
-       - trigger: homeassistant
-         event_type: start
-     conditions: []
-     actions:
-       - event: maestro_hass_started
-         event_data: {}
-     mode: single
    ```
-
-7. **Configure Home Assistant Webhook Secrets**
-
-   Add to your `secrets.yaml`:
-
-   ```yaml
-   maestro_webhook_url: http://<maestro_host_ip>:80/webhooks/hass_event
-   maestro_token: <your_super_secret_api_token>
+   WebSocket authenticated successfully
    ```
-
-   The `maestro_token` secret in Home Assistant must match the `NGINX_TOKEN` Maestro environment variable.
 
 ## Writing Automations
 
@@ -818,6 +717,35 @@ def welcome_home(state_change: StateChangeEvent) -> None:
     if 22 <= hour <= 23:
         light.living_room.turn_on()
 ```
+
+## Troubleshooting
+
+### WebSocket Connection Issues
+
+**Problem**: Maestro can't connect to Home Assistant WebSocket
+
+**Solutions**:
+
+1. Verify `HOME_ASSISTANT_URL` in `.env` is correct (e.g., `http://192.168.1.100:8123`)
+2. Verify `HOME_ASSISTANT_TOKEN` is a valid long-lived access token
+3. Check Home Assistant is accessible: `curl http://<your-ha-url>/api/`
+4. Review Maestro logs: `docker logs maestro`
+
+**Problem**: WebSocket keeps reconnecting
+
+**Solutions**:
+
+1. Check network stability between Maestro and Home Assistant
+2. Verify Home Assistant isn't restarting frequently
+3. Check Home Assistant logs for WebSocket errors
+
+**Problem**: Events seem to be missing
+
+After reconnection, Maestro automatically syncs all entity states. If you still see issues:
+
+1. Check logs for "State sync completed" message after reconnection
+2. Verify the entity is not in `DOMAIN_IGNORE_LIST`
+3. Enable debug logging to see all events: Set `LOG_LEVEL=DEBUG` in `.env`
 
 ## Contributing
 
