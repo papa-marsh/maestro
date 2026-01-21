@@ -101,7 +101,7 @@ class WebSocketManager:
         Route incoming WebSocket events to appropriate handlers.
         Reuses existing webhook handler functions.
         """
-        from maestro.app import EventType
+        from maestro.app import EventType, app
 
         event_type = event.get("event_type")
         if not event_type or not isinstance(event_type, str):
@@ -122,7 +122,8 @@ class WebSocketManager:
         handler = handler_map.get(event_type, handle_event_fired)
 
         try:
-            handler(request_body)
+            with app.app_context():
+                handler(request_body)
         except Exception:
             log.exception("Error handling WebSocket event", event_type=event_type)
 
