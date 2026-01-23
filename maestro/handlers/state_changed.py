@@ -31,11 +31,12 @@ def resolve_entity_state_data(raw_entity_dict: dict) -> EntityData:
 def handle_state_changed(event: WebSocketEvent) -> None:
     state_manager = StateManager()
 
-    entity_id = EntityId(event.data["entity_id"])
-    if entity_id.domain in DOMAIN_IGNORE_LIST:
-        log.debug("Skipping state change for domain in ignore list", entity_id=entity_id)
+    entity_id_string = str(event.data.get("entity_id"))
+    if entity_id_string.split(".")[0] in DOMAIN_IGNORE_LIST:
+        log.debug("Skipping state change for domain in ignore list", entity_id=entity_id_string)
         return
 
+    entity_id = EntityId(event.data["entity_id"])
     old_raw_data: dict | None = event.data.get("old_state")
     new_raw_data: dict | None = event.data.get("new_state")
 
