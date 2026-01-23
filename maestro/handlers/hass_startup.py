@@ -4,5 +4,5 @@ from maestro.utils.logging import log
 
 
 def handle_hass_startup(_event: WebSocketEvent) -> None:
-    log.info("Processing Home Assistant shutdown startup")
+    log.info("Processing Home Assistant startup event")
     HassTriggerManager.fire_triggers(HassEvent.STARTUP)
