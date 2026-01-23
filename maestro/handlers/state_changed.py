@@ -78,7 +78,7 @@ def handle_state_changed(event: WebSocketEvent) -> None:
     if old_data.state != new_data.state:
         changes["state"] = (state_change.old.state, state_change.new.state)
 
-    custom_attributes = ["previous_state", "last_changed", "last_updated"]
+    custom_attributes = ["previous_state", "last_changed", "last_updated", "last_reported"]
     for attr in state_change.old.attributes.keys() | state_change.new.attributes.keys():
         old_attr_data = state_change.old.attributes.get(attr)
         new_attr_data = state_change.new.attributes.get(attr)
