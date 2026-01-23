@@ -1,14 +1,19 @@
 import asyncio
 import threading
+from datetime import datetime, timedelta
 from typing import Any
 
 from maestro.handlers.types import EventTypeName, get_event_type
 from maestro.integrations.home_assistant.types import EventContext, WebSocketEvent
 from maestro.integrations.home_assistant.websocket_client import WebSocketClient
+from maestro.integrations.redis import RedisClient
 from maestro.integrations.state_manager import StateManager
-from maestro.utils.dates import resolve_timestamp
+from maestro.utils.dates import IntervalSeconds, local_now, resolve_timestamp
 from maestro.utils.exceptions import WebSocketConnectionError
 from maestro.utils.logging import build_process_id, log, set_process_id
+
+LAST_CONNECTED_KEY = "websocket_last_connected"
+SYNC_THRESHOLD = timedelta(minutes=30)
 
 
 class WebSocketManager:
@@ -19,6 +24,7 @@ class WebSocketManager:
 
     def __init__(self) -> None:
         self.client = WebSocketClient()
+        self.redis = RedisClient()
         self.min_reconnect_delay = 2
         self.max_reconnect_delay = 30
         self.reconnect_delay = self.min_reconnect_delay
@@ -62,15 +68,19 @@ class WebSocketManager:
                 await self.client.connect()
                 self.reconnect_delay = self.min_reconnect_delay
 
-                log.info("Syncing all entity states after WebSocket connection")
-                self._sync_all_states()
+                if self._sync_states_needed():
+                    self._sync_all_states()
 
                 await self.client.subscribe_to_events(self._handle_event)
 
+                self._set_last_connected()
+
             except WebSocketConnectionError as e:
                 log.error("WebSocket connection error", error=str(e))
+                self._set_last_connected()
             except Exception:
                 log.exception("Unexpected WebSocket error")
+                self._set_last_connected()
 
             try:
                 await self.client.close()
@@ -84,14 +94,45 @@ class WebSocketManager:
             await asyncio.sleep(self.reconnect_delay)
             self.reconnect_delay = min(self.reconnect_delay + 2, self.max_reconnect_delay)
 
+    def _set_last_connected(self) -> None:
+        log.info("Setting WebSocket connection time to now")
+        self.redis.set(
+            key=LAST_CONNECTED_KEY,
+            value=local_now().isoformat(),
+            ttl_seconds=IntervalSeconds.THIRTY_DAYS,
+        )
+
+    def _sync_states_needed(self) -> bool:
+        """Sync all states only if disconnected longer than threshold"""
+        last_connected = self.redis.get(LAST_CONNECTED_KEY)
+        if last_connected is None:
+            log.info("Last WebSocket connection time unknown - syncing entity states")
+            return True
+
+        last_connected = datetime.fromisoformat(last_connected)
+
+        disconnect_duration = local_now() - last_connected
+        if disconnect_duration >= SYNC_THRESHOLD:
+            log.info(
+                "WebSocket disconnected for extended period - syncing entity states",
+                disconnect_duration=str(disconnect_duration),
+            )
+            return True
+        else:
+            log.info(
+                "WebSocket reconnected quickly - skipping entity state sync",
+                disconnect_duration=str(disconnect_duration),
+            )
+            return False
+
     def _sync_all_states(self) -> None:
-        """Fetch all entity states from Home Assistant to catch up after reconnection"""
+        """Fetch all entity states from Home Assistant"""
         try:
             state_manager = StateManager()
             count = state_manager.fetch_all_hass_entities()
             log.info("State sync completed", entity_count=count)
         except Exception:
-            log.exception("Failed to sync states after reconnection")
+            log.exception("Failed to sync states")
 
     def _handle_event(self, raw_event: dict[str, Any]) -> None:
         """Route incoming WebSocket events to appropriate handlers"""
