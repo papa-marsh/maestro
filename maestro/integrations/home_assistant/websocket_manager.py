@@ -169,7 +169,10 @@ class WebSocketManager:
             with app.app_context():
                 event_type.handler_func(event)
         except Exception:
-            log.exception("Error handling WebSocket event", event_type=event_type_name)
+            log.exception(
+                "Uncaught exception raised during WebSocket event",
+                event_type=event_type_name,
+            )
 
     @classmethod
     def is_hass_startup_event(cls, raw_event: dict[str, Any]) -> bool:
