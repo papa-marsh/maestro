@@ -2,7 +2,7 @@ import asyncio
 import threading
 from typing import Any
 
-from maestro.handlers.types import get_event_type
+from maestro.handlers.types import EventTypeName, get_event_type
 from maestro.integrations.home_assistant.types import EventContext, WebSocketEvent
 from maestro.integrations.home_assistant.websocket_client import WebSocketClient
 from maestro.integrations.state_manager import StateManager
@@ -19,8 +19,8 @@ class WebSocketManager:
 
     def __init__(self) -> None:
         self.client = WebSocketClient()
-        self.min_reconnect_delay = 1
-        self.max_reconnect_delay = 60
+        self.min_reconnect_delay = 2
+        self.max_reconnect_delay = 30
         self.reconnect_delay = self.min_reconnect_delay
         self.running = True
 
@@ -82,7 +82,7 @@ class WebSocketManager:
 
             log.warning("Attempting WebSocket reconnection", delay_seconds=self.reconnect_delay)
             await asyncio.sleep(self.reconnect_delay)
-            self.reconnect_delay = min(self.reconnect_delay * 2, self.max_reconnect_delay)
+            self.reconnect_delay = min(self.reconnect_delay + 2, self.max_reconnect_delay)
 
     def _sync_all_states(self) -> None:
         """Fetch all entity states from Home Assistant to catch up after reconnection"""
@@ -97,7 +97,12 @@ class WebSocketManager:
         """Route incoming WebSocket events to appropriate handlers"""
         from maestro.app import app
 
-        event_type_name = raw_event.get("event_type")
+        event_type_name = (
+            EventTypeName.HASS_STARTUP
+            if self.is_hass_startup_event(raw_event)  # TODO: This is a hack
+            else raw_event.get("event_type")
+        )
+
         if not event_type_name or not isinstance(event_type_name, str):
             raise WebSocketConnectionError("Malformed websocket event payload")
 
@@ -120,9 +125,17 @@ class WebSocketManager:
                 user_id=context_data.get("user_id"),
             ),
         )
-
         try:
             with app.app_context():
                 event_type.handler_func(event)
         except Exception:
             log.exception("Error handling WebSocket event", event_type=event_type_name)
+
+    @classmethod
+    def is_hass_startup_event(cls, raw_event: dict[str, Any]) -> bool:
+        if raw_event.get("event_type") != EventTypeName.STATE_CHANGED:
+            return False
+
+        entity_id: str = raw_event.get("data", {}).get("entity_id")
+
+        return entity_id == "sensor.home_assistant_uptime"
