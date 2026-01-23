@@ -1,8 +1,9 @@
 from collections.abc import Callable
+from contextlib import suppress
 from functools import wraps
 from typing import Any, cast
 
-from maestro.handlers.types import EVENT_TYPE_REGISTRY
+from maestro.handlers.types import EventTypeName
 from maestro.integrations.home_assistant.types import FiredEvent
 from maestro.triggers.trigger_manager import TriggerManager
 from maestro.triggers.types import EventFiredParams, TriggerRegistryEntry, TriggerType
@@ -55,7 +56,8 @@ def event_fired_trigger(
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
-        if event_type in EVENT_TYPE_REGISTRY:
+        with suppress(ValueError):
+            EventTypeName(event_type)
             raise EventTriggerOverrideError(
                 "Avoid `event_fired_trigger` when an event-specific trigger exists. "
                 "eg. Use state_change_trigger, not event_fired_trigger(event_type='state_changed')"

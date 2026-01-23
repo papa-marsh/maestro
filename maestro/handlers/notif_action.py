@@ -1,25 +1,24 @@
-from flask import Response, jsonify
-
-from maestro.integrations.home_assistant.types import NotifActionEvent
+from maestro.integrations.home_assistant.types import NotifActionEvent, WebSocketEvent
 from maestro.triggers.notif_action import NotifActionTriggerManager
-from maestro.utils.dates import resolve_timestamp
+from maestro.utils.logging import log
 
 
-def handle_notif_action(request_body: dict) -> tuple[Response, int]:
-    user_id = str(request_body["user_id"]) if request_body["user_id"] is not None else None
+def handle_notif_action(event: WebSocketEvent) -> None:
+    user_id = event.context.user_id
+    action_name = event.data["actionName"]
+    device_name = device_name = event.data["sourceDeviceName"]
+
+    log.debug("Processing notif action event", action=action_name, device=device_name)
 
     ios_notif_action = NotifActionEvent(
-        timestamp=resolve_timestamp(request_body["timestamp"] or ""),
-        time_fired=resolve_timestamp(request_body["time_fired"] or ""),
-        type=request_body["event_type"],
-        data=request_body["data"],
+        time_fired=event.time_fired,
+        type=event.event_type,
+        data=event.data,
         user_id=user_id,
-        name=request_body["data"]["actionName"],
-        action_data=request_body["data"]["action_data"],
-        device_id=request_body["data"]["sourceDeviceID"],
-        device_name=request_body["data"]["sourceDeviceName"],
+        name=action_name,
+        action_data=event.data["action_data"],
+        device_id=event.data["sourceDeviceID"],
+        device_name=device_name,
     )
 
     NotifActionTriggerManager.fire_triggers(ios_notif_action)
-
-    return jsonify({"status": "success"}), 200

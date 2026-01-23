@@ -1,72 +1,83 @@
-from flask import Response, jsonify
-
 from maestro.config import DOMAIN_IGNORE_LIST
-from maestro.integrations.home_assistant.types import EntityData, EntityId, StateChangeEvent
+from maestro.handlers.types import EventTypeName
+from maestro.integrations.home_assistant.types import (
+    EntityData,
+    EntityId,
+    StateChangeEvent,
+    WebSocketEvent,
+)
 from maestro.integrations.state_manager import StateManager
 from maestro.triggers.state_change import StateChangeTriggerManager
 from maestro.utils.dates import resolve_timestamp
+from maestro.utils.exceptions import MalformedResponseError
 from maestro.utils.logging import log
 
 
-def handle_state_changed(request_body: dict) -> tuple[Response, int]:
+def resolve_entity_state_data(raw_entity_dict: dict) -> EntityData:
+    try:
+        attributes = raw_entity_dict["attributes"]
+        attributes["last_changed"] = resolve_timestamp(raw_entity_dict["last_changed"])
+        attributes["last_updated"] = resolve_timestamp(raw_entity_dict["last_updated"])
+
+        return EntityData(
+            entity_id=EntityId(raw_entity_dict["entity_id"]),
+            state=str(raw_entity_dict["state"]),
+            attributes=attributes,
+        )
+    except Exception as e:
+        raise MalformedResponseError("Failed to resolve entity data from state change") from e
+
+
+def handle_state_changed(event: WebSocketEvent) -> None:
     state_manager = StateManager()
-    entity_id_str = str(request_body["entity_id"])
+
+    entity_id = EntityId(event.data["entity_id"])
+    if entity_id.domain in DOMAIN_IGNORE_LIST:
+        log.debug("Skipping state change for domain in ignore list", entity_id=entity_id)
+        return
+
+    old_raw_data: dict | None = event.data.get("old_state")
+    new_raw_data: dict | None = event.data.get("new_state")
+
+    if old_raw_data is None and new_raw_data is None:
+        raise MalformedResponseError("State change received with null data for both old and new")
+
+    if old_raw_data is not None:
+        old_data = resolve_entity_state_data(old_raw_data)
+        if new_raw_data is None:
+            state_manager.delete_cached_entity(entity_id)
+            log.info("State deletion cached", entity_id=entity_id, old_state=old_data.state)
+            return
+
+    if new_raw_data is not None:
+        new_data = resolve_entity_state_data(new_raw_data)
+        if old_raw_data is None:
+            state_manager.cache_entity(new_data)
+            log.info("State creation cached", entity_id=entity_id, new_state=new_data.state)
+            return
 
     log.debug(
         "Processing state change",
-        entity_id=entity_id_str,
-        old_state=request_body.get("old_state"),
-        new_state=request_body.get("new_state"),
+        entity_id=entity_id,
+        old_state=old_data.state,
+        new_state=new_data.state,
     )
 
-    if entity_id_str.split(".")[0] in DOMAIN_IGNORE_LIST:
-        log.debug("Skipping entity for domain in ignore list", entity_id=entity_id_str)
-        return jsonify({"status": "success"}), 200
-
-    entity_id = EntityId(entity_id_str)
-    old_state = str(request_body["old_state"]) if request_body["old_state"] is not None else None
-    new_state = str(request_body["new_state"]) if request_body["new_state"] is not None else None
-    last_changed = resolve_timestamp(request_body["time_fired"] or "")
-    last_updated = resolve_timestamp(request_body["timestamp"] or "")
-
-    if old_state is not None:
-        old_data = EntityData(
-            entity_id=EntityId(entity_id_str),
-            state=old_state,
-            attributes=request_body["old_attributes"] or {},
-        )
-    if new_state is not None:
-        new_data = EntityData(
-            entity_id=EntityId(entity_id_str),
-            state=new_state,
-            attributes=request_body["new_attributes"] or {},
-        )
-        new_data.attributes["last_changed"] = last_changed
-        new_data.attributes["last_updated"] = last_updated
-
-    if not old_state and not new_state:
-        return jsonify({"status": "failure"}), 400
-
-    if old_state is None:
-        state_manager.cache_entity(new_data)
-        log.info("State creation cached", entity_id=entity_id, new_state=new_data.state)
-        return jsonify({"status": "success"}), 200
-
-    if new_state is None:
-        state_manager.delete_cached_entity(entity_id)
-        log.info("State deletion cached", entity_id=entity_id, old_state=old_data.state)
-        return jsonify({"status": "success"}), 200
-
     state_change = StateChangeEvent(
-        timestamp=last_updated,
-        time_fired=last_changed,
-        entity_id=EntityId(entity_id),
+        time_fired=event.time_fired,
+        type=EventTypeName.STATE_CHANGED,
+        data=event.data,
+        user_id=event.context.user_id,
+        entity_id=entity_id,
         old=old_data,
         new=new_data,
     )
-    state_change.new.attributes["previous_state"] = old_state
+    state_change.new.attributes["previous_state"] = old_data.state
+    changes = {}
 
-    changes = {"state": (state_change.old.state, state_change.new.state)}
+    if old_data.state != new_data.state:
+        changes["state"] = (state_change.old.state, state_change.new.state)
+
     custom_attributes = ["previous_state", "last_changed", "last_updated"]
     for attr in state_change.old.attributes.keys() | state_change.new.attributes.keys():
         old_attr_data = state_change.old.attributes.get(attr)
@@ -77,9 +88,12 @@ def handle_state_changed(request_body: dict) -> tuple[Response, int]:
 
     state_manager.cache_entity(state_change.new)
 
-    if new_state == old_state:
-        log.debug("Skipping triggers for unchanged state", entity_id=entity_id, state=new_state)
-    else:
-        StateChangeTriggerManager.fire_triggers(state_change)
+    if new_data.state == old_data.state:
+        log.debug(
+            "Skipping triggers for unchanged state",
+            entity_id=entity_id,
+            state=new_data.state,
+        )
+        return
 
-    return jsonify({"status": "success"}), 200
+    StateChangeTriggerManager.fire_triggers(state_change)

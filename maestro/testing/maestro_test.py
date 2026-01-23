@@ -8,6 +8,7 @@ from freezegun import freeze_time
 
 from maestro.config import TIMEZONE
 from maestro.domains.entity import Entity
+from maestro.handlers.types import EventTypeName
 from maestro.integrations.home_assistant.domain import Domain
 from maestro.integrations.home_assistant.types import (
     AttributeId,
@@ -123,8 +124,10 @@ class MaestroTest:
         self.set_state(entity_id, new, new_attributes)
 
         state_change = StateChangeEvent(
-            timestamp=timestamp,
             time_fired=timestamp,
+            type=EventTypeName.STATE_CHANGED,
+            data={},
+            user_id="",
             entity_id=entity_id,
             old=old_data,
             new=new_data,
@@ -143,7 +146,6 @@ class MaestroTest:
         timestamp = time_fired or local_now()
 
         event = FiredEvent(
-            timestamp=timestamp,
             time_fired=timestamp,
             type=event_type,
             data=data or {},
@@ -164,7 +166,6 @@ class MaestroTest:
         timestamp = time_fired or local_now()
 
         notif_action = NotifActionEvent(
-            timestamp=timestamp,
             time_fired=timestamp,
             type="ios.notification_action_fired",
             data={},

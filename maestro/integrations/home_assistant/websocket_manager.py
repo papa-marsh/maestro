@@ -2,9 +2,11 @@ import asyncio
 import threading
 from typing import Any
 
-from maestro.handlers.types import EventType, EventTypeName, get_event_type
+from maestro.handlers.types import get_event_type
+from maestro.integrations.home_assistant.types import EventContext, WebSocketEvent
 from maestro.integrations.home_assistant.websocket_client import WebSocketClient
 from maestro.integrations.state_manager import StateManager
+from maestro.utils.dates import resolve_timestamp
 from maestro.utils.exceptions import WebSocketConnectionError
 from maestro.utils.logging import build_process_id, log, set_process_id
 
@@ -91,14 +93,11 @@ class WebSocketManager:
         except Exception:
             log.exception("Failed to sync states after reconnection")
 
-    def _handle_event(self, event: dict[str, Any]) -> None:
-        """
-        Route incoming WebSocket events to appropriate handlers.
-        Reuses existing webhook handler functions.
-        """
+    def _handle_event(self, raw_event: dict[str, Any]) -> None:
+        """Route incoming WebSocket events to appropriate handlers"""
         from maestro.app import app
 
-        event_type_name = event.get("event_type")
+        event_type_name = raw_event.get("event_type")
         if not event_type_name or not isinstance(event_type_name, str):
             raise WebSocketConnectionError("Malformed websocket event payload")
 
@@ -109,64 +108,21 @@ class WebSocketManager:
 
         log.debug("WebSocket event received", event_type=event_type_name)
 
-        request_body = self._build_request_body(event_type, event)
+        context_data = raw_event.get("context", {})
+        event = WebSocketEvent(
+            event_type=event_type_name,
+            data=raw_event.get("data", {}),
+            time_fired=resolve_timestamp(str(raw_event.get("time_fired"))),
+            origin=raw_event.get("origin", ""),
+            context=EventContext(
+                id=context_data.get("id", ""),
+                parent_id=context_data.get("parent_id"),
+                user_id=context_data.get("user_id"),
+            ),
+        )
 
         try:
             with app.app_context():
-                event_type.handler_func(request_body)
+                event_type.handler_func(event)
         except Exception:
             log.exception("Error handling WebSocket event", event_type=event_type_name)
-
-    def _build_request_body(self, event_type: EventType, event: dict[str, Any]) -> dict[str, Any]:
-        """
-        Convert WebSocket event format to webhook request_body format.
-        This allows reuse of all existing webhook handler code.
-        """
-
-        # Extract common fields
-        time_fired = event.get("time_fired")
-        data = event.get("data", {})
-        context = event.get("context", {})
-
-        # Build base structure
-        request_body = {
-            "timestamp": time_fired,  # WebSocket uses time_fired for both
-            "time_fired": time_fired,
-            "event_type": event_type,
-        }
-
-        # Event-specific field mapping
-        if event_type.name == EventTypeName.STATE_CHANGED:
-            # state_changed events have old_state and new_state in data
-            old_state = data.get("old_state")
-            new_state = data.get("new_state")
-
-            request_body.update(
-                {
-                    "entity_id": data.get("entity_id"),
-                    "old_state": old_state.get("state") if old_state else None,
-                    "new_state": new_state.get("state") if new_state else None,
-                    "old_attributes": old_state.get("attributes") if old_state else None,
-                    "new_attributes": new_state.get("attributes") if new_state else None,
-                }
-            )
-
-        elif event_type.name == EventTypeName.IOS_NOTIF_ACTION:
-            # iOS notification actions
-            request_body.update(
-                {
-                    "user_id": context.get("user_id"),
-                    "data": data,
-                }
-            )
-
-        else:
-            # Generic events
-            request_body.update(
-                {
-                    "user_id": context.get("user_id"),
-                    "data": data,
-                }
-            )
-
-        return request_body

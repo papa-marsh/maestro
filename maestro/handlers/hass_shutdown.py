@@ -1,11 +1,8 @@
-from flask import Response, jsonify
-
+from maestro.integrations.home_assistant.types import WebSocketEvent
 from maestro.triggers.hass import HassEvent, HassTriggerManager
 from maestro.utils.logging import log
 
 
-def handle_hass_shutdown(_request_body: dict) -> tuple[Response, int]:
-    log.info("Event handled for Home Assistant shutdown")
+def handle_hass_shutdown(_event: WebSocketEvent) -> None:
+    log.info("Processing Home Assistant shutdown event")
     HassTriggerManager.fire_triggers(HassEvent.SHUTDOWN)
-
-    return jsonify({"status": "success"}), 200

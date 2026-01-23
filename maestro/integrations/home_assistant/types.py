@@ -111,10 +111,27 @@ class EntityData:
 
 
 @dataclass
-class FiredEvent:
-    """Generic event data payload for incoming webhooks"""
+class EventContext:
+    id: str
+    parent_id: str | None
+    user_id: str | None
 
-    timestamp: datetime
+
+@dataclass
+class WebSocketEvent:
+    """Raw WebSocket event from Home Assistant event bus"""
+
+    event_type: str
+    data: dict[str, Any]
+    time_fired: datetime
+    origin: str
+    context: EventContext
+
+
+@dataclass
+class FiredEvent:
+    """Generic data payload for incoming websocket events"""
+
     time_fired: datetime
     type: str
     data: dict
@@ -122,11 +139,9 @@ class FiredEvent:
 
 
 @dataclass
-class StateChangeEvent:
+class StateChangeEvent(FiredEvent):
     """Specific event payload type for state changes"""
 
-    timestamp: datetime
-    time_fired: datetime
     entity_id: EntityId
     old: EntityData
     new: EntityData

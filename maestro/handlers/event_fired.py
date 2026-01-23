@@ -1,21 +1,16 @@
-from flask import Response, jsonify
-
-from maestro.integrations.home_assistant.types import FiredEvent
+from maestro.integrations.home_assistant.types import FiredEvent, WebSocketEvent
 from maestro.triggers.event_fired import EventFiredTriggerManager
-from maestro.utils.dates import resolve_timestamp
+from maestro.utils.logging import log
 
 
-def handle_event_fired(request_body: dict) -> tuple[Response, int]:
-    user_id = str(request_body["user_id"]) if request_body["user_id"] is not None else None
+def handle_event_fired(event: WebSocketEvent) -> None:
+    log.debug("Processing fired event", event_type=event.event_type)
 
     fired_event = FiredEvent(
-        timestamp=resolve_timestamp(request_body["timestamp"] or ""),
-        time_fired=resolve_timestamp(request_body["time_fired"] or ""),
-        type=request_body["event_type"],
-        data=request_body["data"],
-        user_id=user_id,
+        time_fired=event.time_fired,
+        type=event.event_type,
+        data=event.data,
+        user_id=event.context.user_id,
     )
 
     EventFiredTriggerManager.fire_triggers(fired_event)
-
-    return jsonify({"status": "success"}), 200
