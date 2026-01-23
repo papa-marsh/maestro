@@ -32,7 +32,6 @@ class WebSocketManager:
         self.process_id = build_process_id("websocket")
 
     def start(self) -> None:
-        """Start WebSocket manager in background thread"""
         thread = threading.Thread(
             target=self._run_event_loop,
             daemon=True,
@@ -42,9 +41,9 @@ class WebSocketManager:
         log.info("WebSocket manager started", thread_name=thread.name)
 
     def stop(self) -> None:
-        """Stop WebSocket manager gracefully"""
-        self.running = False
         log.info("WebSocket manager stopping")
+        self.running = False
+        self._set_last_connected()
 
     def _run_event_loop(self) -> None:
         """Run asyncio event loop in dedicated thread"""
