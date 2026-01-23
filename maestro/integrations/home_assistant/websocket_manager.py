@@ -1,6 +1,6 @@
 import asyncio
 import threading
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any
 
 from maestro.handlers.types import EventTypeName, get_event_type
@@ -108,7 +108,7 @@ class WebSocketManager:
             log.info("Last WebSocket connection time unknown - syncing entity states")
             return True
 
-        last_connected = datetime.fromisoformat(last_connected)
+        last_connected = resolve_timestamp(last_connected)
 
         disconnect_duration = local_now() - last_connected
         if disconnect_duration >= SYNC_THRESHOLD:
