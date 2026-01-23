@@ -29,6 +29,7 @@ class WebSocketManager:
         self.max_reconnect_delay = 30
         self.reconnect_delay = self.min_reconnect_delay
         self.running = True
+        self.process_id = build_process_id("websocket")
 
     def start(self) -> None:
         """Start WebSocket manager in background thread"""
@@ -59,11 +60,10 @@ class WebSocketManager:
 
     async def _maintain_connection(self) -> None:
         """Maintain WebSocket connection with exponential backoff reconnection"""
+        set_process_id(self.process_id)
+
         while self.running:
             try:
-                process_id = build_process_id("websocket")
-                set_process_id(process_id)
-
                 log.info("Attempting WebSocket connection")
                 await self.client.connect()
                 self.reconnect_delay = self.min_reconnect_delay
