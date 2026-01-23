@@ -18,7 +18,12 @@ from maestro.integrations.home_assistant.websocket_manager import WebSocketManag
 from maestro.triggers.cron import CronTriggerManager
 from maestro.triggers.maestro import MaestroEvent, MaestroTriggerManager
 from maestro.triggers.sun import SunTriggerManager
-from maestro.utils.internal import configure_logging, load_script_modules, test_mode_active
+from maestro.utils.internal import (
+    configure_logging,
+    load_script_modules,
+    shell_mode_active,
+    test_mode_active,
+)
 from maestro.utils.logging import build_process_id, log, set_process_id
 
 
@@ -31,6 +36,10 @@ class MaestroFlask(Flask):
 
         if test_mode_active():
             self._initialize_test_environment()
+            return
+
+        if shell_mode_active():
+            self._initialize_shell_environment()
             return
 
         load_script_modules()
@@ -77,6 +86,13 @@ class MaestroFlask(Flask):
         log.info("Initializing test environment")
         self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
         log.info("Test environment initialized")
+
+    def _initialize_shell_environment(self) -> None:
+        """Initialize Flask shell environment with scripts loaded but no background services"""
+        log.info("Initializing shell environment")
+        load_script_modules()
+        self.scheduler = BackgroundScheduler(timezone=TIMEZONE)
+        log.info("Shell environment initialized - background services disabled")
 
 
 configure_logging()

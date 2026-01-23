@@ -5,6 +5,7 @@ Not intended to be used by script modules
 
 import importlib
 import logging
+import os
 import sys
 from collections.abc import Mapping, MutableMapping
 from datetime import datetime
@@ -20,6 +21,13 @@ from maestro.utils.logging import log
 
 def test_mode_active() -> bool:
     return "pytest" in sys.modules
+
+
+def shell_mode_active() -> bool:
+    if os.environ.get("FLASK_RUN_FROM_CLI") == "true":
+        return "shell" in sys.argv
+
+    return hasattr(sys, "ps1") or bool(sys.flags.interactive)
 
 
 def add_timezone_timestamp(
