@@ -1,4 +1,5 @@
 import atexit
+import json
 from typing import Any
 
 from apscheduler.executors.pool import ThreadPoolExecutor  # type:ignore[import-untyped]
@@ -69,6 +70,8 @@ class MaestroFlask(Flask):
         log.info("Job scheduler initialized")
         CronTriggerManager.register_jobs(self.scheduler)
         SunTriggerManager.register_jobs(self.scheduler)
+        all_scheduled_jobs = [str(j) for j in self.scheduler.get_jobs()]
+        log.debug("Jobs scheduled", job_list=json.dumps(all_scheduled_jobs))
         atexit.register(self.scheduler.shutdown)
 
     def _initialize_websocket(self) -> None:
