@@ -1,4 +1,4 @@
-.PHONY: build deploy pull pull-deploy pull-deploy-f logs shell bash
+.PHONY: build deploy pull pull-deploy pull-deploy-f kill-shell logs shell bash
 
 # Build the Docker image
 build:
@@ -7,6 +7,7 @@ build:
 # Rebuild and redeploy the app
 deploy:
 	docker compose down && \
+	make kill-shell && \
 	docker compose up -d --build && \
 	sleep 1 && \
 	make logs
@@ -30,6 +31,7 @@ pull-deploy:
 	git pull && \
 	cd .. && \
 	docker compose down && \
+	make kill-shell && \
 	docker compose up -d --build && \
 	sleep 1 && \
 	make logs
@@ -48,9 +50,14 @@ pull-deploy-f:
 	git pull && \
 	cd .. && \
 	docker compose down && \
+	make kill-shell && \
 	docker compose up -d --build && \
 	sleep 1 && \
 	make logs
+
+# Kill any "flask shell" docker containers
+kill-shell:
+	docker ps --format "{{.ID}} {{.Command}}" | grep "flask shell" | awk '{print $1}' | xargs docker rm -f
 
 # Get logs from the maestro container
 logs:
