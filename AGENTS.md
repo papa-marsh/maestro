@@ -161,7 +161,32 @@ A Python descriptor using PEP 695 generics (`EntityAttribute[T]`) constrained to
 
 Each domain (Light, Switch, Climate, Cover, Lock, Fan, MediaPlayer, etc.) subclasses Entity, sets `domain = Domain.XXX`, and defines action methods that call `self.perform_action()`. Most set `allow_set_state = False`.
 
-The `domains/__init__.py` also does a wildcard import from `scripts.custom_domains` at the bottom, allowing users to define custom domain subclasses (e.g., `SonosSpeaker(MediaPlayer)`) that get injected into the `maestro.domains` namespace.
+#### Custom Domain Subclasses (`scripts/custom_domains/`)
+
+Users can extend built-in domain classes with device-specific or integration-specific functionality. Custom domains live in `scripts/custom_domains/` and are wildcard-imported into `maestro.domains` at the bottom of `domains/__init__.py`, making them available framework-wide.
+
+The pattern for defining a custom domain:
+
+```python
+from maestro.domains.climate import Climate   # Direct module import (avoids circular import)
+
+class Thermostat(Climate):
+    class HVACMode(StrEnum):                  # Nested typed enums for modes/presets
+        OFF = auto()
+        HEAT = auto()
+
+    @override
+    def set_hvac_mode(self, mode: HVACMode) -> None:  # type:ignore[override]
+        self.perform_action("set_hvac_mode", hvac_mode=mode)
+```
+
+Key details:
+- Import from the **specific domain module** (`maestro.domains.climate`), not the package (`maestro.domains`), to avoid circular imports
+- Use `@override` + `# type:ignore[override]` when narrowing parameter types from `str` to a specific `StrEnum`
+- Export all custom domains via `__all__` in `scripts/custom_domains/__init__.py`
+- When a custom domain is used as a HA action under a different HA domain (e.g., Sonos snapshot lives under the `sonos` domain, not `media_player`), call `self.state_manager.hass_client.perform_action()` directly with the correct `Domain` enum
+
+Once defined, registry-generated entity classes automatically inherit from the custom subclass instead of the base domain class, and `RegistryManager` preserves the custom parent class during updates.
 
 ### Entity Registry (`registry/`)
 
