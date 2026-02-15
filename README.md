@@ -64,7 +64,7 @@ Maestro is a framework that lets you write Home Assistant automations in Python 
    Check the logs to confirm successful connection:
 
    ```bash
-   docker logs maestro | grep WebSocket
+   make logs
    ```
 
    You should see:
@@ -77,14 +77,18 @@ Maestro is a framework that lets you write Home Assistant automations in Python 
 
 All your automation logic goes in the `scripts/` directory. Import from the `maestro` package to access triggers, entities, and utilities.
 
-### A Quick Note On Imports
+### A Quick Note on Imports
 
-Anything intended to be used in automation logic is exported by a top-level package in the `maestro` directory. Importing from deeper in the package structure is never necessary.
+Everything intended for use in automation scripts is exported from top-level `maestro` packages. You never need to import from deeper in the package structure.
 
-**Examples**
-
-- `from maestro.triggers import state_change_trigger`
-- `from maestro.integrations import EntityId`
+```python
+from maestro.domains import ON, OFF, HOME, AWAY        # State constants
+from maestro.triggers import state_change_trigger       # Trigger decorators
+from maestro.integrations import StateChangeEvent       # Event types
+from maestro.registry import switch, light, sensor      # Entity instances
+from maestro.utils import Notif, JobScheduler, log      # Utilities
+from maestro.testing import MaestroTest                 # Test framework
+```
 
 ### Basic Example
 
@@ -152,10 +156,10 @@ Trigger decorators automatically register your functions to respond to events. D
 Responds when an entity's state changes. Can trigger on one or multiple entities.
 
 ```python
-# Single entity
+# Single entity with filter
 @state_change_trigger(switch.bedroom_motion_sensor, to_state=ON)
 def motion_detected(state_change: StateChangeEvent) -> None:
-    log.info(f"Changed from {state_change.old.state} to {state_change.new.state}")
+    log.info("Motion detected", new_state=state_change.new.state)
 
 # Multiple entities - same handler for all
 @state_change_trigger(
@@ -164,10 +168,10 @@ def motion_detected(state_change: StateChangeEvent) -> None:
     sensor.kitchen_temperature
 )
 def temperature_changed(state_change: StateChangeEvent) -> None:
-    log.info(f"{state_change.entity_id} changed to {state_change.new.state}")
+    log.info("Temperature changed", entity_id=state_change.entity_id)
 
 # Without parameters - still works!
-@state_change_trigger(entity)
+@state_change_trigger(switch.bedroom_motion_sensor)
 def simple_handler() -> None:
     log.info("Entity changed")
 ```
@@ -202,34 +206,11 @@ def periodic_task() -> None:
 - `pattern`: Cron pattern string (e.g., "0 0 \* \* \*")
 - `minute`, `hour`, `day_of_month`, `month`, `day_of_week`: Individual cron fields
 
+**Note:** You can use either `pattern` or individual fields, but not both.
+
 **Optional Function Parameters:**
 
 - None - cron triggers don't provide runtime parameters
-
-### Event Fired Trigger
-
-Responds to custom Home Assistant events.
-
-```python
-# With optional event parameter
-@event_fired_trigger("my_custom_event")
-def handle_event(event: FiredEvent) -> None:
-    print(f"Event data: {event.data}")
-
-# Without parameters
-@event_fired_trigger("my_custom_event")
-def simple_handler() -> None:
-    print("Event fired")
-```
-
-**Decorator Parameters:**
-
-- `event_type`: String matching the Home Assistant event type
-- `user_id`: Optional - filter by user who triggered the event
-
-**Optional Function Parameters:**
-
-- `event: FiredEvent` - Contains event data and context
 
 ### Sun Trigger
 
@@ -245,34 +226,56 @@ def sunrise_routine() -> None:
     switch.outdoor_lights.turn_off()
 
 # 30 minutes before sunset
-@sun_trigger(SolarEvent.SOLAR_NOON, offset=timedelta(minutes=-30))
-def pre_sunset() -> None:
-    switch.sprinklers.turn_on()
+@sun_trigger(SolarEvent.DUSK, offset=timedelta(minutes=-30))
+def pre_dusk() -> None:
+    switch.patio_lights.turn_on()
 ```
 
 **Decorator Parameters:**
 
-- `solar_event`: SolarEvent enum value
-- `offset`: Optional - timedelta offset (negative for before, positive for after)
+- `solar_event`: SolarEvent enum value (`DAWN`, `DUSK`, `SOLAR_MIDNIGHT`, `SOLAR_NOON`, `SUNRISE`, `SUNSET`)
+- `offset`: Optional timedelta (negative for before, positive for after). Max ±12 hours.
 
 **Optional Function Parameters:**
 
 - None - sun triggers don't provide runtime parameters
+
+### Event Fired Trigger
+
+Responds to custom Home Assistant events. Supports filtering by user ID and arbitrary event data key-value pairs.
+
+```python
+# Basic event trigger
+@event_fired_trigger("my_custom_event")
+def handle_event(event: FiredEvent) -> None:
+    log.info("Event received", data=event.data)
+
+# With event data filtering - only fires when event.data["trigger"] matches
+@event_fired_trigger("my_custom_event", trigger="button_press")
+def handle_button(event: FiredEvent) -> None:
+    log.info("Button pressed")
+```
+
+**Decorator Parameters:**
+
+- `event_type`: String matching the Home Assistant event type
+- `user_id`: Optional - filter by user who triggered the event
+- `**event_data`: Optional key-value filters applied to the event's data dict
+
+**Optional Function Parameters:**
+
+- `event: FiredEvent` - Contains event data and context
 
 ### Notification Action Trigger
 
 Responds to notification actions (e.g., buttons pressed on push notifications).
 
 ```python
-# With optional notif_action parameter
-@notif_action_trigger("ACTION_ID")
-def handle_action(notif_action: NotifActionEvent) -> None:
-    print(f"Action data: {notif_action.action_data}")
-
-# Without parameters
-@notif_action_trigger("ACTION_ID")
-def simple_handler() -> None:
-    print("Action pressed")
+@notif_action_trigger("UNLOCK_DOOR")
+def handle_unlock(notif_action: NotifActionEvent) -> None:
+    door_id = notif_action.action_data.get("door_id")
+    if door_id == "front_door":
+        lock.front_door.unlock()
 ```
 
 **Decorator Parameters:**
@@ -294,7 +297,7 @@ from maestro.triggers import maestro_trigger, MaestroEvent
 @maestro_trigger(MaestroEvent.STARTUP)
 def on_startup() -> None:
     """Runs when Maestro service starts"""
-    log.info("Maestro started!")
+    log.info("Maestro started")
 
 @maestro_trigger(MaestroEvent.SHUTDOWN)
 def on_shutdown() -> None:
@@ -302,13 +305,20 @@ def on_shutdown() -> None:
     log.info("Maestro shutting down")
 ```
 
-**Decorator Parameters:**
+### Home Assistant Trigger
 
-- `event`: `MaestroEvent.STARTUP` or `MaestroEvent.SHUTDOWN`
+Runs on Home Assistant lifecycle events (HA starting up or shutting down).
 
-**Optional Function Parameters:**
+```python
+from maestro.triggers import hass_trigger, HassEvent
 
-- None - maestro triggers don't provide runtime parameters
+@hass_trigger(HassEvent.STARTUP)
+def on_ha_start() -> None:
+    """Runs when Home Assistant starts"""
+    log.info("Home Assistant started")
+```
+
+These are distinct from Maestro triggers—HA can restart independently while Maestro keeps running.
 
 ## Entity Registry
 
@@ -323,6 +333,17 @@ climate.bedroom_thermostat.set_temperature(72)
 temp = sensor.outdoor_temperature.state
 ```
 
+The registry is code-generated from your HA instance's entities. Each entity has typed attributes accessible as properties:
+
+```python
+# State is always a string
+state = sensor.outdoor_temperature.state
+
+# Attributes are typed via EntityAttribute descriptors
+battery = sensor.outdoor_temperature.battery_level   # int
+friendly_name = sensor.outdoor_temperature.friendly_name  # str
+```
+
 ## Entity Methods
 
 Common methods available on entity objects:
@@ -330,8 +351,11 @@ Common methods available on entity objects:
 ### Light
 
 ```python
-light.bedroom.turn_on(brightness=255, color_temp=300)
+# rgb_color and temperature are required; brightness and transition have defaults
+light.bedroom.turn_on(rgb_color=(255, 200, 150), temperature=3000)
+light.bedroom.turn_on(rgb_color=(255, 200, 150), temperature=3000, brightness_percent=50)
 light.bedroom.turn_off()
+light.bedroom.turn_off(transition_seconds=5)
 light.bedroom.toggle()
 ```
 
@@ -340,8 +364,19 @@ light.bedroom.toggle()
 ```python
 climate.thermostat.set_temperature(72)
 climate.thermostat.set_hvac_mode("heat")
+climate.thermostat.set_fan_mode("auto")
+climate.thermostat.set_preset_mode("away")
 climate.thermostat.turn_on()
 climate.thermostat.turn_off()
+```
+
+### Switch
+
+```python
+switch.coffee_maker.turn_on()
+switch.coffee_maker.turn_off()
+switch.coffee_maker.toggle()
+switch.coffee_maker.is_on  # bool property
 ```
 
 ### Lock
@@ -357,84 +392,168 @@ lock.front_door.unlock()
 cover.garage_door.open_cover()
 cover.garage_door.close_cover()
 cover.garage_door.stop_cover()
+cover.garage_door.toggle()
 ```
 
-## Accessing State & Attributes
+### Fan
 
 ```python
-from maestro.registry import sensor
-
-# Get current state
-temp = sensor.outdoor_temperature.state
-
-# Access attributes as EntityAttribute properties
-battery = sensor.outdoor_temperature.battery_level
+fan.ceiling_fan.turn_on()
+fan.ceiling_fan.turn_off()
+fan.ceiling_fan.set_speed(Fan.Speed.MEDIUM)  # LOW=33, MEDIUM=66, HIGH=100
 ```
+
+### Media Player
+
+```python
+media_player.living_room.turn_on()
+media_player.living_room.turn_off()
+media_player.living_room.play(content_id="...", content_type="music")
+media_player.living_room.pause()
+media_player.living_room.set_volume(0.5)  # 0.0 to 1.0
+media_player.living_room.next()
+media_player.living_room.previous()
+```
+
+## Custom Domain Subclasses
+
+You can extend built-in domain classes with device-specific or integration-specific functionality. Custom domains live in `scripts/custom_domains/` and are automatically injected into the `maestro.domains` namespace at startup.
+
+**Important:** Import from the specific domain module (e.g., `maestro.domains.climate`), not the package (`maestro.domains`), to avoid circular imports.
+
+### Example: Attribute Value Enums
+
+Add type safety when passing argument values:
+
+```python
+# scripts/custom_domains/climate.py
+from enum import StrEnum, auto
+from typing import override
+
+from maestro.domains.climate import Climate
+
+
+class TeslaHVAC(Climate):
+    class HVACMode(StrEnum):
+        OFF = auto()
+        HEAT_COOL = auto()
+
+    class PresetMode(StrEnum):
+        NORMAL = auto()
+        DOG = auto()
+        CAMP = auto()
+
+    @override
+    def set_hvac_mode(self, mode: HVACMode) -> None:  # type:ignore[override]
+        self.perform_action("set_hvac_mode", hvac_mode=mode)
+
+    @override
+    def set_preset_mode(self, mode: PresetMode) -> None:  # type:ignore[override]
+        self.perform_action("set_preset_mode", preset_mode=mode)
+```
+
+### Example: Extended Action Methods
+
+When a HA integration exposes actions under a different domain:
+
+```python
+# scripts/custom_domains/sonos_speaker.py
+from maestro.domains.media_player import MediaPlayer
+from maestro.integrations import Domain
+
+
+class SonosSpeaker(MediaPlayer):
+    def join(self, members: list["SonosSpeaker"]) -> None:
+        speaker_ids = [m.id for m in members]
+        self.perform_action("join", group_members=speaker_ids)
+
+    def unjoin(self) -> None:
+        self.perform_action("unjoin")
+
+    def snapshot(self, with_group: bool = False) -> None:
+        # Sonos snapshot is under the "sonos" domain, not "media_player"
+        self.state_manager.hass_client.perform_action(
+            domain=Domain.SONOS, action="snapshot",
+            entity_id=self.id, with_group=with_group,
+        )
+```
+
+Custom domain classes must be exported from `scripts/custom_domains/__init__.py`:
+
+```python
+# scripts/custom_domains/__init__.py
+from .climate import TeslaHVAC
+from .sonos_speaker import SonosSpeaker
+
+__all__ = [
+    TeslaHVAC.__name__,
+    SonosSpeaker.__name__,
+]
+```
+
+Once defined, registry-generated entity classes automatically inherit from your custom subclass instead of the base domain class.
 
 ## Sending Push Notifications
 
-Maestro includes a comprehensive push notification system with support for priorities, actionable notifications, and more.
+Maestro includes a push notification system for iOS devices via Home Assistant. Supports priorities, actionable buttons, custom sounds, and grouping.
 
 ### Basic Notification
 
 ```python
-from maestro.utils import Notif, NotifPriority
+from maestro.utils import Notif
 from maestro.registry import person
 
 # Create and send a notification
-notif = Notif(
+Notif(
     message="Motion detected in living room",
     title="Security Alert",
-    priority=NotifPriority.TIME_SENSITIVE
-)
-notif.send(person.john_doe)
+    priority=Notif.Priority.TIME_SENSITIVE,
+).send(person.john_doe)
 
-# Send to multiple people
-notif.send([person.john_doe, person.jane_doe])
+# Send to multiple people (variadic, not a list)
+Notif(
+    message="Good morning!",
+    title="Daily Briefing",
+).send(person.john_doe, person.jane_doe)
 ```
 
 ### Notification Priorities
 
 ```python
-from maestro.utils import NotifPriority
-
-# PASSIVE - Silent, no wake screen
-# ACTIVE - Standard notification (default)
+# PASSIVE      - Silent, no wake screen
+# ACTIVE       - Standard notification (default)
 # TIME_SENSITIVE - Bypasses notification summary
-# CRITICAL - Plays sound even on silent mode
+# CRITICAL     - Plays sound even on silent mode
 
-notif = Notif(
+Notif(
     message="Critical alert",
-    priority=NotifPriority.CRITICAL
-)
+    priority=Notif.Priority.CRITICAL,
+).send(person.john_doe)
 ```
 
 ### Actionable Notifications
 
 ```python
-from maestro.utils import Notif
-
-# Build actions with the helper method
-action1 = Notif.build_action(
+# Build action buttons
+unlock_action = Notif.build_action(
     name="UNLOCK_DOOR",
     title="Unlock Door",
     destructive=False,
-    require_auth=True
+    require_auth=True,
 )
-action2 = Notif.build_action(
+ignore_action = Notif.build_action(
     name="IGNORE",
     title="Ignore",
-    destructive=True
+    destructive=True,
 )
 
-# Create notification with actions
-notif = Notif(
+# Send notification with actions
+Notif(
     message="Someone is at the door",
     title="Doorbell",
-    actions=[action1, action2],
-    action_data={"door_id": "front_door"}  # Passed to trigger handler
-)
-notif.send(person.john_doe)
+    actions=[unlock_action, ignore_action],
+    action_data={"door_id": "front_door"},  # Passed back to trigger handler
+).send(person.john_doe)
 ```
 
 ### Handling Notification Actions
@@ -454,14 +573,14 @@ def handle_unlock(notif_action: NotifActionEvent) -> None:
 ### Advanced Options
 
 ```python
-notif = Notif(
+Notif(
     message="Message content",
     title="Title",
-    priority=NotifPriority.ACTIVE,
-    group="alarm_system",  # Group related notifications
-    tag="front_door",      # Replace previous notification with same tag
-    sound="alarm.caf",     # Custom sound file
-    url="/lovelace-mobile/cameras"  # Open specific view when tapped
+    priority=Notif.Priority.ACTIVE,
+    group="alarm_system",               # Group related notifications
+    tag="front_door",                   # Replace previous notification with same tag
+    sound="alarm.caf",                  # Custom sound file (None for silent)
+    url="/lovelace-mobile/cameras",     # Open specific view when tapped
 )
 ```
 
@@ -474,7 +593,7 @@ from datetime import timedelta
 from maestro.utils import JobScheduler, local_now
 from maestro.registry import light
 
-def delayed_light_off():
+def delayed_light_off() -> None:
     """Turn off lights after delay"""
     light.bedroom_ceiling.turn_off()
 
@@ -490,101 +609,97 @@ scheduler.cancel_job(job_id)
 Jobs can accept keyword arguments:
 
 ```python
-def set_temperature(temp: int):
+def set_temperature(temp: int) -> None:
     climate.thermostat.set_temperature(temp)
 
+scheduler = JobScheduler()
 scheduler.schedule_job(
     run_time=local_now() + timedelta(hours=1),
     func=set_temperature,
-    func_params={"temp": 72}
+    func_params={"temp": 72},
 )
 ```
 
 ## Testing Your Automations
 
-Maestro includes a comprehensive testing framework that lets you unit test your automations without affecting your production Home Assistant instance. Tests use in-memory mocks and require no Redis or Home Assistant connection.
+Maestro includes a testing framework that lets you unit test your automations without a running Home Assistant instance. Tests use in-memory mocks and require no Redis or HA connection.
 
 **Key Features:**
 
 - **Automatic mocking** - All entities automatically use test mocks, no manual setup required
 - **In-memory state** - State and actions are tracked in memory, no external dependencies
-- **Trigger simulation** - Test state changes, events, and cron triggers
+- **Trigger simulation** - Test state changes, events, and notification actions
 - **Action assertions** - Verify that your automations call the correct Home Assistant actions
 
 ### Quick Example
 
 ```python
-# scripts/test_bedroom_lights.py
+# scripts/tests/test_bedroom_lights.py
+from maestro.domains import OFF, ON
+from maestro.integrations import Domain
 from maestro.registry import light, switch
 from maestro.testing import MaestroTest
 
 # Import the module you want to test to register its triggers
-from scripts.bedroom import lights
+from scripts import bedroom_lights
 
-def test_motion_turns_on_light(mt: MaestroTest):
-    # Setup: Set initial entity states
-    mt.set_state(switch.motion_sensor, OFF)
-    mt.set_state(light.bedroom, OFF)
+def test_motion_turns_on_light(mt: MaestroTest) -> None:
+    """Test that motion triggers the bedroom light"""
+    mt.set_state(switch.bedroom_motion_sensor, OFF)
+    mt.set_state(light.bedroom_ceiling, OFF)
 
-    # Act: Trigger your automation by simulating a state change
-    mt.trigger_state_change(switch.motion_sensor, old=OFF, new=ON)
+    mt.trigger_state_change(switch.bedroom_motion_sensor, old=OFF, new=ON)
 
-    # Assert: Verify the light was turned on
-    mt.assert_action_called("light", "turn_on", entity_id="light.bedroom")
+    mt.assert_action_called(Domain.LIGHT, "turn_on", entity_id=light.bedroom_ceiling.id)
 ```
 
-**Note:** You must import the script module(s) you want to test. This registers the trigger decorators (`@state_change_trigger`, etc.) so they can be invoked by `trigger_state_change()` and similar methods.
+**Note:** You must import the script module(s) you want to test. This registers the trigger decorators so they can be invoked by `trigger_state_change()` and similar methods.
 
 ### Common Testing Patterns
 
 **Test state changes:**
 
 ```python
-def test_temperature_control(mt: MaestroTest):
+def test_temperature_control(mt: MaestroTest) -> None:
     mt.set_state(sensor.temperature, "70")
     mt.trigger_state_change(sensor.temperature, old="70", new="76")
-    mt.assert_action_called("switch", "turn_on", entity_id="switch.fan")
+    mt.assert_action_called(Domain.SWITCH, "turn_on", entity_id=switch.fan.id)
 ```
 
 **Test custom events:**
 
 ```python
-def test_custom_event(mt: MaestroTest):
-    mt.trigger_event("something_happened", data={"duration": 30})
-    mt.assert_action_called("notify", "mobile_app", message="Something happened!")
+def test_custom_event(mt: MaestroTest) -> None:
+    mt.trigger_event("my_custom_event", data={"duration": 30})
+    mt.assert_action_called(Domain.NOTIFY, person.john.notify_action_name)
 ```
 
-**Test with entity objects (automatically mocked):**
+**Test multiple scenarios in one test:**
 
 ```python
-def test_with_entities(mt: MaestroTest):
+def test_motion_sequence(mt: MaestroTest) -> None:
     mt.set_state(light.bedroom, OFF)
 
-    # Entities automatically use the test's mock state manager - no setup needed!
-    light.bedroom.turn_on(rgb_color=(255, 255, 255), temperature=4000)
-    mt.assert_action_called("light", "turn_on")
-```
-
-**Test multiple scenarios:**
-
-```python
-def test_motion_sequence(mt: MaestroTest):
-    mt.set_state("light.bedroom", OFF)
-
-    mt.trigger_state_change("switch.motion", OFF, ON)
-    mt.assert_action_called("light", "turn_on")
+    mt.trigger_state_change(switch.motion, old=OFF, new=ON)
+    mt.assert_action_called(Domain.LIGHT, "turn_on")
 
     mt.clear_action_calls()
 
-    mt.trigger_state_change("switch.motion", ON, OFF)
-    mt.assert_action_called("light", "turn_off")
+    mt.trigger_state_change(switch.motion, old=ON, new=OFF)
+    mt.assert_action_called(Domain.LIGHT, "turn_off")
 ```
 
 ### Running Tests
 
 ```bash
-# Run tests (with venv activated)
+# Run all script tests
 pytest scripts
+
+# Run a specific test file
+pytest scripts/tests/test_bedroom_lights.py
+
+# Run a single test function
+pytest scripts/tests/test_bedroom_lights.py::test_motion_turns_on_light
 ```
 
 ## Development Workflow
@@ -592,10 +707,10 @@ pytest scripts
 ### Interactive Shell
 
 ```bash
-# Flask shell with pre-loaded imports
+# Flask shell with pre-loaded imports (StateManager, RedisClient, etc.)
 make shell
 
-# Direct bash access
+# Direct bash access to the container
 make bash
 ```
 
@@ -607,10 +722,15 @@ Maestro includes PostgreSQL and Flask-SQLAlchemy for persistent storage.
 
 ```python
 # scripts/my_automation/models.py
+from typing import ClassVar
+
 from maestro.app import db
 
-class MyModel(db.Model):
+
+class MyModel(db.Model):  # type:ignore[name-defined]
     __tablename__ = "my_table"
+    __table_args__: ClassVar = {"extend_existing": True}
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
 ```
@@ -649,10 +769,15 @@ db.session.commit()
 
 ```python
 # scripts/bedtime_routine/models.py
+from typing import ClassVar
+
 from maestro.app import db
 
-class SnoozeHistory(db.Model):  # type:ignore [name-defined]
+
+class SnoozeHistory(db.Model):  # type:ignore[name-defined]
     __tablename__ = "snooze_history"
+    __table_args__: ClassVar = {"extend_existing": True}
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     timestamp = db.Column(db.DateTime, nullable=False)
     duration_minutes = db.Column(db.Integer, nullable=False)
@@ -661,58 +786,56 @@ class SnoozeHistory(db.Model):  # type:ignore [name-defined]
 ```python
 # scripts/bedtime_routine/__init__.py
 from maestro.app import db
-from maestro.triggers import state_change_trigger, cron_trigger, notif_action_trigger
+from maestro.domains import HOME
 from maestro.integrations import StateChangeEvent, NotifActionEvent
 from maestro.registry import switch, light, climate, person
-from maestro.utils import Notif, local_now
+from maestro.triggers import state_change_trigger, cron_trigger, notif_action_trigger
+from maestro.utils import Notif, JobScheduler, local_now
 
 from .models import SnoozeHistory
 
-@cron_trigger(hour=22, minute=0)  # 10 PM daily
+SNOOZE_MINUTES = 15
+SNOOZE_JOB_ID = "bedtime_snooze"
+
+
+@cron_trigger(hour=22, minute=0)
 def bedtime_warning() -> None:
     """Notify 30 min before lights out"""
-    snooze_action = Notif.build_action(
-        name="SNOOZE_BEDTIME",
-        title="Snooze 15 min"
-    )
-    dismiss_action = Notif.build_action(
-        name="DISMISS_BEDTIME",
-        title="Dismiss"
-    )
+    snooze_action = Notif.build_action(name="SNOOZE_BEDTIME", title="Snooze 15 min")
+    dismiss_action = Notif.build_action(name="DISMISS_BEDTIME", title="Dismiss")
 
-    notif = Notif(
+    Notif(
         title="Bedtime Soon",
         message="Lights will turn off in 30 minutes",
-        actions=[snooze_action, dismiss_action]
-    )
-    notif.send(person.john)
+        actions=[snooze_action, dismiss_action],
+    ).send(person.john)
 
-@cron_trigger(hour=22, minute=30)  # 10:30 PM daily
+
+@cron_trigger(hour=22, minute=30)
 def bedtime_routine() -> None:
     """Execute bedtime routine"""
-    light.bedroom.turn_on(brightness=50)  # Dim lights
+    light.bedroom.turn_on(brightness_percent=20)
     light.living_room.turn_off()
     climate.bedroom.set_temperature(68)
     switch.sound_machine.turn_on()
 
+
 @notif_action_trigger("SNOOZE_BEDTIME")
 def snooze_bedtime_routine(notif_action: NotifActionEvent) -> None:
-    """Delay bedtime routine by 15 minutes and track snooze"""
-    # Log snooze to database
-    snooze = SnoozeHistory(timestamp=local_now(), duration_minutes=15)
+    """Delay bedtime routine and track snooze history"""
+    snooze = SnoozeHistory(timestamp=local_now(), duration_minutes=SNOOZE_MINUTES)
     db.session.add(snooze)
     db.session.commit()
 
-    # Reschedule bedtime routine (implementation would schedule a one-time job)
-    notif = Notif(
+    Notif(
         title="Bedtime Snoozed",
-        message="Routine delayed by 15 minutes"
-    )
-    notif.send(person.john)
+        message=f"Routine delayed by {SNOOZE_MINUTES} minutes",
+    ).send(person.john)
+
 
 @state_change_trigger(person.john, to_state=HOME)
 def welcome_home(state_change: StateChangeEvent) -> None:
-    """Cancel bedtime routine if arriving home late"""
+    """Turn on lights if arriving home late"""
     hour = local_now().hour
     if 22 <= hour <= 23:
         light.living_room.turn_on()
@@ -729,7 +852,7 @@ def welcome_home(state_change: StateChangeEvent) -> None:
 1. Verify `HOME_ASSISTANT_URL` in `.env` is correct (e.g., `http://192.168.1.100:8123`)
 2. Verify `HOME_ASSISTANT_TOKEN` is a valid long-lived access token
 3. Check Home Assistant is accessible: `curl http://<your-ha-url>/api/`
-4. Review Maestro logs: `docker logs maestro`
+4. Review Maestro logs: `make logs`
 
 **Problem**: WebSocket keeps reconnecting
 
@@ -741,10 +864,10 @@ def welcome_home(state_change: StateChangeEvent) -> None:
 
 **Problem**: Events seem to be missing
 
-After reconnection, Maestro automatically syncs all entity states. If you still see issues:
+After reconnection, Maestro automatically syncs all entity states if it was disconnected for more than 30 minutes. If you still see issues:
 
 1. Check logs for "State sync completed" message after reconnection
-2. Verify the entity is not in `DOMAIN_IGNORE_LIST`
+2. Verify the entity's domain is not in `DOMAIN_IGNORE_LIST`
 3. Enable debug logging to see all events: Set `LOG_LEVEL=DEBUG` in `.env`
 
 ## Contributing

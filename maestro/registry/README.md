@@ -4,122 +4,61 @@ The registry contains auto-generated domain modules that provide strongly-typed 
 
 ## How It Works
 
-- **Programmatic Updates**: Each module is automatically updated and should be edited with caution
-- **Module Parsing**: Line-by-line formatting is critical in parsing and editing registry modules; avoid altering the format
+- **Programmatic Updates**: Each module is automatically generated and updated by `RegistryManager` -- edit with caution
+- **Module Parsing**: Line-by-line formatting is critical for parsing and editing registry modules; do not alter the format
 - **Disaster Recovery**: Deleting a registry entity (or entire module) and allowing it to recreate should fix most problems
+- **Gitignored**: All generated modules are gitignored. Only `__init__.py`, `registry_manager.py`, and this `README.md` are tracked
 
-These registry entities provide type-safe access to Home Assistant entities with full IDE support and autocomplete functionality.
+## Generated Module Structure
 
-## Domain Subclasses
-
-Registry superclasses can be overridden with custom domain subclasses for extended functionality. Custom subclassing is respected by the registry manager's upsert logic, provided the format of the registry module is kept intact.
-
-Note in the example that `ClimateBathroomFloorThermostat` inherits from `BathroomFloor` (which itself inherits from `Climate`)
+Each generated module contains one class per entity (subclassing the appropriate domain class) with `EntityAttribute` descriptors, plus a module-level instance:
 
 ```python
-# maestro/registry/climate.py
+# maestro/registry/light.py (auto-generated)
 
-...
+from maestro.domains import Light  # type:ignore[attr-defined, unused-ignore]
+from maestro.domains.entity import EntityAttribute
+from datetime import datetime
+
+class LightMultiColorBulb(Light):
+    brightness = EntityAttribute(int)
+    rgb_color = EntityAttribute(list)
+    color_mode = EntityAttribute(str)
+multi_color_bulb = LightMultiColorBulb("light.multi_color_bulb")
+```
+
+## Custom Domain Subclasses
+
+Registry superclasses can be overridden with custom domain subclasses for extended functionality. Custom subclassing is respected by `RegistryManager`'s upsert logic, provided the format of the registry module is kept intact.
+
+Note in the example that `ClimateBathroomFloorThermostat` inherits from `BathroomFloor` (which itself inherits from `Climate`):
+
+```python
+# maestro/registry/climate.py (auto-generated)
+
 from maestro.domains import BathroomFloor, Climate  # type:ignore[attr-defined, unused-ignore]
 ...
+
 class ClimateBathroomFloorThermostat(BathroomFloor):
     ...
 bathroom_floor_thermostat = ClimateBathroomFloorThermostat("climate.bathroom_floor_thermostat")
 ```
 
-### Import Structure
+### Setting Up Custom Domains
 
-**Note:** Custom domain classes must be exported from `scripts.custom_domains`.
+Custom domain classes must be defined in `scripts/custom_domains/` and exported via `__all__`:
 
 ```python
 # scripts/custom_domains/__init__.py
-
 from .climate import BathroomFloor, TeslaHVAC, Thermostat
-from .media_player import SonosSpeaker
+from .sonos_speaker import SonosSpeaker
 
 __all__ = [
-    "BathroomFloor",
-    "TeslaHVAC",
-    "Thermostat",
-    "SonosSpeaker",
+    BathroomFloor.__name__,
+    TeslaHVAC.__name__,
+    Thermostat.__name__,
+    SonosSpeaker.__name__,
 ]
-
 ```
 
-### Example 1: Extended Action Methods
-
-While all `media_player` entities share the same base actions (e.g., `media_player.play`), the Sonos integration also exposes actions like `sonos.join` and `sonos.snapshot`.
-
-```python
-# scripts/custom_domains/media_player.py
-
-from maestro.domains.media_player import MediaPlayer
-from maestro.integrations.home_assistant.domain import Domain
-from maestro.integrations.home_assistant.types import EntityId
-
-
-class SonosSpeaker(MediaPlayer):
-    def join(self, members: list[EntityId]) -> None:
-        self.perform_action("join", group_members=members)
-
-    def unjoin(self) -> None:
-        self.perform_action("unjoin")
-
-    def snapshot(self, with_group: bool = False) -> None:
-        self.state_manager.hass_client.perform_action(
-            domain=Domain.SONOS,
-            action="snapshot",
-            entity_id=self.id,
-            with_group=with_group,
-        )
-
-    def restore(self, with_group: bool = False) -> None:
-        self.state_manager.hass_client.perform_action(
-            domain=Domain.SONOS,
-            action="restore",
-            entity_id=self.id,
-            with_group=with_group,
-        )
-```
-
-### Example 2: Attribute Value Enums
-
-Add type safety and autocomplete when passing argument values.
-
-```python
-# scripts/custom_domains/climate.py
-
-from enum import StrEnum, auto
-from typing import override
-
-from maestro.domains.climate import Climate
-
-
-class TeslaHVAC(Climate):
-    class HVACMode(StrEnum):
-        OFF = auto()
-        HEAT_COOL = auto()
-
-    class FanMode(StrEnum):
-        OFF = auto()
-        BIOWEAPON = auto()
-
-    class PresetMode(StrEnum):
-        NORMAL = auto()
-        DEFROST = auto()
-        KEEP = auto()
-        DOG = auto()
-        CAMP = auto()
-
-    @override
-    def set_fan_mode(self, mode: FanMode) -> None:
-        self.perform_action("set_fan_mode", mode=mode)
-
-    @override
-    def set_hvac_mode(self, mode: HVACMode) -> None:
-        self.perform_action("set_hvac_mode", mode=mode)
-
-    @override
-    def set_preset_mode(self, mode: PresetMode) -> None:
-        self.perform_action("set_preset_mode", mode=mode)
-```
+They are wildcard-imported into `maestro.domains` at startup, which makes them available to the registry's import statements. See the main README for full custom domain documentation.
