@@ -9,14 +9,17 @@ class InputDatetime(Entity):
 
     def set_datetime(self, value: datetime) -> None:
         """Set the datetime value"""
+        value = value.isoformat()
         self.perform_action("set_datetime", datetime=value)
 
     def set_date(self, value: date) -> None:
         """Set the date value"""
+        value = value.isoformat()
         self.perform_action("set_datetime", date=value)
 
     def set_time(self, value: time) -> None:
         """Set the time value"""
+        value = value.strftime("%H:%M:%S")
         self.perform_action("set_datetime", time=value)
 
     def set_timestamp(self, value: int) -> None:
