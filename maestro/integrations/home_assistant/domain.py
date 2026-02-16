@@ -13,6 +13,7 @@ class Domain(StrEnum):
     HOME_ASSISTANT = auto()
     HUMIDIFIER = auto()
     INPUT_BOOLEAN = auto()
+    INPUT_DATETIME = auto()
     INPUT_NUMBER = auto()
     INPUT_SELECT = auto()
     INPUT_TEXT = auto()

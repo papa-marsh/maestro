@@ -9,6 +9,7 @@ from .event import Event
 from .fan import Fan
 from .humidifier import Humidifier
 from .input_boolean import InputBoolean
+from .input_datetime import InputDatetime
 from .input_number import InputNumber
 from .input_select import InputSelect
 from .input_text import InputText
@@ -48,6 +49,7 @@ __all__ = [
     Fan.__name__,
     Humidifier.__name__,
     InputBoolean.__name__,
+    InputDatetime.__name__,
     InputNumber.__name__,
     InputSelect.__name__,
     InputText.__name__,
