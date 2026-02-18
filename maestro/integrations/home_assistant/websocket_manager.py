@@ -13,7 +13,7 @@ from maestro.utils.exceptions import WebSocketConnectionError
 from maestro.utils.logging import build_process_id, log, set_process_id
 
 LAST_CONNECTED_KEY = "websocket_last_connected"
-SYNC_THRESHOLD = timedelta(minutes=30)
+SYNC_THRESHOLD = timedelta(minutes=5)
 
 
 class WebSocketManager:
