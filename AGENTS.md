@@ -26,6 +26,9 @@ Public-facing packages (`domains/`, `triggers/`, `integrations/`, `utils/`, `tes
 ## Build / Lint / Test Commands
 
 ```bash
+# Activate the local virtual environment first
+source .venv/bin/activate
+
 # Lint (ruff)
 ruff check maestro                     # Lint the main package
 ruff check --fix maestro               # Lint and auto-fix

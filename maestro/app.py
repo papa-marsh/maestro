@@ -81,6 +81,7 @@ class MaestroFlask(Flask):
         atexit.register(self.websocket_manager.stop)
 
     def _shutdown_handler(self) -> None:
+        self.websocket_manager.set_last_connected()
         self.app_context().push()
         MaestroTriggerManager.fire_triggers(MaestroEvent.SHUTDOWN, self)
 

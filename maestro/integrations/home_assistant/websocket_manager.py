@@ -43,7 +43,6 @@ class WebSocketManager:
     def stop(self) -> None:
         log.info("WebSocket manager stopping")
         self.running = False
-        self._set_last_connected()
 
     def _run_event_loop(self) -> None:
         """Run asyncio event loop in dedicated thread"""
@@ -72,14 +71,14 @@ class WebSocketManager:
 
                 await self.client.subscribe_to_events(self._handle_event)
 
-                self._set_last_connected()
+                self.set_last_connected()
 
             except WebSocketConnectionError as e:
                 log.error("WebSocket connection error", error=str(e))
-                self._set_last_connected()
+                self.set_last_connected()
             except Exception:
                 log.exception("Unexpected WebSocket error")
-                self._set_last_connected()
+                self.set_last_connected()
 
             try:
                 await self.client.close()
@@ -93,13 +92,17 @@ class WebSocketManager:
             await asyncio.sleep(self.reconnect_delay)
             self.reconnect_delay = min(self.reconnect_delay + 2, self.max_reconnect_delay)
 
-    def _set_last_connected(self) -> None:
-        log.info("Setting WebSocket connection time to now")
-        self.redis.set(
-            key=LAST_CONNECTED_KEY,
-            value=local_now().isoformat(),
-            ttl_seconds=IntervalSeconds.THIRTY_DAYS,
-        )
+    def set_last_connected(self) -> None:
+        """Persist the current time as the last WebSocket connection time"""
+        try:
+            log.info("Setting WebSocket connection time to now")
+            self.redis.set(
+                key=LAST_CONNECTED_KEY,
+                value=local_now().isoformat(),
+                ttl_seconds=IntervalSeconds.THIRTY_DAYS,
+            )
+        except Exception:
+            log.exception("Failed to set last connected time")
 
     def _sync_states_needed(self) -> bool:
         """Sync all states only if disconnected longer than threshold"""
