@@ -18,7 +18,7 @@ class StateId(str):
     entity_pattern = r"^[a-z_][a-z0-9_]*\.[a-z0-9_]+$"
     attribute_pattern = r"^[a-z_][a-z0-9_]*\.[a-z0-9_]+\.[a-z0-9_]+$"
 
-    def __new__(cls, value: str) -> "StateId":
+    def __new__(cls, value: str) -> StateId:
         if not (re.match(cls.entity_pattern, value) or re.match(cls.attribute_pattern, value)):
             raise ValueError(f"Invalid entity or attribute format: {value}")
 
@@ -46,13 +46,13 @@ class EntityId(StateId):
 
     attribute: None
 
-    def __new__(cls, value: str) -> "EntityId":
+    def __new__(cls, value: str) -> EntityId:
         if not re.match(cls.entity_pattern, value):
             raise ValueError(f"Invalid entity format: {value}")
 
         return str.__new__(cls, value)
 
-    def resolve_entity(self) -> "Entity":
+    def resolve_entity(self) -> Entity:
         """Resolve this EntityId to its actual registered Entity subclass instance."""
         import importlib
 
@@ -75,7 +75,7 @@ class AttributeId(StateId):
 
     attribute: str
 
-    def __new__(cls, value: str) -> "AttributeId":
+    def __new__(cls, value: str) -> AttributeId:
         if not re.match(cls.attribute_pattern, value):
             raise ValueError(f"Invalid attribute format: {value}")
 

@@ -28,10 +28,10 @@ class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
     def __init__(self, attribute_type: type[T]) -> None:
         self.attribute_type: type[T] = attribute_type
 
-    def __set_name__(self, owner: type["Entity"], name: str) -> None:
+    def __set_name__(self, owner: type[Entity], name: str) -> None:
         self.name = name
 
-    def __get__(self, obj: "Entity", objtype: type["Entity"] | None = None) -> T:
+    def __get__(self, obj: Entity, objtype: type[Entity] | None = None) -> T:
         attribute_id = AttributeId(f"{obj.id}.{self.name}")
         try:
             value = obj.state_manager.get_attribute_state(
@@ -43,7 +43,7 @@ class EntityAttribute[T: (str, int, float, dict, list, bool, datetime)]:
 
         return cast(T, value)
 
-    def __set__(self, obj: "Entity", value: T) -> None:
+    def __set__(self, obj: Entity, value: T) -> None:
         obj.update(state=None, **{self.name: value})
 
     def _build_default_test_value(self) -> T:

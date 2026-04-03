@@ -6,11 +6,11 @@ if TYPE_CHECKING:
 
 
 # Global test context
-_test_state_manager: "StateManager | None" = None
-_test_job_scheduler: "MockJobScheduler | None" = None
+_test_state_manager: StateManager | None = None
+_test_job_scheduler: MockJobScheduler | None = None
 
 
-def get_test_job_scheduler() -> "MockJobScheduler":
+def get_test_job_scheduler() -> MockJobScheduler:
     """Lazily fetch the global test mock job scheduler"""
     global _test_job_scheduler
 
@@ -22,7 +22,7 @@ def get_test_job_scheduler() -> "MockJobScheduler":
     return _test_job_scheduler
 
 
-def get_test_state_manager() -> "StateManager":
+def get_test_state_manager() -> StateManager:
     """Lazily fetch the global test mock state manager"""
     global _test_state_manager
 

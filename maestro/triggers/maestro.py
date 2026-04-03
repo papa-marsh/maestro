@@ -23,7 +23,7 @@ class MaestroTriggerManager(TriggerManager):
     trigger_type = TriggerType.MAESTRO
 
     @classmethod
-    def fire_triggers(cls, event: MaestroEvent, app: "MaestroFlask | None" = None) -> None:
+    def fire_triggers(cls, event: MaestroEvent, app: MaestroFlask | None = None) -> None:
         """Execute registered Maestro event (eg. startup or shutdown) functions."""
         func_params = MaestroParams.FuncParams()
         registry = cls.get_registry(registry_union=True)

@@ -121,7 +121,7 @@ class TriggerManager(ABC):
         cls,
         funcs_to_execute: list[Callable],
         func_params: TriggerFuncParamsT,
-        app: "MaestroFlask",
+        app: MaestroFlask,
     ) -> None:
         """Execute a list of trigger functions synchronously (blocking)."""
         func_params_dict = dict(func_params)
@@ -140,7 +140,7 @@ class TriggerManager(ABC):
         cls,
         func: Callable,
         func_params_dict: dict[str, Any],
-        app: "MaestroFlask",
+        app: MaestroFlask,
         process_id: str | None = None,
     ) -> None:
         """

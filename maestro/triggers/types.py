@@ -71,7 +71,7 @@ class NotifActionParams:
 
 class SunParams:
     class TriggerParams(TypedDict):
-        solar_event: "SolarEvent"
+        solar_event: SolarEvent
         offset: timedelta
 
     class FuncParams(TypedDict):
@@ -80,7 +80,7 @@ class SunParams:
 
 class MaestroParams:
     class TriggerParams(TypedDict):
-        event: "MaestroEvent"
+        event: MaestroEvent
 
     class FuncParams(TypedDict):
         pass
@@ -88,7 +88,7 @@ class MaestroParams:
 
 class HassParams:
     class TriggerParams(TypedDict):
-        event: "HassEvent"
+        event: HassEvent
 
     class FuncParams(TypedDict):
         pass

@@ -60,7 +60,7 @@ class Notif:
             "message": message,
             "title": title,
             "data": {
-                "actions": actions if actions else None,
+                "actions": actions or None,
                 "action_data": action_data,
                 "group": group or str(uuid4()),
                 "tag": tag or str(uuid4()),
@@ -72,7 +72,7 @@ class Notif:
             },
         }
 
-    def send(self, *targets: "Person") -> None:
+    def send(self, *targets: Person) -> None:
         for target in targets:
             log.info(
                 "Sending notification",

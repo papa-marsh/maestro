@@ -1,6 +1,6 @@
 # Maestro
 
-Strongly-typed Python automation framework for Home Assistant. Flask + SQLAlchemy + Redis + APScheduler + structlog. Runs in Docker, connects to Home Assistant via WebSocket and REST API. Python 3.13+.
+Strongly-typed Python automation framework for Home Assistant. Flask + SQLAlchemy + Redis + APScheduler + structlog. Runs in Docker, connects to Home Assistant via WebSocket and REST API. Python 3.14+.
 
 ## Project Structure
 
