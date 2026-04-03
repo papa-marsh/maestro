@@ -26,28 +26,32 @@ Public-facing packages (`domains/`, `triggers/`, `integrations/`, `utils/`, `tes
 ## Build / Lint / Test Commands
 
 ```bash
-# Activate the local virtual environment first
-source .venv/bin/activate
+# Install dependencies (creates .venv automatically)
+uv sync
 
 # Lint (ruff)
-ruff check maestro                     # Lint the main package
-ruff check --fix maestro               # Lint and auto-fix
-ruff format maestro                    # Format code
+uv run ruff check maestro              # Lint the main package
+uv run ruff check --fix maestro        # Lint and auto-fix
+uv run ruff format maestro             # Format code
 
 # Type check (mypy) -- strict mode, all functions must be typed
-mypy maestro
+uv run mypy maestro
 
 # Run all tests
-pytest maestro
+uv run pytest maestro
 
 # Run a single test file
-pytest maestro/testing/tests/test_entity_state.py
+uv run pytest maestro/testing/tests/test_entity_state.py
 
 # Run a single test function
-pytest maestro/testing/tests/test_entity_state.py::test_set_and_get_state
+uv run pytest maestro/testing/tests/test_entity_state.py::test_set_and_get_state
 
 # Run tests with keyword match
-pytest maestro -k "test_action"
+uv run pytest maestro -k "test_action"
+
+# Add a dependency
+uv add <package>                       # Runtime dependency
+uv add --group dev <package>           # Dev-only dependency
 
 # Deploy (Docker)
 make deploy                            # Rebuild and restart all services
@@ -237,7 +241,7 @@ Tests execute synchronously because `invoke_funcs_threaded()` detects test mode 
 
 ### Formatting
 
-- **Line length**: 100 characters (configured in `ruff.toml`)
+- **Line length**: 100 characters (configured in `pyproject.toml`)
 - **Formatter**: Ruff (`ruff format`), applied on save
 - **Final newline**: Always required
 - **No print statements**: Enforced by ruff rule `T20` -- use `log` instead

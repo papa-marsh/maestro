@@ -1,13 +1,15 @@
 FROM python:3.13-slim
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /code
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
 
 COPY ./maestro/ ./maestro
 COPY ./scripts/ ./scripts
 
 EXPOSE 8000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "maestro.app:app"]
+CMD ["uv", "run", "--no-dev", "gunicorn", "--bind", "0.0.0.0:8000", "maestro.app:app"]

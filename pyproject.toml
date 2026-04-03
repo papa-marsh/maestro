@@ -1,8 +1,43 @@
+[project]
+name = "maestro"
+version = "0.1.0"
+description = "Strongly-typed Python automation framework for Home Assistant"
+requires-python = ">=3.13"
+dependencies = [
+    "apscheduler>=3.11,<4",
+    "aiohttp>=3.11,<4",
+    "flask>=3,<4",
+    "flask-sqlalchemy>=3.1,<4",
+    "gunicorn>=21,<23",
+    "psycopg[binary]>=3.2,<4",
+    "python-dateutil>=2.9,<3",
+    "redis>=6,<7",
+    "requests>=2.32,<3",
+    "sqlalchemy>=2,<3",
+    "structlog>=25,<26",
+    "tzlocal>=5,<6",
+]
+
+[dependency-groups]
+dev = [
+    "freezegun>=1.5,<2",
+    "mypy>=1.17,<2",
+    "pytest>=8,<9",
+    "ruff>=0.12,<1",
+    "types-cffi>=1.17",
+    "types-flask-sqlalchemy>=2.5",
+    "types-pyopenssl>=24",
+    "types-requests>=2.32",
+    "types-setuptools>=80",
+    "types-sqlalchemy>=1.4",
+]
+
+[tool.ruff]
 cache-dir = ".cache/ruff"
 target-version = "py313"
 line-length = 100
 
-[lint]
+[tool.ruff.lint]
 select = [
     "F",    # Pyflakes - basic Python errors
     "E",    # pycodestyle errors - PEP 8 violations
@@ -21,12 +56,11 @@ select = [
     "FURB", # refurb - modernization and performance improvements
     "RUF",  # Ruff-specific rules
 ]
-
 ignore = [
     "E741", # Ambiguous variable name
 ]
 
-[lint.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "maestro/app.py" = [
     "F401", # Allow unused imports for Flask shell context
 ]
@@ -44,3 +78,22 @@ ignore = [
     "F401",   # Unused imports
     "S101",   # Assert statements
 ]
+
+[tool.mypy]
+python_version = "3.13"
+cache_dir = ".cache/mypy"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unreachable = true
+warn_no_return = true
+allow_redefinition = true
+pretty = true
+show_error_codes = true
+
+[tool.pytest.ini_options]
+testpaths = ["maestro"]
