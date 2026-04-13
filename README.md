@@ -54,17 +54,17 @@ Maestro is a framework that lets you write Home Assistant automations in Python 
 4. **Start services or deploy new changes**
 
    ```bash
-   make deploy
+   just deploy
    ```
 
-   **Note:** Whenever you make changes to your automation scripts, run `make deploy` to rebuild and restart the services with your latest changes.
+   **Note:** Whenever you make changes to your automation scripts, run `just deploy` to rebuild and restart the services with your latest changes.
 
 5. **Verify WebSocket connection**
 
    Check the logs to confirm successful connection:
 
    ```bash
-   make logs
+   just logs
    ```
 
    You should see:
@@ -708,10 +708,10 @@ pytest scripts/tests/test_bedroom_lights.py::test_motion_turns_on_light
 
 ```bash
 # Flask shell with pre-loaded imports (StateManager, RedisClient, etc.)
-make shell
+just shell
 
 # Direct bash access to the container
-make bash
+just bash
 ```
 
 ### Working with the Database
@@ -738,7 +738,7 @@ class MyModel(db.Model):  # type:ignore[name-defined]
 **Create tables:**
 
 ```bash
-make shell
+just shell
 >>> from maestro.app import db
 >>> db.create_all()  # Creates all tables from imported models
 ```
@@ -852,7 +852,7 @@ def welcome_home(state_change: StateChangeEvent) -> None:
 1. Verify `HOME_ASSISTANT_URL` in `.env` is correct (e.g., `http://192.168.1.100:8123`)
 2. Verify `HOME_ASSISTANT_TOKEN` is a valid long-lived access token
 3. Check Home Assistant is accessible: `curl http://<your-ha-url>/api/`
-4. Review Maestro logs: `make logs`
+4. Review Maestro logs: `just logs`
 
 **Problem**: WebSocket keeps reconnecting
 

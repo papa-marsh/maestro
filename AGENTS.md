@@ -54,10 +54,10 @@ uv add <package>                       # Runtime dependency
 uv add --group dev <package>           # Dev-only dependency
 
 # Deploy (Docker)
-make deploy                            # Rebuild and restart all services
-make build                             # Build Docker image only
-make logs                              # View maestro container logs
-make shell                             # Flask shell with pre-loaded imports
+just deploy                            # Rebuild and restart all services
+just build                             # Build Docker image only
+just logs                              # View maestro container logs
+just shell                             # Flask shell with pre-loaded imports
 ```
 
 Tests use an in-memory SQLite database (overridden in `conftest.py`). No Redis or Home Assistant connection required.
