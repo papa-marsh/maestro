@@ -20,5 +20,6 @@ class Person(Entity):
     def is_home(self) -> bool:
         return self.state == HOME
 
-    def notify(self, notif: Notif) -> None:
+    def notify(self, message: str) -> None:
+        notif = Notif(message=message)
         notif.send(self)
