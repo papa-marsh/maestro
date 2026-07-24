@@ -26,7 +26,7 @@ upgrade-maestro:
 
 # Kill any dangling "flask shell" docker containers
 kill-shell:
-    docker ps --format '{{ "{{" }}.ID{{ "}}" }} {{ "{{" }}.Command{{ "}}" }}' | grep "flask shell" | awk '{print $1}' | xargs -r docker rm -f
+    docker ps --no-trunc --format '{{ "{{" }}.ID{{ "}}" }} {{ "{{" }}.Command{{ "}}" }}' | grep "flask shell" | awk '{print $1}' | xargs -r docker rm -f
 
 # Get logs from the maestro container
 logs:
