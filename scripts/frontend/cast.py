@@ -72,7 +72,7 @@ def execute_cast(ip_address: str) -> None:
         # If the session ever dies, the display falls back to idle and the next run
         # re-casts.
         if cast.app_id == APP_DASHCAST:
-            log.info("Display is already casting", ip_address=ip_address)
+            log.debug("Display is already casting", ip_address=ip_address)
             return
 
         dashcast = DashCastController()
