@@ -14,7 +14,7 @@ services:
       - ./registry:/code/registry
 
   redis:
-    container_name: redis
+    container_name: maestro-redis
     image: redis:7-alpine
     networks:
       - maestro-network
@@ -24,7 +24,7 @@ services:
     command: redis-server /usr/local/etc/redis/redis.conf
 
   postgres:
-    container_name: postgres
+    container_name: maestro-postgres
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: maestro
