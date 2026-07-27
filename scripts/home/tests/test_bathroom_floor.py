@@ -45,7 +45,7 @@ def test_check_floor_temp(mt: MaestroTest) -> None:
     mt.set_state(
         entity=climate.bathroom_floor_thermostat,
         state=BathroomFloor.PresetMode.PERMANENT_HOLD,
-        attributes={"current_temperature": bathroom_floor.HEAT_TEMPERATURE},
+        attributes={"current_temperature": float(bathroom_floor.HEAT_TEMPERATURE)},
     )
     bathroom_floor.check_floor_temp(caller=person.marshall)
     mt.assert_job_not_scheduled(bathroom_floor.TEMPERATURE_CHECK_JOB_ID)
@@ -56,7 +56,7 @@ def test_check_floor_temp(mt: MaestroTest) -> None:
     mt.set_state(
         entity=climate.bathroom_floor_thermostat,
         state=BathroomFloor.PresetMode.PERMANENT_HOLD,
-        attributes={"current_temperature": bathroom_floor.HEAT_TEMPERATURE - 10},
+        attributes={"current_temperature": float(bathroom_floor.HEAT_TEMPERATURE - 10)},
     )
     bathroom_floor.check_floor_temp(caller=person.marshall)
     mt.assert_job_scheduled(
