@@ -7,7 +7,7 @@ from maestro.utils import local_now
 
 from registry import binary_sensor, person
 from scripts.common.gates import Gate, GateManager
-from scripts.home.door_left_open import EXTERIOR_DOORS
+from scripts.home.doors import EXTERIOR_DOORS
 
 from .. import critical_door_notif
 

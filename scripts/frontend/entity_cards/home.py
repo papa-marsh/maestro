@@ -20,7 +20,7 @@ from registry import binary_sensor, climate, maestro
 from scripts.common.event_type import UIEvent, ui_event_trigger
 from scripts.frontend.common.entity_card import EntityCardAttributes, RowColor
 from scripts.frontend.common.icons import Icon
-from scripts.home.door_left_open import EXTERIOR_DOORS
+from scripts.home.doors import EXTERIOR_DOORS
 
 card = maestro.entity_card_3
 

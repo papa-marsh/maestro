@@ -7,8 +7,7 @@ from maestro.utils import Notif, local_now
 
 from registry import person
 from scripts.common.gates import Gate, GateManager, require_gate_check
-
-from .door_left_open import EXTERIOR_DOORS
+from scripts.home.doors import EXTERIOR_DOORS
 
 SILENCE_NOTIF_ACTION_ID = "silence_critical_door_notifs"
 SILENCE_DURATION = timedelta(hours=1)

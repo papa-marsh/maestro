@@ -1,11 +1,11 @@
 from datetime import timedelta
 
-from maestro.domains import OFF, ON, UNAVAILABLE, BinarySensor, Cover
+from maestro.domains import OFF, ON, UNAVAILABLE, BinarySensor
 from maestro.integrations import EntityId, NotifActionEvent, StateChangeEvent
 from maestro.triggers import notif_action_trigger, state_change_trigger
 from maestro.utils import JobScheduler, Notif, format_duration, local_now
 
-from registry import binary_sensor, cover, person
+from registry import binary_sensor, person
 
 PROCESS_ID_PREFIX = "door_left_open"
 SILENCE_NOTIF_ACTION_ID = "silence_door_notif"
@@ -16,7 +16,7 @@ EXTERIOR_DOORS: list[BinarySensor] = [
     binary_sensor.service_door,
     binary_sensor.slider_door,
 ]
-GARAGE_STALLS: list[Cover] = [cover.east_stall, cover.west_stall]
+GARAGE_STALLS: list[BinarySensor] = [binary_sensor.east_stall, binary_sensor.west_stall]
 
 NOTIFICATION_TIMES: list[timedelta] = [
     timedelta(minutes=10),
@@ -34,8 +34,7 @@ def get_job_id(entity_id: EntityId, time: timedelta) -> str:
     return f"{get_process_id(entity_id)}_{int(time.total_seconds())}"
 
 
-@state_change_trigger(*EXTERIOR_DOORS, to_state=ON)
-@state_change_trigger(*GARAGE_STALLS, to_state="open")
+@state_change_trigger(*EXTERIOR_DOORS, *GARAGE_STALLS, to_state=ON)
 def schedule_notifications(state_change: StateChangeEvent) -> None:
     if state_change.old.state == UNAVAILABLE:
         return
@@ -54,7 +53,7 @@ def schedule_notifications(state_change: StateChangeEvent) -> None:
         )
 
 
-def send_notifications(door: BinarySensor | Cover, duration: timedelta) -> None:
+def send_notifications(door: BinarySensor, duration: timedelta) -> None:
     duration_str = format_duration(duration, verbose=True).replace(" 0 minutes", "")
     silence_action = Notif.build_action(
         name=SILENCE_NOTIF_ACTION_ID,
@@ -71,8 +70,7 @@ def send_notifications(door: BinarySensor | Cover, duration: timedelta) -> None:
     ).send(person.marshall, person.emily)
 
 
-@state_change_trigger(*EXTERIOR_DOORS, to_state=OFF)
-@state_change_trigger(*GARAGE_STALLS, to_state="closed")
+@state_change_trigger(*EXTERIOR_DOORS, *GARAGE_STALLS, to_state=OFF)
 def door_closed_cancel_notifs(state_change: StateChangeEvent) -> None:
     cancel_notifications(state_change.entity_id)
 
