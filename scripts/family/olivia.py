@@ -10,7 +10,6 @@ def sound_machines_on() -> None:
         return
 
     switch.olivias_sound_machine.turn_on()
-    switch.master_sound_machine.turn_on()
 
 
 @event_fired_trigger(EventType.OLIVIA_AWAKE)
