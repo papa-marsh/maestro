@@ -25,13 +25,13 @@ def high_charge_limit(state_change: StateChangeEvent) -> None:
         ).send(person.marshall)
 
 
-@cron_trigger(hour=19)
+@cron_trigger(hour=20, minute=30)
 def charge_reminder() -> None:
     for vehicle in (Nyx, Tess):
         name = vehicle.__name__
 
         unplugged = not vehicle.charger.is_on
-        low_battery = float(vehicle.battery.state) < float(vehicle.charge_limit.state) - 20
+        low_battery = float(vehicle.battery.state) < float(vehicle.charge_limit.state) - 25
 
         if vehicle.location.is_home and unplugged and low_battery:
             Notif(
