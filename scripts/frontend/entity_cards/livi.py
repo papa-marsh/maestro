@@ -22,6 +22,12 @@ from scripts.sleep_tracking.queries import get_awake_time, get_last_events
 card = maestro.entity_card_5
 
 
+def _format_card_duration(duration: timedelta) -> str:
+    if duration < timedelta(minutes=1):
+        return "0m"
+    return format_duration(duration)
+
+
 @hass_trigger(HassEvent.STARTUP)
 @maestro_trigger(MaestroEvent.STARTUP)
 def initialize_card() -> None:
@@ -55,9 +61,9 @@ def update_card() -> None:
         state="Awake" if awake else "Asleep",
         icon=Icon.BABY_BUGGY if awake else Icon.SLEEP,
         active=not awake,
-        row_1_value=format_duration(duration),
-        row_2_value=format_duration(prev_duration),
-        row_3_value=format_duration(awake_time),
+        row_1_value=_format_card_duration(duration),
+        row_2_value=_format_card_duration(prev_duration),
+        row_3_value=_format_card_duration(awake_time),
     )
 
 
