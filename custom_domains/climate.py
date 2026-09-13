@@ -1,10 +1,12 @@
 from enum import StrEnum, auto
 from typing import override
 
-from maestro.domains import Climate
+from maestro.domains import Climate, EntityAttribute
 
 
 class Thermostat(Climate):
+    temperature = EntityAttribute(float)
+
     class HVACMode(StrEnum):
         OFF = auto()
         COOL = auto()
