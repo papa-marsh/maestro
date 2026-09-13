@@ -2,7 +2,6 @@ from maestro.domains import HOME
 from maestro.integrations import Domain
 from maestro.testing import MaestroTest
 
-from custom_domains.climate import Thermostat
 from registry import climate, person
 
 from .. import thermostat
@@ -16,8 +15,8 @@ def test_thermostat_hold_reminder(mt: MaestroTest) -> None:
     mt.set_state(person.emily, "Grand Haven")
     mt.set_state(
         entity=climate.thermostat,
-        state=Thermostat.HVACMode.HEAT,
-        attributes={"preset_mode": Thermostat.PresetMode.NONE},
+        state=climate.thermostat.HVACMode.HEAT,
+        attributes={"preset_mode": climate.thermostat.PresetMode.NONE},
     )
     thermostat.thermostat_hold_reminder()
     mt.assert_action_not_called(Domain.NOTIFY, person.marshall.notify_action_name)
@@ -33,8 +32,8 @@ def test_thermostat_hold_reminder(mt: MaestroTest) -> None:
     mt.set_state(person.emily, "Grand Haven")
     mt.set_state(
         entity=climate.thermostat,
-        state=Thermostat.HVACMode.HEAT,
-        attributes={"preset_mode": Thermostat.PresetMode.HOLD},
+        state=climate.thermostat.HVACMode.HEAT,
+        attributes={"preset_mode": climate.thermostat.PresetMode.HOLD},
     )
     thermostat.thermostat_hold_reminder()
     mt.assert_action_not_called(Domain.NOTIFY, person.marshall.notify_action_name)
@@ -44,8 +43,8 @@ def test_thermostat_hold_reminder(mt: MaestroTest) -> None:
     mt.set_state(person.emily, "Grand Haven")
     mt.set_state(
         entity=climate.thermostat,
-        state=Thermostat.HVACMode.HEAT,
-        attributes={"preset_mode": Thermostat.PresetMode.NONE, "temperature": 68},
+        state=climate.thermostat.HVACMode.HEAT,
+        attributes={"preset_mode": climate.thermostat.PresetMode.NONE, "temperature": 68},
     )
     thermostat.thermostat_hold_reminder()
     mt.assert_action_called(Domain.NOTIFY, person.marshall.notify_action_name)
@@ -55,8 +54,8 @@ def test_thermostat_hold_reminder(mt: MaestroTest) -> None:
 def test_check_thermostat_hold(mt: MaestroTest) -> None:
     mt.set_state(
         entity=climate.thermostat,
-        state=Thermostat.HVACMode.HEAT,
-        attributes={"preset_mode": Thermostat.PresetMode.NONE},
+        state=climate.thermostat.HVACMode.HEAT,
+        attributes={"preset_mode": climate.thermostat.PresetMode.NONE},
     )
     # Notif not sent when thermostat is not on hold
     thermostat.check_thermostat_hold()
@@ -66,8 +65,8 @@ def test_check_thermostat_hold(mt: MaestroTest) -> None:
     # Notif sent when thermostat is on hold
     mt.set_state(
         entity=climate.thermostat,
-        state=Thermostat.HVACMode.HEAT,
-        attributes={"preset_mode": Thermostat.PresetMode.HOLD, "temperature": 70},
+        state=climate.thermostat.HVACMode.HEAT,
+        attributes={"preset_mode": climate.thermostat.PresetMode.HOLD, "temperature": 70},
     )
     thermostat.check_thermostat_hold()
     mt.assert_action_called(Domain.NOTIFY, person.marshall.notify_action_name)
