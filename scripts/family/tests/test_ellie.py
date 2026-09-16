@@ -22,7 +22,7 @@ def test_notify_ellie_wakeup(mt: MaestroTest) -> None:
         time_fired=opened_at,
     )
 
-    message = "Ellie woke up after 7h42m"
+    message = "Ellie woke up at 4:00 after 7h 42m"
     mt.assert_action_called(
         Domain.NOTIFY,
         person.marshall.notify_action_name,

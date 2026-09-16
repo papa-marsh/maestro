@@ -28,7 +28,10 @@ def notify_ellie_wakeup(state_change: StateChangeEvent) -> None:
         raise TypeError
 
     duration = format_duration(state_change.time_fired - last_closed)
-    Notif(message=f"Ellie woke up after {duration}").send(person.marshall, person.emily)
+    wake_time = state_change.time_fired.strftime("%-I:%M")
+    Notif(message=f"Ellie woke up at {wake_time} after {duration}").send(
+        person.marshall, person.emily
+    )
 
 
 @state_change_trigger(switch.ellies_sound_machine)
