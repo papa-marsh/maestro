@@ -37,6 +37,7 @@ def initialize_card() -> None:
     )
     card.update(
         title=attributes.title,
+        row_1_value=" - ",
         row_1_icon=Icon.HOME_ASSISTANT,
         row_2_icon=Icon.THERMOMETER,
         row_3_icon=Icon.MEMORY,
