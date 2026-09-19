@@ -1,7 +1,6 @@
 import socket
 from contextlib import suppress
 from dataclasses import asdict
-from datetime import timedelta
 
 from maestro.domains import ON
 from maestro.integrations import StateManager
@@ -13,9 +12,8 @@ from maestro.triggers import (
     maestro_trigger,
     state_change_trigger,
 )
-from maestro.utils import JobScheduler, local_now
 
-from registry import binary_sensor, maestro, sensor, update
+from registry import maestro, sensor, update
 from scripts.frontend.common.entity_card import EntityCardAttributes, RowColor
 from scripts.frontend.common.icons import Icon
 
@@ -39,7 +37,7 @@ def initialize_card() -> None:
     )
     card.update(
         title=attributes.title,
-        row_1_icon=Icon.Z_WAVE,
+        row_1_icon=Icon.HOME_ASSISTANT,
         row_2_icon=Icon.THERMOMETER,
         row_3_icon=Icon.MEMORY,
     )
@@ -61,19 +59,6 @@ def set_state() -> None:
         blink = False
 
     card.update(state=state, icon=icon, active=update_available, blink=blink)
-
-
-@hass_trigger(HassEvent.STARTUP)
-def post_startup_zwave_check() -> None:
-    in_five_minutes = local_now() + timedelta(minutes=5)
-    JobScheduler().schedule_job(run_time=in_five_minutes, func=set_row_1, job_id=ZWAVE_CHECK_JOB_ID)
-
-
-@state_change_trigger(binary_sensor.z_wave_js_running)
-def set_row_1() -> None:
-    value = "Running" if binary_sensor.z_wave_js_running.is_on else "Not Running"
-    color = RowColor.DEFAULT if binary_sensor.z_wave_js_running.is_on else RowColor.RED
-    card.update(row_1_value=value, row_1_color=color)
 
 
 @state_change_trigger(sensor.cpu_temperature)
