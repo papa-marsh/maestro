@@ -12,6 +12,7 @@ from maestro.triggers import (
     maestro_trigger,
     state_change_trigger,
 )
+from maestro.utils import IntervalSeconds, local_now, resolve_timestamp
 
 from registry import maestro, sensor, update
 from scripts.frontend.common.entity_card import EntityCardAttributes, RowColor
@@ -38,7 +39,7 @@ def initialize_card() -> None:
     card.update(
         title=attributes.title,
         row_1_value=" - ",
-        row_1_icon=Icon.HOME_ASSISTANT,
+        row_1_icon=Icon.TIMELAPSE,
         row_2_icon=Icon.THERMOMETER,
         row_3_icon=Icon.MEMORY,
     )
@@ -60,6 +61,21 @@ def set_state() -> None:
         blink = False
 
     card.update(state=state, icon=icon, active=update_available, blink=blink)
+
+
+@cron_trigger(minute=0)
+def set_row_1() -> None:
+    last_boot = resolve_timestamp(sensor.home_assistant_uptime.state)
+    elapsed_seconds = (local_now() - last_boot).total_seconds()
+    elapsed_hours = int(elapsed_seconds // IntervalSeconds.ONE_HOUR)
+
+    if elapsed_hours < 25:
+        value = f"{elapsed_hours} Hours"
+    else:
+        elapsed_days = int(elapsed_seconds // IntervalSeconds.ONE_DAY)
+        value = f"{elapsed_days} Days"
+
+    card.update(row_1_value=value)
 
 
 @state_change_trigger(sensor.cpu_temperature)

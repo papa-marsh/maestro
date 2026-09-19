@@ -36,6 +36,7 @@ class Icon(StrEnum):
     SLEEP = "mdi:sleep"
     SNOWFLAKE = "mdi:snowflake"
     STORE = "mdi:store"
+    TIMELAPSE = "mdi:timelapse"
     TIMER_OUTLINE = "mdi:timer-outline"
     THERMOMETER = "mdi:thermometer"
     THERMOMETER_OFF = "mdi:thermometer-off"
