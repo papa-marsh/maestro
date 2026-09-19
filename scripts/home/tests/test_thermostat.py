@@ -44,7 +44,7 @@ def test_thermostat_hold_reminder(mt: MaestroTest) -> None:
     mt.set_state(
         entity=climate.thermostat,
         state=climate.thermostat.HVACMode.HEAT,
-        attributes={"preset_mode": climate.thermostat.PresetMode.NONE, "temperature": 68},
+        attributes={"preset_mode": climate.thermostat.PresetMode.NONE, "temperature": 68.0},
     )
     thermostat.thermostat_hold_reminder()
     mt.assert_action_called(Domain.NOTIFY, person.marshall.notify_action_name)
@@ -66,7 +66,7 @@ def test_check_thermostat_hold(mt: MaestroTest) -> None:
     mt.set_state(
         entity=climate.thermostat,
         state=climate.thermostat.HVACMode.HEAT,
-        attributes={"preset_mode": climate.thermostat.PresetMode.HOLD, "temperature": 70},
+        attributes={"preset_mode": climate.thermostat.PresetMode.HOLD, "temperature": 70.0},
     )
     thermostat.check_thermostat_hold()
     mt.assert_action_called(Domain.NOTIFY, person.marshall.notify_action_name)

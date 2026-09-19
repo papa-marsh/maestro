@@ -36,7 +36,7 @@ def test_notify_ellie_wakeup(mt: MaestroTest) -> None:
 
 
 def test_notify_ellie_wakeup_ignores_door_after_window(mt: MaestroTest) -> None:
-    opened_at = local_now().replace(hour=8, minute=0, second=0, microsecond=0)
+    opened_at = local_now().replace(hour=9, minute=0, second=0, microsecond=0)
 
     mt.trigger_state_change(
         binary_sensor.ellie_bedroom_door,

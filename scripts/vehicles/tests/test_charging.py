@@ -9,7 +9,7 @@ from ..common import Nyx, Tess
 
 default_limit = str(charging.DEFAULT_CHARGE_LIMIT)
 high_limit = str(charging.DEFAULT_CHARGE_LIMIT + 5)
-low_battery = str(charging.DEFAULT_CHARGE_LIMIT - 25)
+low_battery = str(charging.DEFAULT_CHARGE_LIMIT - 26)
 ok_battery = str(charging.DEFAULT_CHARGE_LIMIT - 5)
 
 
