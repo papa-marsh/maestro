@@ -38,11 +38,11 @@ def initialize_card() -> None:
     )
     card.update(
         title=attributes.title,
-        row_1_value=" - ",
         row_1_icon=Icon.TIMELAPSE,
         row_2_icon=Icon.THERMOMETER,
         row_3_icon=Icon.MEMORY,
     )
+    set_row_1()
 
 
 @cron_trigger("* * * * *")
@@ -75,7 +75,7 @@ def set_row_1() -> None:
         elapsed_days = int(elapsed_seconds // IntervalSeconds.ONE_DAY)
         value = f"{elapsed_days} Days"
 
-    card.update(row_1_value=value)
+    card.row_1_value = value
 
 
 @state_change_trigger(sensor.cpu_temperature)
