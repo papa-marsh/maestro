@@ -16,6 +16,7 @@ class Icon(StrEnum):
     FAN = "mdi:fan"
     FINANCE = "mdi:finance"
     FIRE = "mdi:fire"
+    FOOTBALL = "mdi:football"
     HEADSET = "mdi:headset"
     HELP = "mdi:help"
     HISTORY = "mdi:history"
