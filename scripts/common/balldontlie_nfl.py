@@ -12,6 +12,7 @@ DETROIT_LIONS_TEAM_ID = 25
 
 class NFLTeamResponse(TypedDict):
     full_name: str
+    location: str
 
 
 class NFLGameResponse(TypedDict):
@@ -38,6 +39,8 @@ class NFLGameData:
     status_state: str
     away_score: int | None
     home_score: int | None
+    away_location: str
+    home_location: str
 
 
 def get_next_nfl_game(team_id: int) -> NFLGameData | None:
@@ -81,6 +84,8 @@ def get_next_nfl_game(team_id: int) -> NFLGameData | None:
                         status_state=status_state,
                         away_score=game["visitor_team_score"],
                         home_score=game["home_team_score"],
+                        away_location=game["visitor_team"]["location"],
+                        home_location=game["home_team"]["location"],
                     )
                 )
             cursor = data.get("meta", {}).get("next_cursor")

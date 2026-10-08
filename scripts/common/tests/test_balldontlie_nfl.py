@@ -16,8 +16,8 @@ NOW = datetime(2026, 10, 11, 12, tzinfo=ZoneInfo("America/New_York"))
 def game_response(date: str, status_state: str = "scheduled") -> balldontlie_nfl.NFLGameResponse:
     return {
         "date": date,
-        "visitor_team": {"full_name": "Detroit Lions"},
-        "home_team": {"full_name": "Green Bay Packers"},
+        "visitor_team": {"full_name": "Detroit Lions", "location": "Detroit"},
+        "home_team": {"full_name": "Green Bay Packers", "location": "Green Bay"},
         "status": "Final" if status_state == "final" else "10/11 - 4:25 PM EDT",
         "status_state": status_state,
         "visitor_team_score": 0 if status_state == "final" else None,
@@ -49,6 +49,8 @@ def test_today_final_selected_in_local_timezone(
     assert game.away_score == 0
     assert game.home_score == 7
     assert game.away_team == "Detroit Lions"
+    assert game.away_location == "Detroit"
+    assert game.home_location == "Green Bay"
     assert game.status_state == "final"
     assert get.call_args.kwargs["headers"] == {"Authorization": "test-key"}
     assert get.call_args.kwargs["params"]["seasons[]"] == [2025, 2026, 2027]

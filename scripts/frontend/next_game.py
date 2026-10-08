@@ -95,7 +95,7 @@ def update_card_lions(game: NFLGameData) -> None:
 
     card.update(
         icon=Icon.FOOTBALL,
-        top_row=f"{game.away_team} @ {game.home_team}",
+        top_row=f"{game.away_location} @ {game.home_location}",
         middle_row=middle_row,
         bottom_row=bottom_row,
         left_icon_path=f"/local/nfl_logos/{game.away_team}.png",

@@ -28,6 +28,8 @@ def lions_game(
         status_state=status_state,
         away_score=0,
         home_score=7,
+        away_location="Detroit",
+        home_location="Green Bay",
     )
 
 
@@ -71,7 +73,7 @@ def test_lions_display(
         next_game.initialize_card()
         next_game.update_card_lions(game)
 
-    assert mt.get_attribute(next_game.card, "top_row", str) == "Detroit Lions @ Green Bay Packers"
+    assert mt.get_attribute(next_game.card, "top_row", str) == "Detroit @ Green Bay"
     assert mt.get_attribute(next_game.card, "bottom_row", str) == bottom_row
     assert mt.get_attribute(next_game.card, "active", bool) is active
     assert mt.get_attribute(next_game.card, "blink", bool) is blink
