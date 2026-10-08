@@ -28,8 +28,8 @@ class Marshall(Person):
 
     app_version = sensor.marshalls_iphone_app_version
 
-    watch_battery_level = sensor.marshalls_iphone_watch_battery
-    watch_battery_state = sensor.marshalls_iphone_watch_battery_state
+    # watch_battery_level = sensor.marshalls_iphone_watch_battery
+    # watch_battery_state = sensor.marshalls_iphone_watch_battery_state
 
 
 class Emily(Person):
@@ -48,8 +48,8 @@ class Emily(Person):
 
     app_version = sensor.emily_s_iphone_app_version
 
-    watch_battery_level = sensor.emily_s_iphone_watch_battery
-    watch_battery_state = sensor.emily_s_iphone_watch_battery_state
+    # watch_battery_level = sensor.emily_s_iphone_watch_battery
+    # watch_battery_state = sensor.emily_s_iphone_watch_battery_state
 
 
 def get_person_config(entity_id: EntityId) -> type[Marshall] | type[Emily]:
