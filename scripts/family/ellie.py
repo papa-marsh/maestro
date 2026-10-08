@@ -1,26 +1,36 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from maestro.domains import OFF, ON
 from maestro.integrations import StateChangeEvent
 from maestro.triggers import cron_trigger, state_change_trigger
-from maestro.utils import Notif, format_duration
+from maestro.utils import JobScheduler, Notif, format_duration, local_now
 
 from registry import binary_sensor, person, switch
 
+ELLIE_SOUND_MACHINE_JOB_ID = "ellie_sound_machine_off_after_wakeup"
+
 
 @cron_trigger(hour=19)
-def ellie_bedtime_prep() -> None:
+def ellie_sound_machine_on() -> None:
     switch.ellies_sound_machine.turn_on()
 
 
-@cron_trigger(hour=7, minute=30)
-def ellie_wakeup() -> None:
+@cron_trigger(hour=8)
+def ellie_sound_machine_off() -> None:
     switch.ellies_sound_machine.turn_off()
+
+
+@state_change_trigger(switch.ellies_sound_machine)
+def toggle_butterfly_light(state_change: StateChangeEvent) -> None:
+    if state_change.new.state == "off":
+        switch.butterfly_night_light.turn_on()
+    else:
+        switch.butterfly_night_light.turn_off()
 
 
 @state_change_trigger(binary_sensor.ellie_bedroom_door, from_state=OFF, to_state=ON)
 def notify_ellie_wakeup(state_change: StateChangeEvent) -> None:
-    if not 4 <= state_change.time_fired.hour <= 8:
+    if not 4 <= state_change.time_fired.hour < 8:
         return
 
     last_closed = state_change.old.attributes.get("last_changed")
@@ -34,9 +44,20 @@ def notify_ellie_wakeup(state_change: StateChangeEvent) -> None:
     )
 
 
-@state_change_trigger(switch.ellies_sound_machine)
-def toggle_butterfly_light(state_change: StateChangeEvent) -> None:
-    if state_change.new.state == "off":
-        switch.butterfly_night_light.turn_on()
-    else:
-        switch.butterfly_night_light.turn_off()
+@state_change_trigger(binary_sensor.ellie_bedroom_door, from_state=OFF, to_state=ON)
+def ellie_door_opened_at_wakeup(state_change: StateChangeEvent) -> None:
+    if not 6 <= state_change.time_fired.hour < 8:
+        return
+
+    switch.master_sound_machine.turn_off()
+
+    JobScheduler().schedule_job(
+        run_time=local_now() + timedelta(minutes=2),
+        func=ellie_sound_machine_off,
+        job_id=ELLIE_SOUND_MACHINE_JOB_ID,
+    )
+
+
+@state_change_trigger(binary_sensor.ellie_bedroom_door, from_state=ON, to_state=OFF)
+def cancel_ellie_sound_machine_job() -> None:
+    JobScheduler().cancel_job(ELLIE_SOUND_MACHINE_JOB_ID)
