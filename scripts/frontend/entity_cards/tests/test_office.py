@@ -31,11 +31,11 @@ def test_double_tap_shows_annual_total_comp_then_restores_stocks(mt: MaestroTest
         )
 
     with (
-        patch.object(office, "CURRENT_SALARY", 180_123),
-        patch.object(office, "CURRENT_SHARES_PER_YEAR", 1000),
-        patch.object(office, "SHARE_PRICE", 35),
-        patch.object(office, "NET_SALARY", 150_055),
-        patch.object(office, "NET_SHARES_PER_YEAR", 749.5),
+        patch.object(office, "CURRENT_SALARY", 9_000_000_001),
+        patch.object(office, "CURRENT_SHARES_PER_YEAR", 4_000_000),
+        patch.object(office, "SHARE_PRICE", 0.125),
+        patch.object(office, "NET_SALARY", 7_000_000_003),
+        patch.object(office, "NET_SHARES_PER_YEAR", 0.5),
         patch.object(
             office, "get_stock_quote", side_effect=[net_quote, spy_quote, net_quote]
         ) as get_quote,
@@ -46,7 +46,7 @@ def test_double_tap_shows_annual_total_comp_then_restores_stocks(mt: MaestroTest
         )
 
     assert compensation_displays == [
-        (5, "$215,123", "$244,117", RowColor.DEFAULT, RowColor.DEFAULT)
+        (5, "$9,000,500,001", "$7,000,000,066", RowColor.DEFAULT, RowColor.DEFAULT)
     ]
     assert office.card.row_2_value == "$600"
     assert office.card.row_3_value == "$126"
