@@ -17,7 +17,13 @@ from maestro.utils import local_now, log
 from registry import maestro, sensor, switch
 from scripts.common.event_type import UIEvent, ui_event_trigger
 from scripts.common.finance import NET_SYMBOL, SPY_SYMBOL, get_stock_quote
-from scripts.config.secrets import ANNUAL_NET_SHARES
+from scripts.config.secrets import (
+    CURRENT_SALARY,
+    CURRENT_SHARES_PER_YEAR,
+    NET_SALARY,
+    NET_SHARES_PER_YEAR,
+    SHARE_PRICE,
+)
 from scripts.frontend.common.entity_card import EntityCardAttributes, RowColor
 from scripts.frontend.common.icons import Icon
 from scripts.home.office.meetings import toggle_meeting_active
@@ -134,13 +140,13 @@ def handle_double_tap() -> None:
         card.update(row_2_value="Failed :(", row_3_value="Failed :(")
         return
 
-    annual_vest = quote.c * ANNUAL_NET_SHARES
-    quarterly_vest = annual_vest / 4
+    current_total_comp = CURRENT_SALARY + CURRENT_SHARES_PER_YEAR * SHARE_PRICE
+    net_total_comp = NET_SALARY + NET_SHARES_PER_YEAR * quote.c
 
     card.update(
-        row_2_value=f"${quarterly_vest:,.0f}",
+        row_2_value=f"${current_total_comp:,.0f}",
         row_2_color=RowColor.DEFAULT,
-        row_3_value=f"${annual_vest:,.0f}",
+        row_3_value=f"${net_total_comp:,.0f}",
         row_3_color=RowColor.DEFAULT,
     )
     sleep(5)
