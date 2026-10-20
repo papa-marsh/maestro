@@ -34,6 +34,8 @@ class Icon(StrEnum):
     RADIATOR = "mdi:radiator"
     RASPBERRY_PI = "mdi:raspberry-pi"
     ROAD_VARIANT = "mdi:road-variant"
+    SHIELD_AIRPLANE = "mdi:shield-airplane"
+    SHIELD_MOON = "mdi:shield-moon"
     SLEEP = "mdi:sleep"
     SNOWFLAKE = "mdi:snowflake"
     STORE = "mdi:store"

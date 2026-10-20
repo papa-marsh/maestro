@@ -1,74 +1,137 @@
-"""Office card compensation comparison and stock display restoration."""
+"""Office card pricing, compensation comparison, and normal-row restoration."""
 
 from unittest.mock import patch
 
+import pytest
+from maestro.domains import OFF, UNAVAILABLE
 from maestro.testing import MaestroTest
 
+from registry import sensor, switch
 from scripts.common.event_type import EventType, UIEvent
-from scripts.common.finance import NET_SYMBOL, SPY_SYMBOL, FinnhubResponse
+from scripts.common.finance import FinnhubResponse
 from scripts.frontend.common.entity_card import RowColor
+from scripts.frontend.common.icons import Icon
 
 from .. import office
 
 
-def test_double_tap_shows_annual_total_comp_then_restores_stocks(mt: MaestroTest) -> None:
-    """Show salary plus annual equity for each employer before restoring stock rows."""
+def test_normal_rows_show_environment_and_share_prices(mt: MaestroTest) -> None:
     office.initialize_card()
-    office.card.update(row_2_color=RowColor.GREEN, row_3_color=RowColor.RED)
-    net_quote = FinnhubResponse(c=125.5, d=0, dp=0, h=0, l=0, o=0, pc=0, t=0)
-    spy_quote = FinnhubResponse(c=600, d=0, dp=0, h=0, l=0, o=0, pc=0, t=0)
-    compensation_displays: list[tuple[float, str, str, str, str]] = []
-
-    def capture_compensation_display(seconds: float) -> None:
-        compensation_displays.append(
-            (
-                seconds,
-                office.card.row_2_value,
-                office.card.row_3_value,
-                office.card.row_2_color,
-                office.card.row_3_color,
-            )
-        )
-
+    mt.set_state(sensor.office_ambient_sensor_temperature, "72")
+    mt.set_state(sensor.office_ambient_sensor_humidity, "45")
+    mt.set_state(switch.space_heater, OFF)
     with (
-        patch.object(office, "CURRENT_SALARY", 9_000_000_001),
-        patch.object(office, "CURRENT_SHARES_PER_YEAR", 4_000_000),
-        patch.object(office, "SHARE_PRICE", 0.125),
-        patch.object(office, "NET_SALARY", 7_000_000_003),
-        patch.object(office, "NET_SHARES_PER_YEAR", 0.5),
+        patch.object(office, "get_private_share_price", return_value=123.45),
         patch.object(
-            office, "get_stock_quote", side_effect=[net_quote, spy_quote, net_quote]
-        ) as get_quote,
-        patch.object(office, "sleep", side_effect=capture_compensation_display),
+            office, "get_stock_quote", return_value=FinnhubResponse(125.5, 0, 0, 0, 0, 0, 0, 0)
+        ),
     ):
-        mt.trigger_event(
-            EventType.MAESTRO_UI_EVENT, data={"trigger": UIEvent.ENTITY_CARD_4_DOUBLE_TAP}
-        )
+        office.set_row_1()
+        office.set_employer_stock_row()
+        office.set_stock_rows()
 
-    assert compensation_displays == [
-        (5, "$9,000,500,001", "$7,000,000,066", RowColor.DEFAULT, RowColor.DEFAULT)
-    ]
-    assert office.card.row_2_value == "$600"
+    assert office.card.row_1_value == "72° · 45%"
+    assert office.card.row_1_icon == Icon.THERMOMETER_WATER
+    assert office.card.row_2_value == "$123.45"
+    assert office.card.row_2_icon == Icon.SHIELD_AIRPLANE
     assert office.card.row_3_value == "$126"
-    assert [call.args[0] for call in get_quote.call_args_list] == [
-        NET_SYMBOL,
-        SPY_SYMBOL,
-        NET_SYMBOL,
-    ]
+    assert office.card.row_3_icon == Icon.CLOUD
 
 
-def test_double_tap_handles_cloudflare_quote_failure(mt: MaestroTest) -> None:
-    """Keep the existing failure display when the Cloudflare quote cannot be fetched."""
+@pytest.mark.parametrize(
+    "private_failure,net_failure", [(False, False), (True, False), (False, True)]
+)
+def test_double_tap_shows_compensation_then_restores_rows(
+    mt: MaestroTest, private_failure: bool, net_failure: bool
+) -> None:
     office.initialize_card()
+    mt.set_state(sensor.office_ambient_sensor_temperature, "72")
+    mt.set_state(sensor.office_ambient_sensor_humidity, "45")
+    mt.set_state(switch.space_heater, OFF)
+    quote = FinnhubResponse(125.5, 0, 0, 0, 0, 0, 0, 0)
+    displays: list[tuple[str, str, str]] = []
+
+    def capture_display(seconds: float) -> None:
+        assert seconds == 5
+        displays.append((office.card.row_1_value, office.card.row_2_value, office.card.row_3_value))
+        assert office.card.row_1_icon == Icon.SHIELD_AIRPLANE
+        assert office.card.row_2_icon == Icon.SHIELD_MOON
+        assert office.card.row_3_icon == Icon.CLOUD
+        assert office.card.row_1_color == RowColor.DEFAULT
+        assert office.card.row_2_color == RowColor.DEFAULT
+        assert office.card.row_3_color == RowColor.DEFAULT
 
     with (
-        patch.object(office, "get_stock_quote", side_effect=RuntimeError("Quote unavailable")),
-        patch.object(office, "sleep") as sleep,
+        patch.object(office, "CURRENT_SALARY", 100_000),
+        patch.object(office, "CURRENT_SHARES_PER_YEAR", 1_000),
+        patch.object(office, "SHARE_PRICE", 20),
+        patch.object(office, "NET_SALARY", 90_000),
+        patch.object(office, "NET_SHARES_PER_YEAR", 500),
+        patch.object(
+            office,
+            "get_private_share_price",
+            return_value=123.45,
+            side_effect=RuntimeError() if private_failure else None,
+        ),
+        patch.object(
+            office,
+            "get_stock_quote",
+            return_value=quote,
+            side_effect=RuntimeError() if net_failure else None,
+        ),
+        patch.object(office, "sleep", side_effect=capture_display),
     ):
         mt.trigger_event(
             EventType.MAESTRO_UI_EVENT, data={"trigger": UIEvent.ENTITY_CARD_4_DOUBLE_TAP}
         )
 
-    assert office.card.row_2_value == "Failed :("
-    assert office.card.row_3_value == "Failed :("
-    sleep.assert_not_called()
+    assert displays == [
+        (
+            "$120,000",
+            "API Error" if private_failure else "$223,450",
+            "Failed :(" if net_failure else "$152,750",
+        )
+    ]
+    assert office.card.row_1_value == "72° · 45%"
+    assert office.card.row_1_icon == Icon.THERMOMETER_WATER
+    assert office.card.row_2_value == ("API Error" if private_failure else "$123.45")
+    assert office.card.row_2_icon == Icon.SHIELD_AIRPLANE
+    assert office.card.row_3_value == ("API Error" if net_failure else "$126")
+    assert office.card.row_3_icon == Icon.CLOUD
+
+
+def test_private_price_failure_replaces_previous_value(mt: MaestroTest) -> None:
+    office.initialize_card()
+    office.card.update(row_2_value="$100.00")
+    with patch.object(office, "get_private_share_price", side_effect=RuntimeError()):
+        office.set_employer_stock_row()
+    assert office.card.row_2_value == "API Error"
+    assert office.card.row_2_icon == Icon.SHIELD_AIRPLANE
+
+
+def test_financial_rows_restore_even_if_environment_refresh_fails(mt: MaestroTest) -> None:
+    office.initialize_card()
+    with (
+        patch.object(office, "get_private_share_price", return_value=123.45),
+        patch.object(
+            office, "get_stock_quote", return_value=FinnhubResponse(125.5, 0, 0, 0, 0, 0, 0, 0)
+        ),
+        patch.object(office, "sleep"),
+        patch.object(office, "set_row_1", side_effect=ValueError()),
+        pytest.raises(ValueError),
+    ):
+        office.handle_double_tap()
+
+    assert office.card.row_2_value == "$123.45"
+    assert office.card.row_2_icon == Icon.SHIELD_AIRPLANE
+    assert office.card.row_3_value == "$126"
+
+
+def test_unavailable_humidity_restores_offline_environment_row(mt: MaestroTest) -> None:
+    office.initialize_card()
+    office.card.update(row_1_value="$120,000", row_1_icon=Icon.SHIELD_AIRPLANE)
+    mt.set_state(sensor.office_ambient_sensor_temperature, "72")
+    mt.set_state(sensor.office_ambient_sensor_humidity, UNAVAILABLE)
+    office.set_row_1()
+    assert office.card.row_1_value == "Offline"
+    assert office.card.row_1_icon == Icon.THERMOMETER_OFF

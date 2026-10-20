@@ -16,10 +16,11 @@ from maestro.utils import local_now, log
 
 from registry import maestro, sensor, switch
 from scripts.common.event_type import UIEvent, ui_event_trigger
-from scripts.common.finance import NET_SYMBOL, SPY_SYMBOL, get_stock_quote
+from scripts.common.finance import NET_SYMBOL, get_private_share_price, get_stock_quote
 from scripts.config.secrets import (
     CURRENT_SALARY,
     CURRENT_SHARES_PER_YEAR,
+    EMPLOYER_SYMBOL,
     NET_SALARY,
     NET_SHARES_PER_YEAR,
     SHARE_PRICE,
@@ -44,7 +45,7 @@ def initialize_card() -> None:
         attributes=asdict(attributes),
         restore_cached=True,
     )
-    card.update(title=attributes.title, row_2_icon=Icon.FINANCE, row_3_icon=Icon.CLOUD_OUTLINE)
+    card.update(title=attributes.title, row_2_icon=Icon.SHIELD_AIRPLANE, row_3_icon=Icon.CLOUD)
 
 
 @state_change_trigger(maestro.meeting_active)
@@ -67,7 +68,9 @@ def set_state(state_change: StateChangeEvent) -> None:
     switch.space_heater,
 )
 def set_row_1() -> None:
-    if sensor.office_ambient_sensor_temperature.state in [UNKNOWN, UNAVAILABLE]:
+    if sensor.office_ambient_sensor_temperature.state in [UNKNOWN, UNAVAILABLE] or (
+        sensor.office_ambient_sensor_humidity.state in [UNKNOWN, UNAVAILABLE]
+    ):
         card.update(row_1_value="Offline", row_1_icon=Icon.THERMOMETER_OFF)
         return
 
@@ -104,17 +107,35 @@ def build_stock_row(symbol: str) -> tuple[str, RowColor] | None:
 def set_stock_rows() -> None:
     attr_updates = {}
 
-    if spy_result := build_stock_row(SPY_SYMBOL):
-        value, color = spy_result
-        attr_updates["row_2_value"] = value
-        attr_updates["row_2_color"] = color
-
     if spy_result := build_stock_row(NET_SYMBOL):
         value, color = spy_result
         attr_updates["row_3_value"] = value
         attr_updates["row_3_color"] = color
 
     card.update(**attr_updates)
+
+
+def fetch_employer_price() -> float | None:
+    try:
+        return get_private_share_price(EMPLOYER_SYMBOL)
+    except Exception as e:
+        log.error("Private-market price request failed", exception_type=type(e).__name__)
+        return None
+
+
+def show_employer_price(price: float | None) -> None:
+    card.update(
+        row_2_value=f"${price:,.2f}" if price is not None else "API Error",
+        row_2_icon=Icon.SHIELD_AIRPLANE,
+        row_2_color=RowColor.DEFAULT,
+    )
+
+
+@hass_trigger(HassEvent.STARTUP)
+@maestro_trigger(MaestroEvent.STARTUP)
+@cron_trigger(hour=1)
+def set_employer_stock_row() -> None:
+    show_employer_price(fetch_employer_price())
 
 
 @cron_trigger(hour=8, minute=20, day_of_week=[0, 1, 2, 3, 4])
@@ -133,24 +154,41 @@ def handle_tap() -> None:
 
 @ui_event_trigger(UIEvent.ENTITY_CARD_4_DOUBLE_TAP)
 def handle_double_tap() -> None:
+    price = fetch_employer_price()
+    net_value = "Failed :("
     try:
         quote = get_stock_quote(NET_SYMBOL)
-    except Exception:
-        log.exception("Finnhub API request failed")
-        card.update(row_2_value="Failed :(", row_3_value="Failed :(")
-        return
+        net_total_comp = NET_SALARY + NET_SHARES_PER_YEAR * quote.c
+        net_value = f"${net_total_comp:,.0f}"
+    except Exception as e:
+        log.error("Finnhub API request failed", exception_type=type(e).__name__)
 
     current_total_comp = CURRENT_SALARY + CURRENT_SHARES_PER_YEAR * SHARE_PRICE
-    net_total_comp = NET_SALARY + NET_SHARES_PER_YEAR * quote.c
+    market_value = (
+        f"${CURRENT_SALARY + CURRENT_SHARES_PER_YEAR * price:,.0f}"
+        if price is not None
+        else "API Error"
+    )
 
     card.update(
-        row_2_value=f"${current_total_comp:,.0f}",
+        row_1_value=f"${current_total_comp:,.0f}",
+        row_1_icon=Icon.SHIELD_AIRPLANE,
+        row_1_color=RowColor.DEFAULT,
+        row_2_value=market_value,
+        row_2_icon=Icon.SHIELD_MOON,
         row_2_color=RowColor.DEFAULT,
-        row_3_value=f"${net_total_comp:,.0f}",
+        row_3_value=net_value,
+        row_3_icon=Icon.CLOUD,
         row_3_color=RowColor.DEFAULT,
     )
-    sleep(5)
-    set_stock_rows()
+    try:
+        sleep(5)
+    finally:
+        try:
+            set_row_1()
+        finally:
+            show_employer_price(price)
+            set_stock_rows()
 
 
 @ui_event_trigger(UIEvent.ENTITY_CARD_4_HOLD)
