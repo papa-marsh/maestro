@@ -1,12 +1,12 @@
-from datetime import date
-
 from maestro.triggers import (
     HassEvent,
     MaestroEvent,
+    cron_trigger,
     hass_trigger,
     maestro_trigger,
     state_change_trigger,
 )
+from maestro.utils import local_now
 
 from registry import maestro, sun
 
@@ -14,8 +14,9 @@ from registry import maestro, sun
 @hass_trigger(HassEvent.STARTUP)
 @maestro_trigger(MaestroEvent.STARTUP)
 @state_change_trigger(sun.sun)
+@cron_trigger(hour=0)
 def set_sidebar_text() -> None:
-    today = date.today().strftime("%A")
+    today = local_now().strftime("%A")
 
     if sun.sun.is_above_horizon:
         sun_action = "sets"
