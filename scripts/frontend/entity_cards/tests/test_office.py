@@ -15,13 +15,16 @@ from scripts.frontend.common.icons import Icon
 from .. import office
 
 
-def test_normal_rows_show_environment_and_share_prices(mt: MaestroTest) -> None:
+@pytest.mark.parametrize("price,expected", [(123.45, "$123"), (123.75, "$124")])
+def test_normal_rows_show_environment_and_share_prices(
+    mt: MaestroTest, price: float, expected: str
+) -> None:
     office.initialize_card()
     mt.set_state(sensor.office_ambient_sensor_temperature, "72")
     mt.set_state(sensor.office_ambient_sensor_humidity, "45")
     mt.set_state(switch.space_heater, OFF)
     with (
-        patch.object(office, "get_private_share_price", return_value=123.45),
+        patch.object(office, "get_private_share_price", return_value=price),
         patch.object(
             office, "get_stock_quote", return_value=FinnhubResponse(125.5, 0, 0, 0, 0, 0, 0, 0)
         ),
@@ -32,7 +35,7 @@ def test_normal_rows_show_environment_and_share_prices(mt: MaestroTest) -> None:
 
     assert office.card.row_1_value == "72° · 45%"
     assert office.card.row_1_icon == Icon.THERMOMETER_WATER
-    assert office.card.row_2_value == "$123.45"
+    assert office.card.row_2_value == expected
     assert office.card.row_2_icon == Icon.SHIELD_AIRPLANE
     assert office.card.row_3_value == "$126"
     assert office.card.row_3_icon == Icon.CLOUD
@@ -87,14 +90,14 @@ def test_double_tap_shows_compensation_then_restores_rows(
 
     assert displays == [
         (
-            "$120,000",
-            "API Error" if private_failure else "$223,450",
-            "Failed :(" if net_failure else "$152,750",
+            "$120K",
+            "API Error" if private_failure else "$223K",
+            "Failed :(" if net_failure else "$153K",
         )
     ]
     assert office.card.row_1_value == "72° · 45%"
     assert office.card.row_1_icon == Icon.THERMOMETER_WATER
-    assert office.card.row_2_value == ("API Error" if private_failure else "$123.45")
+    assert office.card.row_2_value == ("API Error" if private_failure else "$123")
     assert office.card.row_2_icon == Icon.SHIELD_AIRPLANE
     assert office.card.row_3_value == ("API Error" if net_failure else "$126")
     assert office.card.row_3_icon == Icon.CLOUD
@@ -122,16 +125,32 @@ def test_financial_rows_restore_even_if_environment_refresh_fails(mt: MaestroTes
     ):
         office.handle_double_tap()
 
-    assert office.card.row_2_value == "$123.45"
+    assert office.card.row_2_value == "$123"
     assert office.card.row_2_icon == Icon.SHIELD_AIRPLANE
     assert office.card.row_3_value == "$126"
 
 
 def test_unavailable_humidity_restores_offline_environment_row(mt: MaestroTest) -> None:
     office.initialize_card()
-    office.card.update(row_1_value="$120,000", row_1_icon=Icon.SHIELD_AIRPLANE)
+    office.card.update(row_1_value="$120K", row_1_icon=Icon.SHIELD_AIRPLANE)
     mt.set_state(sensor.office_ambient_sensor_temperature, "72")
     mt.set_state(sensor.office_ambient_sensor_humidity, UNAVAILABLE)
     office.set_row_1()
     assert office.card.row_1_value == "Offline"
     assert office.card.row_1_icon == Icon.THERMOMETER_OFF
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        (123_000, "$123K"),
+        (123_600, "$124K"),
+        (999_499, "$999K"),
+        (999_500, "$1.00M"),
+        (1_000_000, "$1.00M"),
+        (1_234_567, "$1.23M"),
+        (1_236_000, "$1.24M"),
+    ],
+)
+def test_compensation_uses_compact_currency(mt: MaestroTest, value: float, expected: str) -> None:
+    assert office.format_compensation(value) == expected
