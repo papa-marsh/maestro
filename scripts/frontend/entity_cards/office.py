@@ -125,7 +125,7 @@ def fetch_employer_price() -> float | None:
 
 def show_employer_price(price: float | None) -> None:
     card.update(
-        row_2_value=f"${price:,.2f}" if price is not None else "API Error",
+        row_2_value=f"${price:,.0f}" if price is not None else "API Error",
         row_2_icon=Icon.SHIELD_AIRPLANE,
         row_2_color=RowColor.DEFAULT,
     )
@@ -152,6 +152,13 @@ def handle_tap() -> None:
     toggle_meeting_active()
 
 
+def format_compensation(value: float) -> str:
+    thousands = round(value / 1_000)
+    if abs(thousands) >= 1_000:
+        return f"${value / 1_000_000:.2f}M"
+    return f"${thousands}K"
+
+
 @ui_event_trigger(UIEvent.ENTITY_CARD_4_DOUBLE_TAP)
 def handle_double_tap() -> None:
     price = fetch_employer_price()
@@ -159,19 +166,19 @@ def handle_double_tap() -> None:
     try:
         quote = get_stock_quote(NET_SYMBOL)
         net_total_comp = NET_SALARY + NET_SHARES_PER_YEAR * quote.c
-        net_value = f"${net_total_comp:,.0f}"
+        net_value = format_compensation(net_total_comp)
     except Exception as e:
         log.error("Finnhub API request failed", exception_type=type(e).__name__)
 
     current_total_comp = CURRENT_SALARY + CURRENT_SHARES_PER_YEAR * SHARE_PRICE
     market_value = (
-        f"${CURRENT_SALARY + CURRENT_SHARES_PER_YEAR * price:,.0f}"
+        format_compensation(CURRENT_SALARY + CURRENT_SHARES_PER_YEAR * price)
         if price is not None
         else "API Error"
     )
 
     card.update(
-        row_1_value=f"${current_total_comp:,.0f}",
+        row_1_value=format_compensation(current_total_comp),
         row_1_icon=Icon.SHIELD_AIRPLANE,
         row_1_color=RowColor.DEFAULT,
         row_2_value=market_value,

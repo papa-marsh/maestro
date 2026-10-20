@@ -328,7 +328,7 @@ Both are gitignored because they contain personal data. If you need to modify th
 
 The Office card uses `EMPLOYER_SYMBOL` from `scripts/config/secrets.py` to request an indicative Forge share price through Yahoo Finance's unauthenticated chart feed. Keep the symbol and employer identity out of tracked files, fixtures, logs, and PR text. No additional API credential is required. The feed is unofficial and its estimate is not an executable quote.
 
-Normal rows show temperature/humidity, the private-market share price, and NET's stock price. Double-tap shows annual total compensation using the configured share price, annual total compensation using the fetched estimate, and NET-based annual total compensation for five seconds. Private-market pricing refreshes at startup, daily at 01:00, and on double-tap; NET retains its market-hours schedule. Failed private-price requests display the existing API error state without substituting the configured price.
+Normal rows show temperature/humidity, the private-market share price rounded to whole dollars, and NET's stock price. Double-tap shows annual total compensation using the configured share price, annual total compensation using the fetched estimate, and NET-based annual total compensation for five seconds. Compensation values use whole thousands (`$123K`) or two-decimal millions (`$1.23M`), promoting rounded thousands to millions at `$1.00M`. Private-market pricing refreshes at startup, daily at 01:00, and on double-tap; NET retains its market-hours schedule. Failed private-price requests display the existing API error state without substituting the configured price.
 
 ## Deployment
 
