@@ -208,6 +208,10 @@ JobScheduler().cancel_job(JOB_ID)
 
 Job IDs are module-level `SCREAMING_SNAKE_CASE` constants. `JobScheduler()` is instantiated per-use (auto-detects test mode).
 
+### Laundry Completion
+
+`scripts/home/laundry.py` detects `sensor.washer_plug_power` crossing from at least 10W to below 10W. A scheduler job notifies Marshall and Emily after five minutes; readings at or above 10W or invalid readings cancel it. Further below-threshold readings leave the deadline unchanged. The notification uses the falling-edge event's local time. Sensor recovery alone does not count as a completed cycle.
+
 ### Database Models
 
 ```python
