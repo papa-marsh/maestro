@@ -102,7 +102,7 @@ def build_stock_row(symbol: str) -> tuple[str, RowColor] | None:
     return value, color
 
 
-@cron_trigger("* 9-16 * * 1-5")
+@cron_trigger("* 9-16 * * mon-fri")
 @cron_trigger(hour=1)
 def set_stock_rows() -> None:
     attr_updates = {}
