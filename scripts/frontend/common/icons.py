@@ -4,6 +4,7 @@ from enum import StrEnum
 class Icon(StrEnum):
     BABY = "mdi:baby"
     BABY_BUGGY = "mdi:baby-buggy"
+    BABY_FACE_OUTLINE = "mdi:baby-face-outline"
     BASEBALL = "mdi:baseball"
     BATTERY_UNKNOWN = "mdi:battery-unknown"
     CALENDAR_TODAY = "mdi:calendar-today"
@@ -22,6 +23,8 @@ class Icon(StrEnum):
     HISTORY = "mdi:history"
     HOME = "mdi:home"
     HOME_ASSISTANT = "mdi:home-assistant"
+    HUMAN_FEMALE_GIRL = "mdi:human-female-girl"
+    HUMAN_MALE_FEMALE = "mdi:human-male-female"
     HVAC = "mdi:hvac"
     HVAC_OFF = "mdi:hvac-off"
     LOCK = "mdi:lock"
