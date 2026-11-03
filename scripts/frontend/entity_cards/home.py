@@ -173,13 +173,13 @@ def show_bedroom_environment() -> None:
             sensor.ellies_room_temperature_sensor_temperature,
             sensor.ellies_room_temperature_sensor_humidity,
         ),
-        row_2_icon=Icon.HUMAN_FEMALE_GIRL,
+        row_2_icon=Icon.HUMAN_FEMALE_DANCE,
         row_2_color=RowColor.DEFAULT,
         row_3_value=bedroom_environment(
             sensor.olivias_room_temperature_sensor_temperature,
             sensor.olivias_room_temperature_sensor_humidity,
         ),
-        row_3_icon=Icon.BABY_FACE_OUTLINE,
+        row_3_icon=Icon.CRADLE,
         row_3_color=RowColor.DEFAULT,
     )
     try:
