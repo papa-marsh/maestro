@@ -46,8 +46,8 @@ def test_double_tap_shows_bedrooms_then_restores_rows(
         assert home.card.row_2_value == ("Offline" if missing_state else "70° · 45%")
         assert home.card.row_3_value == ("Offline" if missing_state else "73° · 48%")
         assert home.card.row_1_icon == Icon.HUMAN_MALE_FEMALE
-        assert home.card.row_2_icon == Icon.HUMAN_FEMALE_GIRL
-        assert home.card.row_3_icon == Icon.BABY_FACE_OUTLINE
+        assert home.card.row_2_icon == Icon.HUMAN_FEMALE_DANCE
+        assert home.card.row_3_icon == Icon.CRADLE
         assert home.card.row_3_color == RowColor.DEFAULT
         assert home.card.state == "All Shut"
         assert home.card.blink
@@ -86,7 +86,7 @@ def test_feeding_update_during_alternate_view_is_preserved(mt: MaestroTest) -> N
         def check_display(seconds: float) -> None:
             updates.append(executor.submit(feed_chelsea))
             assert update_started.wait(timeout=1)
-            assert home.card.row_3_icon == Icon.BABY_FACE_OUTLINE
+            assert home.card.row_3_icon == Icon.CRADLE
 
         with (
             patch.object(home, "bedroom_environment", return_value="72° · 45%"),
