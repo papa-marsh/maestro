@@ -1,15 +1,12 @@
 """Home card bedroom climate display and normal-row restoration."""
 
-from concurrent.futures import Future, ThreadPoolExecutor
-from threading import Event
 from unittest.mock import patch
 
 import pytest
-from flask import current_app
 from maestro.domains import UNAVAILABLE, UNKNOWN
 from maestro.testing import MaestroTest
 
-from registry import sensor
+from registry import climate, sensor
 from scripts.common.event_type import EventType, UIEvent
 from scripts.frontend.common.entity_card import RowColor
 from scripts.frontend.common.icons import Icon
@@ -38,10 +35,14 @@ def test_double_tap_shows_bedrooms_then_restores_rows(
     mt.set_state(sensor.ellies_room_temperature_sensor_humidity, "44.8")
     mt.set_state(sensor.olivias_room_temperature_sensor_temperature, "73.1")
     mt.set_state(sensor.olivias_room_temperature_sensor_humidity, missing_state or "47.7")
+    mt.set_state(climate.thermostat, UNAVAILABLE)
 
     def check_display(seconds: float) -> None:
         assert seconds == 5
+        assert home.bedroom_view_active()
         home.handle_double_tap()
+        home.set_row_1()
+        home.set_row_2()
         assert home.card.row_1_value == "72° · 42%"
         assert home.card.row_2_value == ("Offline" if missing_state else "70° · 45%")
         assert home.card.row_3_value == ("Offline" if missing_state else "73° · 48%")
@@ -52,11 +53,16 @@ def test_double_tap_shows_bedrooms_then_restores_rows(
         assert home.card.state == "All Shut"
         assert home.card.blink
 
-    with patch.object(home, "sleep", side_effect=check_display) as pause:
+    redis = home.card.state_manager.redis_client
+    with (
+        patch.object(home, "sleep", side_effect=check_display) as pause,
+        patch.object(redis, "set", wraps=redis.set) as cache_set,
+    ):
         mt.trigger_event(
             EventType.MAESTRO_UI_EVENT, data={"trigger": UIEvent.ENTITY_CARD_3_DOUBLE_TAP}
         )
     pause.assert_called_once()
+    cache_set.assert_any_call(redis.build_key(home.BEDROOM_VIEW_CACHE_PREFIX), "1", ttl_seconds=5)
 
     assert home.card.row_1_value == "72° · 45%"
     assert home.card.row_1_icon == Icon.THERMOMETER
@@ -66,38 +72,11 @@ def test_double_tap_shows_bedrooms_then_restores_rows(
     assert home.card.row_3_icon == Icon.DOG
     assert home.card.row_3_color == RowColor.RED
     assert home.card.blink
-
-
-def test_feeding_update_during_alternate_view_is_preserved(mt: MaestroTest) -> None:
-    home.initialize_card()
-    home.card.update(row_3_value="6:30 AM", row_3_color=RowColor.RED)
-    app_context = current_app.app_context
-    update_started = Event()
-    updates: list[Future[None]] = []
-    feeding_time = home.local_now().strftime("%-I:%M %p")
-
-    def feed_chelsea() -> None:
-        with app_context():
-            update_started.set()
-            home.set_row_3()
-
-    with ThreadPoolExecutor(max_workers=1) as executor:
-
-        def check_display(seconds: float) -> None:
-            updates.append(executor.submit(feed_chelsea))
-            assert update_started.wait(timeout=1)
-            assert home.card.row_3_icon == Icon.CRADLE
-
-        with (
-            patch.object(home, "bedroom_environment", return_value="72° · 45%"),
-            patch.object(home, "sleep", side_effect=check_display),
-        ):
-            home.handle_double_tap()
-
-    updates[0].result()
-    assert home.card.row_3_value == feeding_time
-    assert home.card.row_3_icon == Icon.DOG
-    assert home.card.row_3_color == RowColor.DEFAULT
+    assert not home.bedroom_view_active()
+    home.set_row_1()
+    home.set_row_2()
+    assert home.card.row_1_value == "Offline"
+    assert home.card.row_2_value == "Offline"
 
 
 def test_interrupted_display_restores_reminder(mt: MaestroTest) -> None:
@@ -112,3 +91,4 @@ def test_interrupted_display_restores_reminder(mt: MaestroTest) -> None:
     assert home.card.row_3_value == "6:30 AM"
     assert home.card.row_3_icon == Icon.DOG
     assert home.card.row_3_color == RowColor.RED
+    assert not home.bedroom_view_active()

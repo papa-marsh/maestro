@@ -2,7 +2,6 @@ from calendar import Day
 from contextlib import suppress
 from dataclasses import asdict
 from datetime import timedelta
-from threading import Lock
 from time import sleep
 
 from maestro.domains import ON, UNAVAILABLE, UNKNOWN, Sensor
@@ -25,8 +24,7 @@ from scripts.frontend.common.icons import Icon
 from scripts.home.doors import EXTERIOR_DOORS
 
 card = maestro.entity_card_3
-# Normal row updates wait until the temporary display has restored its snapshot.
-ROW_LOCK = Lock()
+BEDROOM_VIEW_CACHE_PREFIX = "HOME_CARD_BEDROOM_VIEW"
 
 
 @hass_trigger(HassEvent.STARTUP)
@@ -68,11 +66,8 @@ def set_state() -> None:
 @state_change_trigger(climate.thermostat)
 @cron_trigger("*/10 * * * *")
 def set_row_1() -> None:
-    with ROW_LOCK:
-        update_row_1()
-
-
-def update_row_1() -> None:
+    if bedroom_view_active():
+        return
     if climate.thermostat.state in [UNKNOWN, UNAVAILABLE]:
         card.update(row_1_value="Offline", row_1_icon=Icon.THERMOMETER_OFF)
         return
@@ -87,11 +82,8 @@ def update_row_1() -> None:
 @state_change_trigger(climate.thermostat)
 @cron_trigger("*/10 * * * *")
 def set_row_2() -> None:
-    with ROW_LOCK:
-        update_row_2()
-
-
-def update_row_2() -> None:
+    if bedroom_view_active():
+        return
     if climate.thermostat.state in [UNKNOWN, UNAVAILABLE]:
         card.update(row_2_value="Offline", row_2_icon=Icon.HVAC)
         return
@@ -112,8 +104,7 @@ def update_row_2() -> None:
 @state_change_trigger(binary_sensor.chelsea_cabinet, to_state=ON)
 def set_row_3() -> None:
     value = local_now().strftime("%-I:%M %p")
-    with ROW_LOCK:
-        card.update(row_3_value=value, row_3_color=RowColor.DEFAULT)
+    card.update(row_3_value=value, row_3_color=RowColor.DEFAULT)
 
 
 @cron_trigger(hour=18, day_of_week=Day.MONDAY)
@@ -124,10 +115,9 @@ def garbage_bin_reminder() -> None:
 @cron_trigger(hour=7)
 @cron_trigger(hour=19)
 def feed_chelsea_reminder() -> None:
-    with ROW_LOCK:
-        last_changed = binary_sensor.chelsea_cabinet.last_changed
-        if local_now() - last_changed > timedelta(hours=1):
-            card.row_3_color = RowColor.RED
+    last_changed = binary_sensor.chelsea_cabinet.last_changed
+    if local_now() - last_changed > timedelta(hours=1):
+        card.row_3_color = RowColor.RED
 
 
 @ui_event_trigger(UIEvent.ENTITY_CARD_3_TAP)
@@ -136,8 +126,7 @@ def handle_tap() -> None:
         card.blink = False
         return
 
-    with ROW_LOCK:
-        card.row_3_color = RowColor.DEFAULT if card.row_3_color == RowColor.RED else RowColor.RED
+    card.row_3_color = RowColor.DEFAULT if card.row_3_color == RowColor.RED else RowColor.RED
 
 
 def bedroom_environment(temperature: Sensor, humidity: Sensor) -> str:
@@ -148,12 +137,20 @@ def bedroom_environment(temperature: Sensor, humidity: Sensor) -> str:
 
 @ui_event_trigger(UIEvent.ENTITY_CARD_3_DOUBLE_TAP)
 def handle_double_tap() -> None:
-    if not ROW_LOCK.acquire(blocking=False):
+    if bedroom_view_active():
         return
+    redis = card.state_manager.redis_client
+    key = redis.build_key(BEDROOM_VIEW_CACHE_PREFIX)
+    redis.set(key, "1", ttl_seconds=5)
     try:
         show_bedroom_environment()
     finally:
-        ROW_LOCK.release()
+        redis.delete(key)
+
+
+def bedroom_view_active() -> bool:
+    redis = card.state_manager.redis_client
+    return redis.get(redis.build_key(BEDROOM_VIEW_CACHE_PREFIX)) is not None
 
 
 def show_bedroom_environment() -> None:
