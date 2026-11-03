@@ -324,10 +324,6 @@ with mt.mock_datetime_as(local_now().replace(hour=3, minute=0)):
 
 Both are gitignored because they contain personal data. If you need to modify them, note that changes won't appear in git status.
 
-### Home Card Bedroom Climate
-
-The Home card's double-tap event is already wired in Lovelace; its display behavior lives in `scripts/frontend/entity_cards/home.py`. Double-tap shows temperature and humidity for the master bedroom, Ellie's room, and Olivia's room, in that order, for five seconds. Room icons are parents (`mdi:human-male-female`), a dancer (`mdi:human-female-dance`), and a cradle (`mdi:cradle`). Unknown or unavailable readings display the existing `Offline` label. The normal row values, icons, and colors are restored afterward, including Chelsea's feeding timestamp and reminder color. A shared row lock ignores overlapping double-taps and delays normal row updates until restoration so feeding events and reminders are not overwritten.
-
 ### Office Card Pricing
 
 The Office card uses `EMPLOYER_SYMBOL` from `scripts/config/secrets.py` to request an indicative Forge share price through Yahoo Finance's unauthenticated chart feed. Keep the symbol and employer identity out of tracked files, fixtures, logs, and PR text. No additional API credential is required. The feed is unofficial and its estimate is not an executable quote.
