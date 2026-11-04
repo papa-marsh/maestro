@@ -69,6 +69,27 @@ def test_olivia_info_bedtime(
     mt.assert_action_not_called(Domain.NOTIFY, person.emily.notify_action_name)
 
 
+@pytest.mark.parametrize("after_nap", [False, True])
+def test_only_nap_wakeup_notification_ends_with_bedtime(mt: MaestroTest, after_nap: bool) -> None:
+    """Include bedtime after a nap, but not after overnight sleep."""
+    midnight = local_now().replace(hour=0, minute=0, second=0, microsecond=0)
+    save_sleep_event(midnight - timedelta(hours=4), wakeup=False)
+    if after_nap:
+        save_sleep_event(midnight + timedelta(hours=7, minutes=15), wakeup=True)
+        save_sleep_event(midnight + timedelta(hours=12), wakeup=False)
+    wakeup_time = midnight + (timedelta(hours=13) if after_nap else timedelta(hours=7, minutes=15))
+    with mt.mock_datetime_as(wakeup_time):
+        mt.trigger_event(EventType.OLIVIA_AWAKE)
+
+    for target in (person.marshall, person.emily):
+        calls = mt.get_action_calls(Domain.NOTIFY, target.notify_action_name)
+        assert len(calls) == 1
+        lines = calls[0].kwargs["message"].splitlines()
+        assert lines[0].startswith("Olivia woke up after ")
+        assert lines[1].startswith("Wake time today: ")
+        assert lines[2:] == (["Bedtime: ~7:15"] if after_nap else [])
+
+
 def test_olivia_asleep_event(mt: MaestroTest) -> None:
     one_hour_ago = local_now() - timedelta(hours=1)
     with mt.mock_datetime_as(one_hour_ago):
@@ -81,6 +102,9 @@ def test_olivia_asleep_event(mt: MaestroTest) -> None:
     assert sleep_events[1].wakeup is False
     mt.assert_action_called(Domain.NOTIFY, person.marshall.notify_action_name)
     mt.assert_action_called(Domain.NOTIFY, person.emily.notify_action_name)
+    for call in mt.get_action_calls(Domain.NOTIFY):
+        if "went to sleep" in call.kwargs["message"]:
+            assert "Bedtime:" not in call.kwargs["message"]
 
     # Sleep event notifies only Emily and exits if already asleep
     mt.clear_action_calls()
