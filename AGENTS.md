@@ -317,6 +317,10 @@ with mt.mock_datetime_as(local_now().replace(hour=3, minute=0)):
     mt.assert_action_called(...)
 ```
 
+## Sleep Tracking
+
+`OLIVIA_INFO` sends the requesting person a sleep summary beginning with `Bedtime: ~H:MM` (12-hour time without AM/PM). The estimate is the request time plus the remaining time to reach 11 hours awake today, assuming she stays awake from the request onward. If no nap has been recorded after waking today, it adds 90 minutes for an anticipated nap. An ongoing nap counts as a recorded nap; only its elapsed sleep affects the estimate. Sleep/wake event notifications do not include the bedtime estimate.
+
 ## Config (`scripts/config/`)
 
 - `secrets.py` -- User ID mappings (`USER_ID_TO_PERSON`, `PERSON_TO_USER_ID`), API tokens, financial constants. **Gitignored.**

@@ -73,12 +73,20 @@ def olivia_info(event: FiredEvent) -> None:
     last_event = get_last_event()
 
     duration = format_duration(now - last_event.timestamp)
-    total_duration = format_duration(get_awake_time())
+    awake_time = get_awake_time(end=now)
+    total_duration = format_duration(awake_time)
+    wake_windows = get_wake_windows(end=now)
+    bedtime = now + timedelta(hours=11) - awake_time
+    if not any(start and end for start, end in wake_windows):
+        bedtime += timedelta(minutes=90)
 
     state = "awake" if last_event.wakeup else "asleep"
-    message = f"Olivia has been {state} for {duration}\nWake time today: {total_duration}\n"
+    message = (
+        f"Bedtime: ~{bedtime.strftime('%-I:%M')}\n"
+        f"Olivia has been {state} for {duration}\nWake time today: {total_duration}\n"
+    )
 
-    for wake_window in get_wake_windows():
+    for wake_window in wake_windows:
         start, end = wake_window
         start_str = start.strftime("%-I:%M%P") if start else ""
         end_str = end.strftime("%-I:%M%P") if end else ""
