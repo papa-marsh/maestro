@@ -23,6 +23,14 @@ NOTIF_TITLE = "Sleep Tracker"
 NOTIF_ID = "sleep_tracker"
 
 
+def bedtime_line() -> str:
+    now = local_now()
+    bedtime = now + timedelta(hours=11) - get_awake_time(end=now)
+    if not any(start and end for start, end in get_wake_windows(end=now)):
+        bedtime += timedelta(minutes=90)
+    return f"Bedtime: ~{bedtime.strftime('%-I:%M')}"
+
+
 def sleep_tracker_notify(
     message: str,
     target: Person | list[Person] = [person.marshall, person.emily],
@@ -64,6 +72,10 @@ def olivia_sleep_event(event: FiredEvent) -> None:
     total_duration = format_duration(get_awake_time())
 
     message = notif_message(duration, total_duration, wakeup=wakeup)
+    if wakeup and any(
+        start and end == last_event.timestamp for start, end in get_wake_windows(end=now)
+    ):
+        message += f"\n{bedtime_line()}"
     sleep_tracker_notify(message)
 
 
@@ -73,16 +85,12 @@ def olivia_info(event: FiredEvent) -> None:
     last_event = get_last_event()
 
     duration = format_duration(now - last_event.timestamp)
-    awake_time = get_awake_time(end=now)
-    total_duration = format_duration(awake_time)
+    total_duration = format_duration(get_awake_time(end=now))
     wake_windows = get_wake_windows(end=now)
-    bedtime = now + timedelta(hours=11) - awake_time
-    if not any(start and end for start, end in wake_windows):
-        bedtime += timedelta(minutes=90)
 
     state = "awake" if last_event.wakeup else "asleep"
     message = (
-        f"Bedtime: ~{bedtime.strftime('%-I:%M')}\n"
+        f"{bedtime_line()}\n"
         f"Olivia has been {state} for {duration}\nWake time today: {total_duration}\n"
     )
 
