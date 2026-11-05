@@ -18,6 +18,8 @@ from .queries import (
 )
 
 FALSE_ALARM_THRESHOLD = timedelta(minutes=20)
+EXPECTED_NAP_DURATION = timedelta(minutes=90)
+NAP_CUTOFF_HOUR = 17
 
 NOTIF_TITLE = "Sleep Tracker"
 NOTIF_ID = "sleep_tracker"
@@ -25,10 +27,25 @@ NOTIF_ID = "sleep_tracker"
 
 def bedtime_line() -> str:
     now = local_now()
+    last_event = get_last_event()
+    last_timestamp = last_event.timestamp.astimezone(now.tzinfo)
+    wake_windows = get_wake_windows(end=now)
+    napping = (
+        not last_event.wakeup
+        and last_timestamp.date() == now.date()
+        and last_timestamp.hour < NAP_CUTOFF_HOUR
+        and any(start and start < last_event.timestamp for start, _ in wake_windows)
+    )
+    has_napped = any(
+        start and end and end.astimezone(now.tzinfo).hour < NAP_CUTOFF_HOUR
+        for start, end in wake_windows
+    )
     bedtime = now + timedelta(hours=11) - get_awake_time(end=now)
-    if not any(start and end for start, end in get_wake_windows(end=now)):
-        bedtime += timedelta(minutes=90)
-    return f"Bedtime: ~{bedtime.strftime('%-I:%M')}"
+    if napping:
+        bedtime += max(EXPECTED_NAP_DURATION - (now - last_event.timestamp), timedelta())
+    elif not has_napped or now.hour < 11:
+        bedtime += EXPECTED_NAP_DURATION
+    return f"Bedtime: ~{bedtime.strftime('%-I:%M%p').lower()}"
 
 
 def sleep_tracker_notify(
@@ -72,9 +89,13 @@ def olivia_sleep_event(event: FiredEvent) -> None:
     total_duration = format_duration(get_awake_time())
 
     message = notif_message(duration, total_duration, wakeup=wakeup)
-    if wakeup and any(
-        start and end == last_event.timestamp for start, end in get_wake_windows(end=now)
-    ):
+    nap_start = not wakeup and now.hour < NAP_CUTOFF_HOUR
+    nap_wakeup = (
+        wakeup
+        and last_event.timestamp.astimezone(now.tzinfo).hour < NAP_CUTOFF_HOUR
+        and any(start and end == last_event.timestamp for start, end in get_wake_windows(end=now))
+    )
+    if nap_start or nap_wakeup:
         message += f"\n{bedtime_line()}"
     sleep_tracker_notify(message)
 
