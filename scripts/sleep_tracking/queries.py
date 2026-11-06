@@ -1,15 +1,19 @@
 from datetime import datetime, timedelta
 
 from maestro import db
+from maestro.integrations import StateManager
 from maestro.utils import local_now
 
 from .models import SleepEvent
 
+SLEEP_HISTORY_LOCK = "sleep_history"
+
 
 def save_sleep_event(timestamp: datetime, wakeup: bool) -> None:
-    sleep_event = SleepEvent(timestamp=timestamp, wakeup=wakeup)
-    db.session.add(sleep_event)
-    db.session.commit()
+    with StateManager().redis_client.lock(SLEEP_HISTORY_LOCK):
+        sleep_event = SleepEvent(timestamp=timestamp, wakeup=wakeup)
+        db.session.add(sleep_event)
+        db.session.commit()
 
 
 def get_last_event() -> SleepEvent:
@@ -41,10 +45,11 @@ def get_last_events(count: int = 1) -> list[SleepEvent]:
 
 def delete_last_event() -> None:
     """Delete the most recent sleep event."""
-    latest_event = db.session.query(SleepEvent).order_by(SleepEvent.timestamp.desc()).first()
-    if latest_event:
-        db.session.delete(latest_event)
-        db.session.commit()
+    with StateManager().redis_client.lock(SLEEP_HISTORY_LOCK):
+        latest_event = db.session.query(SleepEvent).order_by(SleepEvent.timestamp.desc()).first()
+        if latest_event:
+            db.session.delete(latest_event)
+            db.session.commit()
 
 
 def get_wake_windows(
