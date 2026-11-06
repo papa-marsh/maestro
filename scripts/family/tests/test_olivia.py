@@ -1,3 +1,4 @@
+import pytest
 from maestro.domains import AWAY, HOME
 from maestro.integrations import Domain
 from maestro.testing import MaestroTest
@@ -8,17 +9,10 @@ from scripts.common.event_type import EventType
 from .. import olivia
 
 
-def test_toggle_sound_machine(mt: MaestroTest) -> None:
-    # Sound machine doesn't turn on when Emily is not home
-    mt.set_state(person.emily, AWAY)
-    mt.trigger_event(EventType.OLIVIA_ASLEEP)
-    mt.assert_action_not_called(
-        domain=Domain.SWITCH,
-        action="turn_on",
-    )
-
-    # Sound machine turns on when Emily is home
-    mt.set_state(person.emily, HOME)
+@pytest.mark.parametrize("emily_state", [HOME, AWAY])
+def test_toggle_sound_machine(mt: MaestroTest, emily_state: str) -> None:
+    """Follow Olivia's sleep events regardless of Emily's location."""
+    mt.set_state(person.emily, emily_state)
     mt.trigger_event(EventType.OLIVIA_ASLEEP)
     mt.assert_action_called(
         domain=Domain.SWITCH,

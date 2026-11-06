@@ -146,6 +146,7 @@ def test_lions_without_tigers_calendar(mt: MaestroTest) -> None:
     with (
         mt.mock_datetime_as(NOW),
         patch.object(next_game, "get_next_nfl_game", return_value=lions_game()),
+        patch.object(GoogleCalendar, "next_event", new_callable=PropertyMock, return_value=None),
     ):
         next_game.initialize_card()
         next_game.update_card()
@@ -155,7 +156,11 @@ def test_lions_without_tigers_calendar(mt: MaestroTest) -> None:
 
 def test_no_games_clears_card(mt: MaestroTest) -> None:
     """Clear live presentation when neither team has a usable game."""
-    with mt.mock_datetime_as(NOW), patch.object(next_game, "get_next_nfl_game", return_value=None):
+    with (
+        mt.mock_datetime_as(NOW),
+        patch.object(next_game, "get_next_nfl_game", return_value=None),
+        patch.object(GoogleCalendar, "next_event", new_callable=PropertyMock, return_value=None),
+    ):
         next_game.initialize_card()
         next_game.update_card_lions(lions_game(status_state="in_progress"))
         next_game.update_card()
