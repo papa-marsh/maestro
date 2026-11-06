@@ -14,6 +14,7 @@ class EventType(StrEnum):
     OLIVIA_ASLEEP = auto()
     OLIVIA_AWAKE = auto()
     OLIVIA_INFO = auto()
+    OLIVIA_CORRECTION = auto()
 
     MAESTRO_UI_EVENT = "maestro_ui_event"
 
