@@ -52,7 +52,7 @@ def test_notify_ellie_wakeup_ignores_door_after_window(mt: MaestroTest) -> None:
 
 def test_toggle_butterfly_light(mt: MaestroTest) -> None:
     # Light turns on when sound machine turns off
-    mt.trigger_state_change(switch.ellies_sound_machine, new=OFF)
+    mt.trigger_state_change(switch.ellie_sound_machine, new=OFF)
     mt.assert_action_called(
         domain=Domain.SWITCH,
         action="turn_on",
@@ -60,7 +60,7 @@ def test_toggle_butterfly_light(mt: MaestroTest) -> None:
     )
 
     # Light turns off when sound machine turns on
-    mt.trigger_state_change(switch.ellies_sound_machine, new=ON)
+    mt.trigger_state_change(switch.ellie_sound_machine, new=ON)
     mt.assert_action_called(
         domain=Domain.SWITCH,
         action="turn_off",

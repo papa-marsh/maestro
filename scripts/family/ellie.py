@@ -12,15 +12,15 @@ ELLIE_SOUND_MACHINE_JOB_ID = "ellie_sound_machine_off_after_wakeup"
 
 @cron_trigger(hour=19)
 def ellie_sound_machine_on() -> None:
-    switch.ellies_sound_machine.turn_on()
+    switch.ellie_sound_machine.turn_on()
 
 
 @cron_trigger(hour=8)
 def ellie_sound_machine_off() -> None:
-    switch.ellies_sound_machine.turn_off()
+    switch.ellie_sound_machine.turn_off()
 
 
-@state_change_trigger(switch.ellies_sound_machine)
+@state_change_trigger(switch.ellie_sound_machine)
 def toggle_butterfly_light(state_change: StateChangeEvent) -> None:
     if state_change.new.state == "off":
         switch.butterfly_night_light.turn_on()
