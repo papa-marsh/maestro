@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from maestro.domains import Person
 from maestro.integrations import EntityId
 
-from registry import binary_sensor, sensor
+from registry import sensor
 
 if TYPE_CHECKING:
     from scripts.vehicles.common import Nyx, Tess
@@ -21,12 +21,12 @@ class Marshall(Person):
 
     location = sensor.marshall_iphone_geocoded_location
 
-    phone_battery_level = sensor.marshall_iphone_battery_level
-    phone_battery_state = sensor.marshall_iphone_battery_state
-    phone_focus = binary_sensor.marshall_iphone_focus
-    phone_connection = sensor.marshall_iphone_connection_type
+    # phone_battery_level = sensor.marshall_iphone_battery_level
+    # phone_battery_state = sensor.marshall_iphone_battery_state
+    # phone_focus = binary_sensor.marshall_iphone_focus
+    # phone_connection = sensor.marshall_iphone_connection_type
 
-    app_version = sensor.marshall_iphone_app_version
+    # app_version = sensor.marshall_iphone_app_version
 
     # watch_battery_level = sensor.marshall_iphone_watch_battery
     # watch_battery_state = sensor.marshall_iphone_watch_battery_state
@@ -41,12 +41,12 @@ class Emily(Person):
 
     location = sensor.emily_iphone_geocoded_location
 
-    phone_battery_level = sensor.emily_iphone_battery_level
-    phone_battery_state = sensor.emily_iphone_battery_state
-    phone_focus = binary_sensor.emily_iphone_focus
-    phone_connection = sensor.emily_iphone_connection_type
+    # phone_battery_level = sensor.emily_iphone_battery_level
+    # phone_battery_state = sensor.emily_iphone_battery_state
+    # phone_focus = binary_sensor.emily_iphone_focus
+    # phone_connection = sensor.emily_iphone_connection_type
 
-    app_version = sensor.emily_iphone_app_version
+    # app_version = sensor.emily_iphone_app_version
 
     # watch_battery_level = sensor.emily_iphone_watch_battery
     # watch_battery_state = sensor.emily_iphone_watch_battery_state

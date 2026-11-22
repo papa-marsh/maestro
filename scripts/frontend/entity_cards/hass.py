@@ -10,12 +10,11 @@ from maestro.triggers import (
     cron_trigger,
     hass_trigger,
     maestro_trigger,
-    state_change_trigger,
 )
 from maestro.utils import IntervalSeconds, local_now, resolve_timestamp
 
 from registry import maestro, sensor, update
-from scripts.frontend.common.entity_card import EntityCardAttributes, RowColor
+from scripts.frontend.common.entity_card import EntityCardAttributes
 from scripts.frontend.common.icons import Icon
 
 card = maestro.entity_card_6
@@ -41,6 +40,8 @@ def initialize_card() -> None:
         row_1_icon=Icon.TIMELAPSE,
         row_2_icon=Icon.THERMOMETER,
         row_3_icon=Icon.MEMORY,
+        row_2_value="-",
+        row_3_value="-",
     )
     set_row_1()
 
@@ -76,22 +77,6 @@ def set_row_1() -> None:
         value = f"{elapsed_days} Days"
 
     card.row_1_value = value
-
-
-@state_change_trigger(sensor.cpu_temperature)
-def set_row_2() -> None:
-    cpu_temp = float(sensor.cpu_temperature.state)
-    value = f"{cpu_temp:.0f} °F"
-    color = RowColor.RED if cpu_temp >= 110 else RowColor.DEFAULT
-    card.update(row_2_value=value, row_2_color=color)
-
-
-@state_change_trigger(sensor.memory_use_percent)
-def set_row_3() -> None:
-    memory_use = float(sensor.memory_use_percent.state)
-    value = f"{memory_use:.1f}%"
-    color = RowColor.RED if memory_use >= 85 else RowColor.DEFAULT
-    card.update(row_3_value=value, row_3_color=color)
 
 
 def check_internet_connection() -> bool:

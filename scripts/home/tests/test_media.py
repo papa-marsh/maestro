@@ -29,8 +29,7 @@ def test_reset_speakers(mt: MaestroTest) -> None:
             speaker.id,
             is_volume_muted=False,
         )
-    speakers_and_tv: list[MediaPlayer] = [*media.ALL_SPEAKERS, media_player.living_room_tv]
-    for speaker in speakers_and_tv:
+    for speaker in media.ALL_SPEAKERS:
         mt.assert_action_called(Domain.MEDIA_PLAYER, "volume_set", speaker.id)
 
 

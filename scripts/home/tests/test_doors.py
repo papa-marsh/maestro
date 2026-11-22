@@ -4,7 +4,7 @@ from maestro.domains import OFF, ON, Cover
 from maestro.integrations import Domain
 from maestro.testing import MaestroTest
 
-from registry import binary_sensor, cover, person
+from registry import binary_sensor, person
 
 from .. import doors
 
@@ -37,13 +37,6 @@ def test_door_closed_cancel_notifs(mt: MaestroTest) -> None:
     mt.trigger_state_change(test_door, new=OFF)
     for time in doors.NOTIFICATION_TIMES:
         job_id = doors.get_job_id(test_door.id, time)
-        mt.assert_job_not_scheduled(job_id)
-
-    # Garage door jobs are cancelled when door closes
-    mt.trigger_state_change(cover.west_stall, new="open")
-    mt.trigger_state_change(cover.west_stall, new="closed")
-    for time in doors.NOTIFICATION_TIMES:
-        job_id = doors.get_job_id(cover.west_stall.id, time)
         mt.assert_job_not_scheduled(job_id)
 
 

@@ -29,7 +29,6 @@ def reset_speakers() -> None:
     media_player.portable.set_volume(0.2)
     media_player.basement.set_volume(0.3)
     media_player.office.set_volume(0.35)
-    media_player.living_room_tv.set_volume(0.1)
 
 
 @state_change_trigger(*MAIN_SPEAKERS, to_state="playing")
