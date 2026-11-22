@@ -29,12 +29,12 @@ def test_double_tap_shows_bedrooms_then_restores_rows(
         row_3_value="6:30 AM",
         row_3_color=RowColor.RED,
     )
-    mt.set_state(sensor.master_bedroom_temperature_sensor, "71.6")
-    mt.set_state(sensor.master_bedroom_temperature_sensor_humidity, "42.3")
-    mt.set_state(sensor.ellies_room_temperature_sensor_temperature, missing_state or "70.2")
-    mt.set_state(sensor.ellies_room_temperature_sensor_humidity, "44.8")
-    mt.set_state(sensor.olivias_room_temperature_sensor_temperature, "73.1")
-    mt.set_state(sensor.olivias_room_temperature_sensor_humidity, missing_state or "47.7")
+    mt.set_state(sensor.master_bedroom_temperature, "71.6")
+    mt.set_state(sensor.master_bedroom_humidity, "42.3")
+    mt.set_state(sensor.ellie_bedroom_temperature, missing_state or "70.2")
+    mt.set_state(sensor.ellie_bedroom_humidity, "44.8")
+    mt.set_state(sensor.olivia_bedroom_temperature, "73.1")
+    mt.set_state(sensor.olivia_bedroom_humidity, missing_state or "47.7")
     mt.set_state(climate.thermostat, UNAVAILABLE)
 
     def check_display(seconds: float) -> None:

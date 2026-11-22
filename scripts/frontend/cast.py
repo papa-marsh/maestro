@@ -20,7 +20,7 @@ NEST_DISPLAYS: list[tuple[MediaPlayer, str]] = [
     (media_player.kitchen_display, "192.168.0.127"),
 ]
 
-CAST_URL = "http://192.168.0.107:8123/lovelace-cast/overview"
+CAST_URL = "http://192.168.0.145/lovelace-cast/overview"
 CAST_LOCK_KEY_PREFIX = "cast_lock_"
 CHROMECAST_PORT = 8009
 DEVICE_INFO_TIMEOUT_SECONDS = 10

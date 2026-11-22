@@ -23,9 +23,9 @@ def ellie_sound_machine_off() -> None:
 @state_change_trigger(switch.ellie_sound_machine)
 def toggle_butterfly_light(state_change: StateChangeEvent) -> None:
     if state_change.new.state == "off":
-        switch.butterfly_night_light.turn_on()
+        switch.butterfly_light.turn_on()
     else:
-        switch.butterfly_night_light.turn_off()
+        switch.butterfly_light.turn_off()
 
 
 @state_change_trigger(binary_sensor.ellie_bedroom_door, from_state=OFF, to_state=ON)

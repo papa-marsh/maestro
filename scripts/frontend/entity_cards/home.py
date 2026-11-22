@@ -161,20 +161,20 @@ def show_bedroom_environment() -> None:
     }
     card.update(
         row_1_value=bedroom_environment(
-            sensor.master_bedroom_temperature_sensor,
-            sensor.master_bedroom_temperature_sensor_humidity,
+            sensor.master_bedroom_temperature,
+            sensor.master_bedroom_humidity,
         ),
         row_1_icon=Icon.HUMAN_MALE_FEMALE,
         row_1_color=RowColor.DEFAULT,
         row_2_value=bedroom_environment(
-            sensor.ellies_room_temperature_sensor_temperature,
-            sensor.ellies_room_temperature_sensor_humidity,
+            sensor.ellie_bedroom_temperature,
+            sensor.ellie_bedroom_humidity,
         ),
         row_2_icon=Icon.HUMAN_FEMALE_DANCE,
         row_2_color=RowColor.DEFAULT,
         row_3_value=bedroom_environment(
-            sensor.olivias_room_temperature_sensor_temperature,
-            sensor.olivias_room_temperature_sensor_humidity,
+            sensor.olivia_bedroom_temperature,
+            sensor.olivia_bedroom_humidity,
         ),
         row_3_icon=Icon.CRADLE,
         row_3_color=RowColor.DEFAULT,

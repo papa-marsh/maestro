@@ -65,7 +65,7 @@ def set_state() -> None:
 
 @cron_trigger(minute=0)
 def set_row_1() -> None:
-    last_boot = resolve_timestamp(sensor.home_assistant_uptime.state)
+    last_boot = resolve_timestamp(sensor.uptime.state)
     elapsed_seconds = (local_now() - last_boot).total_seconds()
     elapsed_hours = int(elapsed_seconds // IntervalSeconds.ONE_HOUR)
 

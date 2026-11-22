@@ -17,7 +17,7 @@ def test_toggle_sound_machine(mt: MaestroTest, emily_state: str) -> None:
     mt.assert_action_called(
         domain=Domain.SWITCH,
         action="turn_on",
-        entity_id=switch.olivias_sound_machine.id,
+        entity_id=switch.olivia_sound_machine.id,
     )
 
     # Sound machine turns off for 'olivia_awake' event
@@ -25,5 +25,5 @@ def test_toggle_sound_machine(mt: MaestroTest, emily_state: str) -> None:
     mt.assert_action_called(
         domain=Domain.SWITCH,
         action="turn_off",
-        entity_id=switch.olivias_sound_machine.id,
+        entity_id=switch.olivia_sound_machine.id,
     )

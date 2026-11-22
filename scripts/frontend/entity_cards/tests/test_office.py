@@ -20,8 +20,8 @@ def test_normal_rows_show_environment_and_share_prices(
     mt: MaestroTest, price: float, expected: str
 ) -> None:
     office.initialize_card()
-    mt.set_state(sensor.office_ambient_sensor_temperature, "72")
-    mt.set_state(sensor.office_ambient_sensor_humidity, "45")
+    mt.set_state(sensor.office_temperature, "72")
+    mt.set_state(sensor.office_humidity, "45")
     mt.set_state(switch.space_heater, OFF)
     with (
         patch.object(office, "get_private_share_price", return_value=price),
@@ -48,8 +48,8 @@ def test_double_tap_shows_compensation_then_restores_rows(
     mt: MaestroTest, private_failure: bool, net_failure: bool
 ) -> None:
     office.initialize_card()
-    mt.set_state(sensor.office_ambient_sensor_temperature, "72")
-    mt.set_state(sensor.office_ambient_sensor_humidity, "45")
+    mt.set_state(sensor.office_temperature, "72")
+    mt.set_state(sensor.office_humidity, "45")
     mt.set_state(switch.space_heater, OFF)
     quote = FinnhubResponse(125.5, 0, 0, 0, 0, 0, 0, 0)
     displays: list[tuple[str, str, str]] = []
@@ -133,8 +133,8 @@ def test_financial_rows_restore_even_if_environment_refresh_fails(mt: MaestroTes
 def test_unavailable_humidity_restores_offline_environment_row(mt: MaestroTest) -> None:
     office.initialize_card()
     office.card.update(row_1_value="$120K", row_1_icon=Icon.SHIELD_AIRPLANE)
-    mt.set_state(sensor.office_ambient_sensor_temperature, "72")
-    mt.set_state(sensor.office_ambient_sensor_humidity, UNAVAILABLE)
+    mt.set_state(sensor.office_temperature, "72")
+    mt.set_state(sensor.office_humidity, UNAVAILABLE)
     office.set_row_1()
     assert office.card.row_1_value == "Offline"
     assert office.card.row_1_icon == Icon.THERMOMETER_OFF

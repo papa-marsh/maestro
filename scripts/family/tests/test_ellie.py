@@ -56,7 +56,7 @@ def test_toggle_butterfly_light(mt: MaestroTest) -> None:
     mt.assert_action_called(
         domain=Domain.SWITCH,
         action="turn_on",
-        entity_id=switch.butterfly_night_light.id,
+        entity_id=switch.butterfly_light.id,
     )
 
     # Light turns off when sound machine turns on
@@ -64,5 +64,5 @@ def test_toggle_butterfly_light(mt: MaestroTest) -> None:
     mt.assert_action_called(
         domain=Domain.SWITCH,
         action="turn_off",
-        entity_id=switch.butterfly_night_light.id,
+        entity_id=switch.butterfly_light.id,
     )

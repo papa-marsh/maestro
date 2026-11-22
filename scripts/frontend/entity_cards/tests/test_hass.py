@@ -26,7 +26,7 @@ def test_uptime_display(
 ) -> None:
     """Display completed hours below 25 hours and completed days thereafter."""
     now = local_now().replace(hour=12, minute=0, second=0, microsecond=0)
-    mt.set_state(sensor.home_assistant_uptime, (now - uptime).isoformat())
+    mt.set_state(sensor.uptime, (now - uptime).isoformat())
 
     with mt.mock_datetime_as(now):
         hass.initialize_card()

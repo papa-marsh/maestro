@@ -63,19 +63,19 @@ def set_state(state_change: StateChangeEvent) -> None:
 
 
 @state_change_trigger(
-    sensor.office_ambient_sensor_temperature,
-    sensor.office_ambient_sensor_humidity,
+    sensor.office_temperature,
+    sensor.office_humidity,
     switch.space_heater,
 )
 def set_row_1() -> None:
-    if sensor.office_ambient_sensor_temperature.state in [UNKNOWN, UNAVAILABLE] or (
-        sensor.office_ambient_sensor_humidity.state in [UNKNOWN, UNAVAILABLE]
+    if sensor.office_temperature.state in [UNKNOWN, UNAVAILABLE] or (
+        sensor.office_humidity.state in [UNKNOWN, UNAVAILABLE]
     ):
         card.update(row_1_value="Offline", row_1_icon=Icon.THERMOMETER_OFF)
         return
 
-    temperature = float(sensor.office_ambient_sensor_temperature.state)
-    humidity = float(sensor.office_ambient_sensor_humidity.state)
+    temperature = float(sensor.office_temperature.state)
+    humidity = float(sensor.office_humidity.state)
 
     value = f"{temperature:.0f}° · {humidity:.0f}%"
     icon = Icon.RADIATOR if switch.space_heater.is_on else Icon.THERMOMETER_WATER
