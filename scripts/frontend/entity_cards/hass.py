@@ -20,6 +20,7 @@ from scripts.frontend.common.icons import Icon
 card = maestro.entity_card_6
 
 ZWAVE_CHECK_JOB_ID = "post_startup_zwave_check"
+CARD_ICON = Icon.SERVER
 
 
 @hass_trigger(HassEvent.STARTUP)
@@ -27,7 +28,7 @@ ZWAVE_CHECK_JOB_ID = "post_startup_zwave_check"
 def initialize_card() -> None:
     attributes = EntityCardAttributes(
         title="Hass",
-        icon=Icon.SERVER,
+        icon=CARD_ICON,
     )
     StateManager().initialize_hass_entity(
         entity_id=card.id,
@@ -56,7 +57,7 @@ def set_state() -> None:
         blink = True
     else:
         state = update.home_assistant_core_update.installed_version[2:]
-        icon = Icon.UPDATE if update_available else Icon.HOME_ASSISTANT
+        icon = Icon.UPDATE if update_available else CARD_ICON
         blink = False
 
     card.update(state=state, icon=icon, active=update_available, blink=blink)
