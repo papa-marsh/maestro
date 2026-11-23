@@ -2,7 +2,7 @@ import socket
 from contextlib import suppress
 from dataclasses import asdict
 
-from maestro.domains import ON
+from maestro.domains import ON, UNAVAILABLE, UNKNOWN, Sensor
 from maestro.integrations import StateManager
 from maestro.triggers import (
     HassEvent,
@@ -27,7 +27,7 @@ ZWAVE_CHECK_JOB_ID = "post_startup_zwave_check"
 def initialize_card() -> None:
     attributes = EntityCardAttributes(
         title="Hass",
-        icon=Icon.RASPBERRY_PI,
+        icon=Icon.SERVER,
     )
     StateManager().initialize_hass_entity(
         entity_id=card.id,
@@ -38,10 +38,8 @@ def initialize_card() -> None:
     card.update(
         title=attributes.title,
         row_1_icon=Icon.TIMELAPSE,
-        row_2_icon=Icon.THERMOMETER,
-        row_3_icon=Icon.MEMORY,
-        row_2_value="-",
-        row_3_value="-",
+        row_2_icon=Icon.MEMORY,
+        row_3_icon=Icon.HARDDISK,
     )
     set_row_1()
 
@@ -77,6 +75,26 @@ def set_row_1() -> None:
         value = f"{elapsed_days} Days"
 
     card.row_1_value = value
+
+
+@cron_trigger("* * * * *")
+def set_resource_rows() -> None:
+    card.update(
+        row_2_value=format_percent_pair(
+            sensor.system_monitor_processor_use,
+            sensor.system_monitor_memory_usage,
+        ),
+        row_3_value=format_percent_pair(
+            sensor.system_monitor_disk_usage,
+            sensor.system_monitor_swap_usage,
+        ),
+    )
+
+
+def format_percent_pair(first: Sensor, second: Sensor) -> str:
+    if any(s.state in [UNKNOWN, UNAVAILABLE] for s in (first, second)):
+        return "Offline"
+    return f"{float(first.state):.0f}% · {float(second.state):.0f}%"
 
 
 def check_internet_connection() -> bool:

@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 import pytest
+from maestro.domains import UNAVAILABLE
 from maestro.testing import MaestroTest
 from maestro.utils import local_now
 
@@ -33,3 +34,18 @@ def test_uptime_display(
         hass.set_row_1()
 
     assert hass.card.row_1_value == expected_value
+
+
+def test_resource_rows(mt: MaestroTest) -> None:
+    """Show rounded CPU/memory and disk/swap pairs, or Offline when a sensor is unavailable."""
+    mt.set_state(sensor.uptime, local_now().isoformat())
+    mt.set_state(sensor.system_monitor_processor_use, "2")
+    mt.set_state(sensor.system_monitor_memory_usage, "49.4")
+    mt.set_state(sensor.system_monitor_disk_usage, "33.6")
+    mt.set_state(sensor.system_monitor_swap_usage, UNAVAILABLE)
+
+    hass.initialize_card()
+    hass.set_resource_rows()
+
+    assert hass.card.row_2_value == "2% · 49%"
+    assert hass.card.row_3_value == "Offline"
