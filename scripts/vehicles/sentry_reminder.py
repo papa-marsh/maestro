@@ -11,7 +11,7 @@ from .common import Tess
 SENTRY_REMINDER_JOB_ID = "sentry_reminder_job_id"
 
 
-@state_change_trigger(Tess.location, to_state=zone.the_deprees.friendly_name)
+@state_change_trigger(Tess.location, to_state=zone.the_deprees.entity_name)
 def sentry_reminder() -> None:
     """Reminder to turn off Sentry at the deprees after a 30 min debounce"""
 
@@ -22,7 +22,7 @@ def sentry_reminder() -> None:
     )
 
 
-@state_change_trigger(Tess.location, from_state=zone.the_deprees.friendly_name)
+@state_change_trigger(Tess.location, from_state=zone.the_deprees.entity_name)
 def cancel_reminder() -> None:
     JobScheduler().cancel_job(SENTRY_REMINDER_JOB_ID)
 

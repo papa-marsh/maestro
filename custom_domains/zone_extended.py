@@ -19,27 +19,27 @@ class ZoneExtended(Zone):
     def metadata(self) -> ZoneMetadata:
         """Lazy-load metadata to avoid accessing state manager during module import"""
         if self._metadata is None:
-            self._metadata = self.get_zone_metadata(self.friendly_name)
+            self._metadata = self.get_zone_metadata(self.entity_name)
         return self._metadata
 
     @classmethod
-    def get_zone_metadata(cls, friendly_name: str) -> ZoneMetadata:
-        registry_entry = zone_metadata_registry.get(friendly_name)
+    def get_zone_metadata(cls, zone_name: str) -> ZoneMetadata:
+        registry_entry = zone_metadata_registry.get(zone_name)
 
         zone_metadata = deepcopy(registry_entry) or ZoneMetadata()
 
         if zone_metadata.short_name is None:
-            zone_metadata.short_name = friendly_name
+            zone_metadata.short_name = zone_name
 
         return zone_metadata
 
     @classmethod
-    def resolve_zone(cls, friendly_name: str) -> Zone:
+    def resolve_zone(cls, zone_name: str) -> Zone:
         from registry import zone as zone_registry
 
         for attr_name in dir(zone_registry):
             attr = getattr(zone_registry, attr_name)
-            if isinstance(attr, Zone) and attr.friendly_name == friendly_name:
+            if isinstance(attr, Zone) and attr.entity_name == zone_name:
                 return attr
 
-        raise ValueError(f"No zone entity found for friendly_name: {friendly_name}")
+        raise ValueError(f"No zone entity found named {zone_name}")

@@ -50,7 +50,7 @@ def build_zone_change_event(state_change: StateChangeEvent) -> ZoneChangeEvent:
     new_metadata = ZoneExtended.get_zone_metadata(state_change.new.state)
 
     return ZoneChangeEvent(
-        name=person_.friendly_name,
+        name=person_.entity_name,
         person=person_,
         spouse=spouse,
         timestamp=state_change.time_fired,

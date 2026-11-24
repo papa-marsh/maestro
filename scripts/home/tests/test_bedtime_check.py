@@ -36,8 +36,10 @@ def test_no_notification_when_nothing_needs_attention(mt: MaestroTest) -> None:
 
 def test_combines_outstanding_tasks_for_both_people(mt: MaestroTest) -> None:
     initialize_bedtime_states(mt)
-    mt.set_state(EXTERIOR_DOORS[0], ON, attributes={"friendly_name": "Front Door"})
-    mt.set_state(GARAGE_STALLS[1], ON, attributes={"friendly_name": "West Stall"})
+    mt.set_state(EXTERIOR_DOORS[0], ON)
+    mt.set_names(EXTERIOR_DOORS[0], "Front Door")
+    mt.set_state(GARAGE_STALLS[1], ON)
+    mt.set_names(GARAGE_STALLS[1], "West Stall")
     mt.set_state(
         maestro.entity_card_3,
         "Front",
@@ -88,7 +90,8 @@ def test_ignores_unknown_and_unavailable_states(mt: MaestroTest) -> None:
     initialize_bedtime_states(mt)
     mt.set_state(EXTERIOR_DOORS[0], UNKNOWN)
     mt.set_state(GARAGE_STALLS[0], UNAVAILABLE)
-    mt.set_state(EXTERIOR_DOORS[1], ON, attributes={"friendly_name": "Garage Door"})
+    mt.set_state(EXTERIOR_DOORS[1], ON)
+    mt.set_names(EXTERIOR_DOORS[1], "Garage Door")
     mt.set_state(maestro.entity_card_3, UNKNOWN)
     mt.set_state(Nyx.battery, UNKNOWN)
     mt.set_state(Tess.battery, UNAVAILABLE)

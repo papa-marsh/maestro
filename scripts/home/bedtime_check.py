@@ -28,7 +28,7 @@ def get_vehicle_task(name: str, battery: Sensor, charger: BinarySensor) -> str |
 
 def get_bedtime_tasks() -> list[str]:
     tasks = [
-        f"{door.friendly_name} is open"
+        f"{door.entity_name} is open"
         for door in [*EXTERIOR_DOORS, *GARAGE_STALLS]
         if door.state == ON
     ]

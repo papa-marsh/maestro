@@ -165,7 +165,7 @@ temp = float(climate.thermostat.current_temperature)
 battery = int(sensor.nyx_battery.state)
 ```
 
-Use convenience properties where available: `.is_on`, `.is_home`, `.friendly_name`.
+Use convenience properties where available: `.is_on`, `.is_home`, `.entity_name`.
 
 ### Push Notifications
 

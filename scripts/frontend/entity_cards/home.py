@@ -48,7 +48,7 @@ def set_state() -> None:
     open_doors = [door for door in EXTERIOR_DOORS if door.state == "on"]
     open_count = len(open_doors)
     if open_count == 1:
-        state = open_doors[0].friendly_name.split(" ")[0]
+        state = open_doors[0].entity_name.split(" ")[0]
         icon = Icon.DOOR_OPEN
         active = True
     elif open_count > 1:

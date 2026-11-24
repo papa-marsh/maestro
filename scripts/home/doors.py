@@ -62,7 +62,7 @@ def send_notifications(door: BinarySensor, duration: timedelta) -> None:
 
     Notif(
         title="Door Left Open",
-        message=f"{door.friendly_name} has been open for {duration_str}",
+        message=f"{door.entity_name} has been open for {duration_str}",
         group=PROCESS_ID_PREFIX,
         tag=get_process_id(door.id),
         actions=[silence_action],

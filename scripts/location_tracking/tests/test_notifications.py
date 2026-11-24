@@ -27,7 +27,8 @@ def test_location_update_orchestrator_basic(
     mt: MaestroTest,
 ) -> None:
     # Needed for metadata lookup to fetch debounce
-    mt.set_state(test_debounced, "test_state", {"friendly_name": test_debounced_name})
+    mt.set_state(test_debounced, "test_state")
+    mt.set_names(test_debounced, test_debounced_name)
 
     # Leaving home calls set_last_left_home(...)
     mt.trigger_state_change(test_person, old=HOME, new=test_region_name)
