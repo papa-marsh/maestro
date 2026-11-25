@@ -6,7 +6,7 @@ from sqlalchemy.engine import Dialect
 
 
 class TZDateTime(TypeDecorator):
-    """A DateTime column that stores in UTC and converts to/from local timezone"""
+    """A timezone-aware DateTime column that stores and returns values in UTC"""
 
     impl = DateTime
     cache_ok = True

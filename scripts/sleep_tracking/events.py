@@ -117,8 +117,8 @@ def olivia_info(event: FiredEvent) -> None:
 
     for wake_window in wake_windows:
         start, end = wake_window
-        start_str = start.strftime("%-I:%M%P") if start else ""
-        end_str = end.strftime("%-I:%M%P") if end else ""
+        start_str = start.astimezone(now.tzinfo).strftime("%-I:%M%p").lower() if start else ""
+        end_str = end.astimezone(now.tzinfo).strftime("%-I:%M%p").lower() if end else ""
 
         if start is None and end:
             message += f"\nAwake until {end_str}"
