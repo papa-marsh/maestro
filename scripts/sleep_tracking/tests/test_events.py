@@ -187,6 +187,21 @@ def test_wakeup_false_alarm_threshold(mt: MaestroTest) -> None:
     mt.assert_action_called(Domain.NOTIFY, person.emily.notify_action_name)
 
 
+def test_olivia_info_wake_windows_in_local_time(mt: MaestroTest) -> None:
+    midnight = local_now().replace(hour=0, minute=0, second=0, microsecond=0)
+    save_sleep_event(midnight + timedelta(hours=7), wakeup=True)
+    save_sleep_event(midnight + timedelta(hours=9, minutes=30), wakeup=False)
+    save_sleep_event(midnight + timedelta(hours=11), wakeup=True)
+
+    with mt.mock_datetime_as(midnight + timedelta(hours=12)):
+        mt.trigger_event(EventType.OLIVIA_INFO, user_id=PERSON_TO_USER_ID[person.marshall])
+
+    calls = mt.get_action_calls(Domain.NOTIFY, person.marshall.notify_action_name)
+    lines = calls[0].kwargs["message"].splitlines()
+    assert "7:00am-9:30am (2h 30m)" in lines
+    assert "Awake since 11:00am (60m)" in lines
+
+
 def test_olivia_info(mt: MaestroTest) -> None:
     # Notification is sent to requestor only
     mt.trigger_event(EventType.OLIVIA_AWAKE)
