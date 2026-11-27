@@ -53,4 +53,4 @@ def test_card_state_shows_projected_bedtime(mt: MaestroTest) -> None:
         livi.initialize_card()
         livi.update_card()
 
-    mt.assert_state(livi.card, "7:45 pm")
+    mt.assert_state(livi.card, "7:45 PM")

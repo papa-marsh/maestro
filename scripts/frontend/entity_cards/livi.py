@@ -58,7 +58,7 @@ def update_card() -> None:
     awake_time = get_awake_time()
 
     card.update(
-        state=get_projected_bedtime().strftime("%-I:%M %p").lower(),
+        state=get_projected_bedtime().strftime("%-I:%M %p"),
         icon=Icon.BABY_BUGGY if awake else Icon.SLEEP,
         active=not awake,
         row_1_value=_format_card_duration(duration),
