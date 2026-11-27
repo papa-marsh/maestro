@@ -7,6 +7,9 @@ from maestro.utils import local_now
 from .models import SleepEvent
 
 SLEEP_HISTORY_LOCK = "sleep_history"
+TARGET_AWAKE_TIME = timedelta(hours=11)
+EXPECTED_NAP_DURATION = timedelta(minutes=90)
+NAP_CUTOFF_HOUR = 17
 
 
 def save_sleep_event(timestamp: datetime, wakeup: bool) -> None:
@@ -115,3 +118,27 @@ def get_awake_time(
         total_wake_time += window_end - window_start
 
     return total_wake_time
+
+
+def get_projected_bedtime() -> datetime:
+    """Project tonight's bedtime from today's awake time and naps."""
+    now = local_now()
+    last_event = get_last_event()
+    last_timestamp = last_event.timestamp.astimezone(now.tzinfo)
+    wake_windows = get_wake_windows(end=now)
+    napping = (
+        not last_event.wakeup
+        and last_timestamp.date() == now.date()
+        and last_timestamp.hour < NAP_CUTOFF_HOUR
+        and any(start and start < last_event.timestamp for start, _ in wake_windows)
+    )
+    has_napped = any(
+        start and end and end.astimezone(now.tzinfo).hour < NAP_CUTOFF_HOUR
+        for start, end in wake_windows
+    )
+    bedtime = now + TARGET_AWAKE_TIME - get_awake_time(end=now)
+    if napping:
+        bedtime += max(EXPECTED_NAP_DURATION - (now - last_event.timestamp), timedelta())
+    elif not has_napped or now.hour < 11:
+        bedtime += EXPECTED_NAP_DURATION
+    return bedtime

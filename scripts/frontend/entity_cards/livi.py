@@ -17,7 +17,7 @@ from registry import maestro
 from scripts.common.event_type import EventType
 from scripts.frontend.common.entity_card import EntityCardAttributes
 from scripts.frontend.common.icons import Icon
-from scripts.sleep_tracking.queries import get_awake_time, get_last_events
+from scripts.sleep_tracking.queries import get_awake_time, get_last_events, get_projected_bedtime
 
 card = maestro.entity_card_5
 
@@ -58,7 +58,7 @@ def update_card() -> None:
     awake_time = get_awake_time()
 
     card.update(
-        state="Awake" if awake else "Asleep",
+        state=get_projected_bedtime().strftime("%-I:%M %p").lower(),
         icon=Icon.BABY_BUGGY if awake else Icon.SLEEP,
         active=not awake,
         row_1_value=_format_card_duration(duration),
