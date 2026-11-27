@@ -10,42 +10,23 @@ from scripts.common.event_type import EventType
 from scripts.config.secrets import USER_ID_TO_PERSON
 
 from .queries import (
+    NAP_CUTOFF_HOUR,
     delete_last_event,
     get_awake_time,
     get_last_event,
+    get_projected_bedtime,
     get_wake_windows,
     save_sleep_event,
 )
 
 FALSE_ALARM_THRESHOLD = timedelta(minutes=20)
-EXPECTED_NAP_DURATION = timedelta(minutes=90)
-NAP_CUTOFF_HOUR = 17
 
 NOTIF_TITLE = "Sleep Tracker"
 NOTIF_ID = "sleep_tracker"
 
 
 def bedtime_line() -> str:
-    now = local_now()
-    last_event = get_last_event()
-    last_timestamp = last_event.timestamp.astimezone(now.tzinfo)
-    wake_windows = get_wake_windows(end=now)
-    napping = (
-        not last_event.wakeup
-        and last_timestamp.date() == now.date()
-        and last_timestamp.hour < NAP_CUTOFF_HOUR
-        and any(start and start < last_event.timestamp for start, _ in wake_windows)
-    )
-    has_napped = any(
-        start and end and end.astimezone(now.tzinfo).hour < NAP_CUTOFF_HOUR
-        for start, end in wake_windows
-    )
-    bedtime = now + timedelta(hours=11) - get_awake_time(end=now)
-    if napping:
-        bedtime += max(EXPECTED_NAP_DURATION - (now - last_event.timestamp), timedelta())
-    elif not has_napped or now.hour < 11:
-        bedtime += EXPECTED_NAP_DURATION
-    return f"Bedtime: ~{bedtime.strftime('%-I:%M%p').lower()}"
+    return f"Bedtime: ~{get_projected_bedtime().strftime('%-I:%M%p').lower()}"
 
 
 def sleep_tracker_notify(

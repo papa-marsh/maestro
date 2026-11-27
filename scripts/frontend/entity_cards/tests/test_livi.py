@@ -38,7 +38,19 @@ def test_card_duration_display(
         livi.initialize_card()
         livi.update_card()
 
-    mt.assert_state(livi.card, "Asleep")
     assert livi.card.row_1_value == current_display
     assert livi.card.row_2_value == previous_display
     assert livi.card.row_3_value == previous_display
+
+
+def test_card_state_shows_projected_bedtime(mt: MaestroTest) -> None:
+    """Display the projected bedtime as the card state."""
+    midnight = local_now().replace(hour=0, minute=0, second=0, microsecond=0)
+    save_sleep_event(timestamp=midnight - timedelta(hours=4), wakeup=False)
+    save_sleep_event(timestamp=midnight + timedelta(hours=7, minutes=15), wakeup=True)
+
+    with mt.mock_datetime_as(midnight + timedelta(hours=16)):
+        livi.initialize_card()
+        livi.update_card()
+
+    mt.assert_state(livi.card, "7:45 pm")
